@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Trap Master Reference",
+  "schemaVersion": 1,
+  "description": "Trap/Hip-Hop mixing & mastering reference — loudness/TP/EQ/stereo guides + plugin suggestions pulled from Kevin's full library (iLok, Waves, Native Access / iZotope / NI — approx. 450+ plugins)."
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trap Master Workbench</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#111827;color:#e5e7eb;line-height:1.5;padding:20px;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding-bottom:80px}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:26px;font-weight:700;color:#f9fafb}
+.subtitle{color:#9ca3af;font-size:13px;margin-top:2px}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,button,input,textarea{font-family:inherit;font-size:13px}
+.platform-select,.genre-select{background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px}
+.genre-select{border-color:#854d0e}
+.btn{background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:9px 14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn:hover{background:#6d28d9}
+.btn.secondary{background:#374151}
+.btn.secondary:hover{background:#4b5563}
+.btn.ghost{background:transparent;color:#9ca3af;border:1px solid #374151}
+.btn.ghost:hover{color:#e5e7eb;border-color:#6b7280}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.green{background:#059669}.btn.green:hover{background:#047857}
+.btn.red{background:#dc2626}.btn.red:hover{background:#b91c1c}
+.btn.amber{background:#b45309;color:#fef3c7}.btn.amber:hover{background:#92400e}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid #374151;margin-bottom:18px}
+.tab{background:transparent;color:#9ca3af;border:none;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent}
+.tab:hover{color:#d1d5db}
+.tab.active{color:#a78bfa;border-bottom-color:#a78bfa}
+.tab.active-section{color:#34d399;border-bottom-color:#34d399}
+.tab.voice-tab{color:#f97316}
+.tab.voice-tab.active{color:#fb923c;border-bottom-color:#fb923c}
+.panel{display:none}.panel.active{display:block}
+.row-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
+.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:8px}
+.card .big{font-size:22px;font-weight:700;color:#f9fafb;margin-bottom:2px}
+.card .sub{color:#9ca3af;font-size:12px}
+.card ul{list-style:none}.card li{padding:5px 0;border-bottom:1px solid #374151;font-size:12px}.card li:last-child{border-bottom:none}
+.card .freq{color:#a78bfa;font-weight:600;font-family:"SF Mono",monospace;font-size:11px}
+.tip-box{background:#1e3a8a;border-left:3px solid #3b82f6;border-radius:6px;padding:12px 14px;margin-top:14px;font-size:13px;color:#dbeafe}
+.tip-box.alt{background:#581c87;border-left-color:#a78bfa;color:#f3e8ff}
+.tip-box.warn{background:#78350f;border-left-color:#f59e0b;color:#fef3c7}
+.tip-box strong{color:#fff}
+.chip{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.chip-slate{background:#581c87;color:#f3e8ff}.chip-ssl{background:#1e40af;color:#dbeafe}
+.chip-ua{background:#991b1b;color:#fee2e2}.chip-softube{background:#9a3412;color:#ffedd5}
+.chip-sonnox{background:#14532d;color:#dcfce7}.chip-sonible{background:#164e63;color:#cffafe}
+.chip-sndtoys{background:#854d0e;color:#fef9c3}.chip-izotope{background:#831843;color:#fce7f3}
+.chip-eiosis{background:#312e81;color:#e0e7ff}.chip-weiss{background:#1d4ed8;color:#dbeafe}
+.chip-oek{background:#0c4a6e;color:#e0f2fe}.chip-waves{background:#b91c1c;color:#fee2e2}
+.chip-ni{background:#0f172a;color:#cbd5e1}.chip-pa{background:#b45309;color:#fef3c7}
+.chip-ant{background:#4c1d95;color:#ede9fe}.chip-cele{background:#0369a1;color:#e0f2fe}
+.chip-liq{background:#134e4a;color:#ccfbf1}.chip-other{background:#374151;color:#d1d5db}
+.bus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.bus-col{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:12px;min-height:200px}
+.bus-col h4{font-size:12px;color:#d1d5db;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center}
+.bus-col h4 .count{color:#9ca3af;font-weight:500;font-size:11px;letter-spacing:.2px;text-transform:none}
+.chain-list{margin-bottom:10px}
+.chain-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 8px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px}
+.chain-item.has-notes{border-color:#4c1d95}
+.chain-item .order{color:#9ca3af;font-family:"SF Mono",monospace;font-size:10px;min-width:14px}
+.chain-item .name{flex:1;color:#f3f4f6;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chain-item button{background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:13px;padding:2px 5px;line-height:1}
+.chain-item button:hover{color:#e5e7eb}.chain-item button.del:hover{color:#ef4444}
+.chain-item button.notes-btn.has{color:#c4b5fd}.chain-item button.notes-btn.has:hover{color:#ddd6fe}
+.chain-empty{color:#4b5563;font-size:12px;font-style:italic;padding:8px;text-align:center}
+.chain-notes-row{flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px dashed #374151;display:flex;gap:6px;align-items:flex-start}
+.chain-notes{flex:1;font-size:11px;color:#e0e7ff;white-space:pre-wrap;line-height:1.5;cursor:pointer;padding:4px 6px;border-radius:4px;border:1px solid transparent}
+.chain-notes:hover{background:#1a1332;border-color:#4c1d95}
+.chain-notes .nlabel{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#a78bfa;font-weight:700;margin-bottom:2px}
+.chain-notes-edit{flex:1;min-height:64px;background:#0b1220;color:#e5e7eb;border:1px solid #6d28d9;border-radius:4px;padding:6px 8px;font-family:inherit;font-size:12px;line-height:1.45;resize:vertical}
+.chain-notes-actions{display:flex;flex-direction:column;gap:4px}
+.chain-notes-clear{align-self:flex-start;background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:12px;padding:2px 4px;line-height:1}
+.chain-notes-clear:hover{color:#ef4444}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:#1f2937;border:1px solid #374151;border-radius:12px;width:100%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:14px 16px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{color:#f9fafb;font-size:15px;font-weight:600}
+.modal-header .close-btn{background:transparent;border:none;color:#9ca3af;font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.modal-filters{padding:12px 16px;border-bottom:1px solid #374151;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.modal-filters input[type="text"]{flex:1;min-width:180px;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:7px 10px;font-size:13px}
+.modal-filters select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:7px 10px;font-size:13px}
+.modal-body{overflow-y:auto;padding:8px}
+.modal-form{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.modal-form label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:4px}
+.modal-form input[type="text"],.modal-form select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:13px}
+.modal-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-form .actions{display:flex;gap:8px;justify-content:flex-end;padding-top:6px;border-top:1px solid #374151}
+.plugin-option{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:5px;cursor:pointer;font-size:12px}
+.plugin-option:hover{background:#374151}
+.plugin-option .name{flex:1;color:#f3f4f6}
+.plugin-option .stage-tag{font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px}
+.meter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.meter-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
+.meter-card label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:6px}
+.meter-card .target{font-size:11px;color:#6b7280;margin-bottom:8px;font-family:"SF Mono",monospace}
+.meter-card input[type="number"]{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:9px 10px;font-size:16px;font-weight:600;font-family:"SF Mono",monospace}
+.meter-card .verdict{margin-top:8px;font-size:12px;font-weight:600;padding:5px 9px;border-radius:5px;display:inline-block}
+.verdict.green{background:#064e3b;color:#6ee7b7}.verdict.amber{background:#78350f;color:#fcd34d}
+.verdict.red{background:#7f1d1d;color:#fca5a5}.verdict.neutral{background:#374151;color:#9ca3af}
+.meter-card .note{font-size:11px;color:#9ca3af;margin-top:6px;line-height:1.4}
+.diagnosis-box{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;margin-top:14px}
+.diagnosis-box h4{color:#f9fafb;font-size:14px;margin-bottom:8px}
+.diagnosis-box ul{margin-left:16px}
+.diagnosis-box li{font-size:13px;color:#d1d5db;margin-bottom:4px}
+.diagnosis-box li.ok{color:#6ee7b7}.diagnosis-box li.warn{color:#fcd34d}.diagnosis-box li.err{color:#fca5a5}
+.symptom-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:18px}
+.symptom{background:#1f2937;border:1px solid #374151;color:#e5e7eb;padding:11px 13px;border-radius:8px;cursor:pointer;font-size:13px;text-align:left;transition:all .15s}
+.symptom:hover{background:#374151;border-color:#4b5563}
+.symptom.active{background:#581c87;border-color:#a78bfa;color:#f3e8ff;font-weight:600}
+.recipe-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px;margin-bottom:10px}
+.recipe-card h4{color:#f9fafb;font-size:15px;font-weight:700;margin-bottom:4px}
+.recipe-card .dx{color:#9ca3af;font-size:12px;margin-bottom:10px;font-style:italic}
+.recipe-step{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #374151;font-size:13px}
+.recipe-step:last-child{border-bottom:none}
+.recipe-step .num{color:#a78bfa;font-weight:700;font-family:"SF Mono",monospace;font-size:11px;min-width:20px}
+.recipe-step .plugin{flex:1;color:#f3f4f6}
+.recipe-step .setting{color:#9ca3af;font-size:12px;font-family:"SF Mono",monospace}
+.recipe-alt{font-size:11px;color:#6b7280;margin-top:8px}
+
+/* LIBRARY */
+.library-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;background:#1f2937;border:1px solid #374151;border-radius:10px}
+.library-toolbar .current-genre{font-weight:600;color:#fbbf24}
+.stage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.stage-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
+.stage-card h4{font-size:13px;color:#f9fafb;margin-bottom:10px;font-weight:600}
+.stage-card .empty{color:#4b5563;font-size:12px;font-style:italic;padding:4px}
+.plugin-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#111827;border:1px solid #374151;font-size:12px}
+.plugin-row.top{background:#2e1065;border-left:3px solid #a78bfa}
+.plugin-row.fav{border-left:3px solid #f472b6}
+.plugin-row.fav.top{border-left:3px solid #fbbf24}
+.plugin-row .star{color:#fbbf24;font-size:11px}
+.plugin-row .name{flex:1;font-weight:500;color:#f3f4f6;display:flex;align-items:center;gap:5px}
+.plugin-row .custom-badge{background:#854d0e;color:#fef9c3;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.fav-btn{background:transparent;border:none;color:#4b5563;cursor:pointer;font-size:13px;padding:2px 4px;line-height:1}
+.fav-btn:hover{color:#f472b6}
+.fav-btn.on{color:#f472b6}
+.del-custom{background:transparent;border:none;color:#4b5563;cursor:pointer;font-size:12px;padding:2px}
+.del-custom:hover{color:#ef4444}
+
+/* VOICE */
+.voice-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.voice-layout{grid-template-columns:1fr}}
+.voice-pane{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:16px}
+.voice-pane h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:12px}
+.voice-pane.input h3{color:#fb923c}.voice-pane.output h3{color:#34d399}
+.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 0 14px}
+.mic-btn{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,#f97316,#c2410c);border:4px solid #fb923c;color:#fff;font-size:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,box-shadow .1s;box-shadow:0 4px 12px rgba(249,115,22,.3);user-select:none}
+.mic-btn:hover{transform:scale(1.03);box-shadow:0 6px 18px rgba(249,115,22,.5)}
+.mic-btn:active{transform:scale(.97)}
+.mic-btn.recording{background:radial-gradient(circle,#dc2626,#991b1b);border-color:#f87171;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.7)}50%{box-shadow:0 0 0 16px rgba(239,68,68,0)}}
+.mic-label{color:#f3f4f6;font-size:13px;font-weight:600}
+.mic-hint{color:#9ca3af;font-size:11px;text-align:center;max-width:260px}
+.mode-toggle{display:flex;gap:4px;background:#111827;border:1px solid #374151;border-radius:6px;padding:2px;margin-bottom:10px}
+.mode-toggle button{flex:1;background:transparent;color:#9ca3af;border:none;padding:5px 8px;font-size:11px;cursor:pointer;border-radius:4px;font-weight:600}
+.mode-toggle button.on{background:#374151;color:#f3f4f6}
+.transcript-box{width:100%;min-height:110px;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.5;resize:vertical;font-family:inherit}
+.transcript-box.recording{border-color:#f97316;background:#1c1410}
+.voice-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.voice-status{font-size:11px;color:#9ca3af;margin-top:6px;min-height:14px}
+.voice-status.err{color:#fca5a5}.voice-status.ok{color:#6ee7b7}
+.tts-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.tts-controls label{font-size:11px;color:#9ca3af;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.tts-controls select,.tts-controls input[type="range"]{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 8px;font-size:12px}
+.tts-playback{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.speaking-indicator{height:3px;background:#374151;border-radius:2px;overflow:hidden;margin-top:8px;position:relative}
+.speaking-indicator.active::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#34d399,transparent);animation:slide 1.8s infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.floating-mic{position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;background:#f97316;border:none;color:#fff;font-size:22px;cursor:pointer;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.floating-mic:hover{background:#ea580c;transform:scale(1.05)}
+.floating-mic.recording{background:#dc2626;animation:pulse 1.2s infinite}
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s;z-index:200}
+.toast.show{opacity:1}.toast.err{background:#7f1d1d;color:#fecaca}
+
+/* REALTIME VOICE */
+.rt-settings-row{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px;background:#1f2937;border:1px solid #374151;border-radius:12px;padding:14px 16px}
+@media(max-width:720px){.rt-settings-row{grid-template-columns:1fr}}
+.rt-key-wrap label,.rt-opts label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:6px}
+.rt-key-inputs{display:flex;gap:6px;align-items:center}
+.rt-key-inputs input{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:12px;font-family:'SF Mono',monospace}
+.rt-key-status{font-size:11px;color:#9ca3af;margin-top:6px}
+.rt-key-status.ok{color:#6ee7b7}.rt-key-status.err{color:#fca5a5}
+.rt-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rt-opts select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:12px}
+.rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.rt-call-btn{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#7c3aed,#4c1d95);border:4px solid #a78bfa;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all .15s;box-shadow:0 6px 28px rgba(124,58,237,.35);padding:16px;font-family:inherit}
+.rt-call-btn:hover:not(:disabled){transform:scale(1.02);box-shadow:0 10px 36px rgba(124,58,237,.55)}
+.rt-call-btn:disabled{opacity:.35;cursor:not-allowed;background:radial-gradient(circle,#374151,#1f2937);border-color:#4b5563;box-shadow:none}
+.rt-call-btn.connecting{background:radial-gradient(circle,#b45309,#78350f);border-color:#fbbf24;animation:pulse-amber 1.2s infinite}
+.rt-call-btn.live{background:radial-gradient(circle,#059669,#065f46);border-color:#34d399;animation:pulse-green 1.6s infinite}
+.rt-call-btn.speaking{background:radial-gradient(circle,#2563eb,#1e3a8a);border-color:#60a5fa}
+@keyframes pulse-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0)}}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 22px rgba(52,211,153,0)}}
+.rt-call-icon{font-size:56px;line-height:1}
+.rt-call-label{font-size:13px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.rt-status-row{display:flex;align-items:center;gap:10px;font-size:12px;color:#9ca3af;flex-wrap:wrap;justify-content:center}
+.rt-dot{width:8px;height:8px;border-radius:50%;background:#4b5563}
+.rt-dot.connecting{background:#fbbf24;animation:blink 1s infinite}
+.rt-dot.live{background:#34d399}
+.rt-dot.speaking{background:#60a5fa;animation:blink .8s infinite}
+.rt-dot.err{background:#f87171}
+@keyframes blink{50%{opacity:.3}}
+.rt-timer{font-family:'SF Mono',monospace;color:#d1d5db}
+.rt-cost{color:#fbbf24;font-family:'SF Mono',monospace}
+.rt-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px 14px;min-height:140px;max-height:340px;overflow-y:auto;font-size:13px;line-height:1.5}
+.rt-placeholder{color:#4b5563;font-style:italic;text-align:center;padding:30px 0}
+.rt-turn{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.rt-turn .who{font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;min-width:56px;padding-top:2px}
+.rt-turn.user .who{color:#fb923c}.rt-turn.ai .who{color:#34d399}
+.rt-turn .txt{flex:1;color:#e5e7eb;white-space:pre-wrap}
+.rt-turn.user .txt{color:#fed7aa}
+.rt-turn.partial{opacity:.6}
+.rt-tools-log{background:#111827;border:1px solid #374151;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:12px}
+.rt-tools-log h4{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.rt-tool{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #1f2937;color:#d1d5db;font-family:'SF Mono',monospace;font-size:11px}
+.rt-tool:last-child{border-bottom:none}
+.rt-tool .fn{color:#a78bfa}
+.rt-tool .args{color:#9ca3af;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-tool .res{color:#6ee7b7;font-size:10px}
+.rt-tool.err .res{color:#fca5a5}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header-top">
+  <div>
+    <h1>Trap Master Workbench</h1>
+    <div class="subtitle">Active mixing/mastering guide — Kevin's iLok + Waves + Native Access + Plugin Alliance library</div>
+  </div>
+  <div class="header-actions">
+    <select class="genre-select" id="genreSelect" title="Genre — changes which plugins are starred as top picks">
+      <option value="trap">🔥 Trap</option>
+      <option value="drill">🔪 Drill</option>
+      <option value="ukdrill">🇬🇧 UK Drill</option>
+      <option value="phonk">👹 Phonk</option>
+      <option value="rage">💢 Rage</option>
+      <option value="cloud">☁️ Cloud Rap</option>
+      <option value="memphis">🪦 Memphis</option>
+      <option value="jersey">🏀 Jersey Club</option>
+      <option value="hyperpop">✨ Hyperpop</option>
+      <option value="boombap">🎙️ Boom Bap</option>
+    </select>
+    <select class="platform-select" id="platformSelect">
+      <option value="trap">Trap -8 LUFS</option>
+      <option value="spotify">Spotify -14</option>
+      <option value="apple">Apple -16</option>
+      <option value="soundcloud">SoundCloud -10</option>
+    </select>
+    <button class="btn" id="snapshotBtn">📋 Snapshot → Claude</button>
+    <button class="btn secondary sm" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active active-section" data-tab="chain">🎛️ Chain Builder</button>
+  <button class="tab active-section" data-tab="meter">📊 Meter Check</button>
+  <button class="tab active-section" data-tab="trouble">🔧 Troubleshooter</button>
+  <button class="tab voice-tab" data-tab="voice">🎙️ Voice Chat</button>
+  <button class="tab" data-tab="loudness">Loudness</button>
+  <button class="tab" data-tab="peak">True Peak</button>
+  <button class="tab" data-tab="eq">EQ / Freq</button>
+  <button class="tab" data-tab="stereo">Stereo</button>
+  <button class="tab" data-tab="library">🔌 Plugin Library</button>
+</div>
+
+<div class="panel active" id="chain">
+  <div class="bus-grid" id="busGrid"></div>
+  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "📋 Snapshot → Claude" when dialed in.</div>
+</div>
+
+<div class="panel" id="meter">
+  <div class="meter-grid" id="meterGrid"></div>
+  <div class="diagnosis-box" id="diagnosis"><h4>Diagnosis</h4><ul id="diagnosisList"><li class="ok">Enter your readings above.</li></ul></div>
+</div>
+
+<div class="panel" id="trouble">
+  <div class="subtitle" style="margin-bottom:12px;">Click any symptom to see a recipe. Pick multiple — they stack on the snapshot.</div>
+  <div class="symptom-grid" id="symptomGrid"></div>
+  <div id="recipesOutput"></div>
+</div>
+
+<div class="panel" id="voice">
+  <div class="rt-settings-row">
+    <div class="rt-key-wrap">
+      <label>OpenAI API Key</label>
+      <div class="rt-key-inputs">
+        <input type="password" id="rtApiKey" placeholder="sk-proj-… (stored only in this browser)" autocomplete="off" spellcheck="false">
+        <button class="btn ghost sm" id="rtKeyShow" title="Show/hide">👁</button>
+        <button class="btn secondary sm" id="rtKeySave">Save</button>
+        <button class="btn ghost sm" id="rtKeyClear" title="Remove from this browser">🗑</button>
+      </div>
+      <div class="rt-key-status" id="rtKeyStatus">No key saved. Paste and Save.</div>
+    </div>
+    <div class="rt-opts">
+      <div><label>Model</label>
+        <select id="rtModel">
+          <option value="gpt-4o-realtime-preview">gpt-4o-realtime — best</option>
+          <option value="gpt-4o-mini-realtime-preview" selected>gpt-4o-mini-realtime — ~10× cheaper</option>
+        </select>
+      </div>
+      <div><label>Voice</label>
+        <select id="rtVoice">
+          <option value="alloy">alloy (neutral)</option>
+          <option value="ash">ash (warm)</option>
+          <option value="ballad">ballad (soft)</option>
+          <option value="coral">coral (bright)</option>
+          <option value="echo" selected>echo (male, clear)</option>
+          <option value="sage">sage (mellow)</option>
+          <option value="shimmer">shimmer (female, crisp)</option>
+          <option value="verse">verse (expressive)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="rt-main">
+    <button class="rt-call-btn" id="rtCallBtn" disabled>
+      <span class="rt-call-icon">🎙️</span>
+      <span class="rt-call-label" id="rtCallLabel">Save a key to start</span>
+    </button>
+    <div class="rt-status-row">
+      <span class="rt-dot" id="rtDot"></span>
+      <span class="rt-status" id="rtStatus">Idle</span>
+      <span class="rt-timer" id="rtTimer"></span>
+      <span class="rt-cost" id="rtCost"></span>
+    </div>
+  </div>
+
+  <div class="rt-transcript" id="rtTranscript">
+    <div class="rt-placeholder">Transcript will appear here once the call starts.</div>
+  </div>
+
+  <div class="rt-tools-log" id="rtToolsLog" style="display:none;">
+    <h4>Live actions</h4>
+    <div id="rtToolsList"></div>
+  </div>
+
+  <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Pro-L 2 after Ozone"</em>, <em>"switch genre to drill"</em>, or <em>"I'm hearing pumping on the master."</em></div>
+
+  <div class="tip-box warn" id="browserWarn" style="display:none;"><strong>Heads up:</strong> voice needs a secure context (HTTPS or localhost). Chrome blocks the mic on <code>file://</code> URLs — open this artifact via the Cowork sidebar, or serve the folder with <code>python3 -m http.server</code> and open <code>http://localhost:8000</code>. Safari is more forgiving but still needs mic permission.</div>
+
+  <audio id="rtAudio" autoplay playsinline></audio>
+</div>
+
+<div class="panel" id="loudness"><div class="row-grid">
+  <div class="card"><h3>Competitive Trap</h3><div class="big" style="color:#a78bfa;">-8 LUFS</div><div class="sub">Club-loud.</div></div>
+  <div class="card"><h3>Spotify/YouTube/Tidal</h3><div class="big">-14 LUFS</div><div class="sub">Platform normalization.</div></div>
+  <div class="card"><h3>Apple Music</h3><div class="big">-16 LUFS</div><div class="sub">Sound Check.</div></div>
+  <div class="card"><h3>Broadcast</h3><div class="big">-23 LUFS</div><div class="sub">TV/radio (EBU R128).</div></div>
+</div><div class="tip-box"><strong>Pro tip:</strong> master to -8, but A/B how it sounds after Spotify normalizes to -14.</div></div>
+
+<div class="panel" id="peak"><div class="row-grid">
+  <div class="card"><h3>Streaming</h3><div class="big">-1.0 dBTP</div><div class="sub">Safe for MP3/AAC.</div></div>
+  <div class="card"><h3>SoundCloud</h3><div class="big">-0.5 dBTP</div><div class="sub">Stricter encoder.</div></div>
+  <div class="card"><h3>Safe headroom</h3><div class="big">-2.0 dBTP</div><div class="sub">Stems / print masters.</div></div>
+  <div class="card"><h3>Hard ceiling</h3><div class="big" style="color:#ef4444;">0 dBTP</div><div class="sub">Never exceed.</div></div>
+</div></div>
+
+<div class="panel" id="eq"><div class="row-grid">
+  <div class="card"><h3>Sub-bass</h3><div class="freq">20-60 Hz</div><ul><li>808 fundamental</li><li>HP below 30Hz if muddy</li></ul></div>
+  <div class="card"><h3>Bass/Body</h3><div class="freq">60-200 Hz</div><ul><li>808 punch, kick weight</li><li>Watch masking</li></ul></div>
+  <div class="card"><h3>Low-Mid (mud)</h3><div class="freq">200-500 Hz</div><ul><li>Vocal warmth @ 250Hz</li><li>Cut if boxy</li></ul></div>
+  <div class="card"><h3>Mids</h3><div class="freq">500-2k Hz</div><ul><li>Vocal body, snare</li><li>Honk ~800Hz</li></ul></div>
+  <div class="card"><h3>Upper Mids</h3><div class="freq">2-6 kHz</div><ul><li>Presence, de-ess zone</li></ul></div>
+  <div class="card"><h3>Highs</h3><div class="freq">6-10 kHz</div><ul><li>Air, cymbal shimmer</li></ul></div>
+  <div class="card"><h3>Extreme</h3><div class="freq">10-20 kHz</div><ul><li>Maag magic band</li></ul></div>
+</div></div>
+
+<div class="panel" id="stereo"><div class="row-grid">
+  <div class="card"><h3>Sub-bass</h3><div class="big">Mono</div><div class="sub">Below 100Hz mono.</div></div>
+  <div class="card"><h3>Bass</h3><div class="big">10-30%</div><div class="sub">M/S not Haas.</div></div>
+  <div class="card"><h3>Mids</h3><div class="big">30-60%</div></div>
+  <div class="card"><h3>Highs</h3><div class="big">60-100%</div></div>
+  <div class="card"><h3>FX Tails</h3><div class="big">100%</div></div>
+</div></div>
+
+<!-- LIBRARY -->
+<div class="panel" id="library">
+  <div class="library-toolbar">
+    <span>Current genre: <span class="current-genre" id="currentGenreLabel">Trap</span></span>
+    <span style="color:#6b7280;">⭐ = top pick for this genre &nbsp;•&nbsp; ❤ = your favorite</span>
+    <div style="flex:1"></div>
+    <button class="btn amber sm" id="addPluginBtn">⊕ Add my plugin</button>
+    <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
+  </div>
+  <div class="stage-grid" id="libraryGrid"></div>
+</div>
+</div>
+
+<!-- PICKER MODAL (chain builder) -->
+<div class="modal-backdrop" id="pickerModal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add plugin to <span id="pickerBusName">bus</span></h3><button class="close-btn" id="pickerClose">×</button></div>
+    <div class="modal-filters">
+      <input type="text" id="pickerSearch" placeholder="Search your library…">
+      <select id="pickerStage"><option value="">All stages</option></select>
+    </div>
+    <div class="modal-body" id="pickerList"></div>
+  </div>
+</div>
+
+<!-- ADD PLUGIN MODAL -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header"><h3>Add a plugin to your library</h3><button class="close-btn" id="addClose">×</button></div>
+    <div class="modal-form">
+      <div><label>Plugin name</label><input type="text" id="addName" placeholder="e.g. FabFilter Pro-L 2"></div>
+      <div class="row">
+        <div><label>Publisher</label><select id="addPub"></select></div>
+        <div><label>Stage</label><select id="addStage"></select></div>
+      </div>
+      <div><label>Custom publisher label (if "Other" above)</label><input type="text" id="addPubCustom" placeholder="e.g. FabFilter"></div>
+      <div class="actions">
+        <button class="btn ghost sm" id="addCancel">Cancel</button>
+        <button class="btn green" id="addSave">Add to library</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COPY FALLBACK MODAL -->
+<div class="modal-backdrop" id="copyModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h3>Copy manually (⌘A then ⌘C)</h3><button class="close-btn" id="copyModalClose">×</button></div>
+    <div class="modal-form">
+      <div style="color:#fcd34d;font-size:12px;line-height:1.5;">Auto-copy failed — your browser blocks clipboard writes on <code style="background:#111827;padding:1px 4px;border-radius:3px;">file://</code>. Select all (⌘A / Ctrl-A) then copy (⌘C / Ctrl-C).<br>Fix for good: open the artifact via the Cowork sidebar, or serve the folder with <code style="background:#111827;padding:1px 4px;border-radius:3px;">python3 -m http.server</code> in the artifact folder and open <code style="background:#111827;padding:1px 4px;border-radius:3px;">http://localhost:8000</code>.</div>
+      <textarea id="copyModalText" style="width:100%;height:260px;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px;font-family:'SF Mono',monospace;font-size:12px;resize:vertical;"></textarea>
+      <div class="actions">
+        <button class="btn ghost sm" id="copyModalSelect">Select all</button>
+        <button class="btn green" id="copyModalCloseBtn">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="floating-mic" id="floatMic" title="Push to talk">🎤</button>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+// ========== PUBLISHERS ==========
+const PUBS = {
+  slate:['Slate','chip-slate'],ssl:['SSL','chip-ssl'],ua:['UA','chip-ua'],
+  softube:['Softube','chip-softube'],sonnox:['Sonnox','chip-sonnox'],
+  sonible:['sonible','chip-sonible'],sndtoys:['Soundtoys','chip-sndtoys'],
+  izotope:['iZotope','chip-izotope'],eiosis:['Eiosis','chip-eiosis'],
+  weiss:['Weiss','chip-weiss'],oek:['oeksound','chip-oek'],
+  waves:['Waves','chip-waves'],ni:['NI','chip-ni'],pa:['PA','chip-pa'],
+  ant:['Antares','chip-ant'],cele:['Celemony','chip-cele'],liq:['LiquidSonics','chip-liq'],
+  other:['Other','chip-other']
+};
+
+// ========== STAGES ==========
+const STAGES = [
+  {id:'metering', label:'📊 Metering'},
+  {id:'eq-clean', label:'🧹 Clean EQ'},
+  {id:'eq-colour', label:'🎨 Colour EQ'},
+  {id:'bus-comp', label:'🚌 Bus Comp'},
+  {id:'char-comp', label:'💪 Character Comp'},
+  {id:'saturation', label:'🔥 Saturation'},
+  {id:'transient', label:'🎯 Transient'},
+  {id:'limiter', label:'🧱 Limiter'},
+  {id:'clipper', label:'✂️ Clipper'},
+  {id:'de-ess', label:'🫢 De-esser'},
+  {id:'bass', label:'🔊 808 / Bass'},
+  {id:'tuner', label:'🎵 Pitch / Tuner'},
+  {id:'vocal', label:'🎤 Vocal Chain'},
+  {id:'imager', label:'🌐 Imager / Stereo'},
+  {id:'reverb', label:'🌊 Reverb'},
+  {id:'delay', label:'⏱️ Delay'},
+  {id:'modulation', label:'🌀 Modulation'},
+  {id:'repair', label:'🩹 Audio Repair'},
+  {id:'creative-fx', label:'✨ Creative FX'}
+];
+
+// ========== BUILT-IN PLUGINS ==========
+const PLUGINS = [
+  {n:'Insight 2',p:'izotope',s:'metering'},{n:'Waves WLM Plus',p:'waves',s:'metering'},
+  {n:'Paz Analyzer',p:'waves',s:'metering'},{n:'Tonal Balance Control',p:'izotope',s:'metering'},
+  {n:'Audiolens',p:'izotope',s:'metering'},{n:'bx_tuner',p:'pa',s:'metering'},
+  {n:'bx_solo',p:'pa',s:'metering'},{n:'true:level',p:'sonible',s:'metering'},
+  {n:'Sonnox Oxford EQ',p:'sonnox',s:'eq-clean'},{n:'Ozone 12 EQ',p:'izotope',s:'eq-clean'},
+  {n:'Neutron 5 EQ',p:'izotope',s:'eq-clean'},{n:'smart:EQ 4',p:'sonible',s:'eq-clean'},
+  {n:'Q10',p:'waves',s:'eq-clean'},{n:'H-EQ',p:'waves',s:'eq-clean'},
+  {n:'F6 Dynamic EQ',p:'waves',s:'eq-clean'},{n:'Slate Infinity EQ',p:'slate',s:'eq-clean'},
+  {n:'SSL Native X-EQ 2',p:'ssl',s:'eq-clean'},{n:'SPL PQ',p:'pa',s:'eq-clean'},
+  {n:'Ozone 12 Match EQ',p:'izotope',s:'eq-clean'},{n:'Ozone 12 Stabilizer',p:'izotope',s:'eq-clean'},
+  {n:'Neutron 5 Unmask',p:'izotope',s:'eq-clean'},{n:'Solid EQ FX',p:'ni',s:'eq-clean'},
+  {n:'Fresh Air',p:'slate',s:'eq-clean'},{n:'elysia niveau filter',p:'pa',s:'eq-clean'},
+  {n:'Maag EQ4',p:'pa',s:'eq-colour'},{n:'SSL E-Channel EQ',p:'waves',s:'eq-colour'},
+  {n:'SSL G-Channel EQ',p:'waves',s:'eq-colour'},{n:'UA Pultec EQP-1A',p:'ua',s:'eq-colour'},
+  {n:'UA Pultec MEQ-5',p:'ua',s:'eq-colour'},{n:'UA Neve 1073',p:'ua',s:'eq-colour'},
+  {n:'UA Neve 1081',p:'ua',s:'eq-colour'},{n:'Softube Tube-Tech PE 1C',p:'softube',s:'eq-colour'},
+  {n:'Softube Tube-Tech ME 1B',p:'softube',s:'eq-colour'},{n:'Puigtec EQP-1A',p:'waves',s:'eq-colour'},
+  {n:'Puigtec MEQ-5',p:'waves',s:'eq-colour'},{n:'API 550A',p:'waves',s:'eq-colour'},
+  {n:'API 550B',p:'waves',s:'eq-colour'},{n:'Scheps 73',p:'waves',s:'eq-colour'},
+  {n:'Sie-Q',p:'sndtoys',s:'eq-colour'},{n:'bx_console Focusrite SC',p:'pa',s:'eq-colour'},
+  {n:'bx_console SSL 9000 J',p:'pa',s:'eq-colour'},{n:'AirEQ',p:'eiosis',s:'eq-colour'},
+  {n:'Slate Virtual Mix Rack',p:'slate',s:'eq-colour'},
+  {n:'Shadow Hills Mastering Comp',p:'pa',s:'bus-comp'},{n:'Slate FG-Grey',p:'slate',s:'bus-comp'},
+  {n:'SSL G-Master Buss',p:'waves',s:'bus-comp'},{n:'SSL Comp',p:'waves',s:'bus-comp'},
+  {n:'SSL Native Bus Compressor 2',p:'ssl',s:'bus-comp'},{n:'UA API 2500',p:'ua',s:'bus-comp'},
+  {n:'API 2500',p:'waves',s:'bus-comp'},{n:'UA Fatso Jr.',p:'ua',s:'bus-comp'},
+  {n:'Weiss MM-1',p:'weiss',s:'bus-comp'},{n:'Abbey Road TG',p:'waves',s:'bus-comp'},
+  {n:'PuigChild',p:'waves',s:'bus-comp'},{n:'Shadow Hills OptoMax',p:'pa',s:'bus-comp'},
+  {n:'Solid Bus Comp FX',p:'ni',s:'bus-comp'},
+  {n:'H-Comp',p:'waves',s:'char-comp'},{n:'Slate FG-116',p:'slate',s:'char-comp'},
+  {n:'Slate FG-401',p:'slate',s:'char-comp'},{n:'Slate FG-Stress',p:'slate',s:'char-comp'},
+  {n:'UA 1176 Rev A',p:'ua',s:'char-comp'},{n:'UA 1176 Rev E',p:'ua',s:'char-comp'},
+  {n:'UA LA-2A',p:'ua',s:'char-comp'},{n:'Softube FET Compressor',p:'softube',s:'char-comp'},
+  {n:'Softube Opto Compressor',p:'softube',s:'char-comp'},{n:'Softube Tube-Tech CL 1B',p:'softube',s:'char-comp'},
+  {n:'CLA-76',p:'waves',s:'char-comp'},{n:'CLA-2A',p:'waves',s:'char-comp'},
+  {n:'CLA-3A',p:'waves',s:'char-comp'},{n:'R-Comp',p:'waves',s:'char-comp'},
+  {n:'C1 Compressor',p:'waves',s:'char-comp'},{n:'C4 Multiband',p:'waves',s:'char-comp'},
+  {n:'C6 Multiband',p:'waves',s:'char-comp'},{n:'L3-MB Multiband',p:'waves',s:'char-comp'},
+  {n:'Sonnox Oxford Dynamics',p:'sonnox',s:'char-comp'},{n:'bx_opto Pedal',p:'pa',s:'char-comp'},
+  {n:'smart:comp 2',p:'sonible',s:'char-comp'},{n:'Neutron 5 Compressor',p:'izotope',s:'char-comp'},
+  {n:'Supercharger GT',p:'ni',s:'char-comp'},{n:'SSL Native X-Comp',p:'ssl',s:'char-comp'},
+  {n:'Black Box HG-2MS',p:'pa',s:'saturation'},{n:'NLS Buss',p:'waves',s:'saturation'},
+  {n:'NLS Channel',p:'waves',s:'saturation'},{n:'Softube Tape',p:'softube',s:'saturation'},
+  {n:'Softube Saturation Knob',p:'softube',s:'saturation'},{n:'J37 Tape',p:'waves',s:'saturation'},
+  {n:'Kramer Master Tape',p:'waves',s:'saturation'},{n:'Abbey Road Saturator',p:'waves',s:'saturation'},
+  {n:'UA Studer A800',p:'ua',s:'saturation'},{n:'UA Ampex ATR-102',p:'ua',s:'saturation'},
+  {n:'Decapitator',p:'sndtoys',s:'saturation'},{n:'Radiator',p:'sndtoys',s:'saturation'},
+  {n:'Devil-Loc',p:'sndtoys',s:'saturation'},{n:'Trash',p:'izotope',s:'saturation'},
+  {n:'Vinyl 2',p:'izotope',s:'saturation'},{n:'Slate Virtual Tape Machines',p:'slate',s:'saturation'},
+  {n:'Ozone 12 Exciter',p:'izotope',s:'saturation'},{n:'Neutron 5 Exciter',p:'izotope',s:'saturation'},
+  {n:'Sonnox Oxford Inflator',p:'sonnox',s:'saturation'},{n:'bx_distorange',p:'pa',s:'saturation'},
+  {n:'bx_greenscreamer',p:'pa',s:'saturation'},{n:'bx_yellowdrive',p:'pa',s:'saturation'},
+  {n:'bx_enhancer',p:'pa',s:'saturation'},{n:'Driver',p:'ni',s:'saturation'},
+  {n:'Dirt',p:'ni',s:'saturation'},{n:'Bite',p:'ni',s:'saturation'},
+  {n:'Plasma',p:'ni',s:'saturation'},{n:'Vitamin',p:'waves',s:'saturation'},
+  {n:'SSL Fusion Vintage Drive',p:'ssl',s:'saturation'},{n:'Noveltech Vocal Enhancer',p:'pa',s:'saturation'},
+  {n:'SPL Transient Designer Plus',p:'pa',s:'transient'},{n:'Smack Attack',p:'waves',s:'transient'},
+  {n:'Transient Master FX',p:'ni',s:'transient'},{n:'spiff',p:'oek',s:'transient'},
+  {n:'Neutron 5 Transient Shaper',p:'izotope',s:'transient'},
+  {n:'Ozone 12 Maximizer',p:'izotope',s:'limiter'},{n:'L2 Ultramaximizer',p:'waves',s:'limiter'},
+  {n:'L3-LL Ultramaximizer',p:'waves',s:'limiter'},{n:'L1 Ultramaximizer',p:'waves',s:'limiter'},
+  {n:'Sonnox Oxford Limiter',p:'sonnox',s:'limiter'},{n:'Slate FG-X',p:'slate',s:'limiter'},
+  {n:'pure:limit',p:'sonible',s:'limiter'},{n:'smart:limit',p:'sonible',s:'limiter'},
+  {n:'bx_clipper',p:'pa',s:'clipper'},{n:'Softube Clipper',p:'softube',s:'clipper'},
+  {n:'Slate Bus Clipper',p:'slate',s:'clipper'},
+  {n:'Lindell 902 De-esser',p:'pa',s:'de-ess'},{n:'Eiosis E2Deesser',p:'eiosis',s:'de-ess'},
+  {n:'soothe2',p:'oek',s:'de-ess'},{n:'Waves Sibilance',p:'waves',s:'de-ess'},
+  {n:'Waves DeEsser',p:'waves',s:'de-ess'},{n:'R-DeEsser',p:'waves',s:'de-ess'},
+  {n:'Sonnox Oxford SuprEsser',p:'sonnox',s:'de-ess'},
+  {n:'bx_subfilter',p:'pa',s:'bass'},{n:'bx_boom',p:'pa',s:'bass'},
+  {n:'MaxxBass',p:'waves',s:'bass'},{n:'RBass',p:'waves',s:'bass'},
+  {n:'Ozone 12 Low End Focus',p:'izotope',s:'bass'},
+  {n:'Waves Tune Real-Time',p:'waves',s:'tuner'},{n:'Waves Tune',p:'waves',s:'tuner'},
+  {n:'Auto-Tune Pro X',p:'ant',s:'tuner'},{n:'MetaTune',p:'ant',s:'tuner'},
+  {n:'Melodyne 5',p:'cele',s:'tuner'},{n:'bx_crispytuner',p:'pa',s:'tuner'},
+  {n:'bx_crispyscale',p:'pa',s:'tuner'},{n:'Little Alter Boy',p:'sndtoys',s:'tuner'},
+  {n:'Nectar 4 Advanced',p:'izotope',s:'vocal'},{n:'CLA Vocals',p:'waves',s:'vocal'},
+  {n:'Scheps Omni Channel',p:'waves',s:'vocal'},{n:'Vocal Rider',p:'waves',s:'vocal'},
+  {n:'R-Vox',p:'waves',s:'vocal'},{n:'VocalSynth 2',p:'izotope',s:'vocal'},
+  {n:'bspoken',p:'oek',s:'vocal'},
+  {n:'Ozone 12 Imager',p:'izotope',s:'imager'},{n:'S1 Imager',p:'waves',s:'imager'},
+  {n:'Waves Center',p:'waves',s:'imager'},{n:'PS22 Stereo Maker',p:'waves',s:'imager'},
+  {n:'SPL BiG',p:'pa',s:'imager'},{n:'SPL Free Ranger',p:'pa',s:'imager'},
+  {n:'Raum',p:'ni',s:'reverb'},{n:'H-Reverb',p:'waves',s:'reverb'},
+  {n:'R-Verb',p:'waves',s:'reverb'},{n:'TrueVerb',p:'waves',s:'reverb'},
+  {n:'IR-1 Convolution',p:'waves',s:'reverb'},{n:'Little Plate',p:'sndtoys',s:'reverb'},
+  {n:'Softube TSAR-1',p:'softube',s:'reverb'},{n:'Softube Spring Reverb',p:'softube',s:'reverb'},
+  {n:'Cinematic Rooms',p:'liq',s:'reverb'},{n:'Reverberate 3',p:'liq',s:'reverb'},
+  {n:'SSL Native FlexVerb',p:'ssl',s:'reverb'},{n:'UA Lexicon 224',p:'ua',s:'reverb'},
+  {n:'UA EMT 250',p:'ua',s:'reverb'},{n:'smart:reverb',p:'sonible',s:'reverb'},
+  {n:'H-Delay',p:'waves',s:'delay'},{n:'Replika XT',p:'ni',s:'delay'},
+  {n:'EchoBoy',p:'sndtoys',s:'delay'},{n:'PrimalTap',p:'sndtoys',s:'delay'},
+  {n:'MicroShift',p:'sndtoys',s:'modulation'},{n:'PhaseMistress',p:'sndtoys',s:'modulation'},
+  {n:'Tremolator',p:'sndtoys',s:'modulation'},{n:'FilterFreak',p:'sndtoys',s:'modulation'},
+  {n:'PanMan',p:'sndtoys',s:'modulation'},{n:'Doubler',p:'waves',s:'modulation'},
+  {n:'MondoMod',p:'waves',s:'modulation'},{n:'MetaFlanger',p:'waves',s:'modulation'},
+  {n:'Phasis',p:'ni',s:'modulation'},{n:'Flair',p:'ni',s:'modulation'},
+  {n:'Choral',p:'ni',s:'modulation'},
+  {n:'RX 11 Standard',p:'izotope',s:'repair'},{n:'Waves NS1',p:'waves',s:'repair'},
+  {n:'W43',p:'waves',s:'repair'},{n:'Z-Noise',p:'waves',s:'repair'},
+  {n:'X-Noise',p:'waves',s:'repair'},{n:'X-Click',p:'waves',s:'repair'},
+  {n:'Crystallizer',p:'sndtoys',s:'creative-fx'},{n:'Freak',p:'ni',s:'creative-fx'},
+  {n:'Morphoder',p:'waves',s:'creative-fx'},{n:'Enigma',p:'waves',s:'creative-fx'},
+  {n:'Ultrapitch',p:'waves',s:'creative-fx'},{n:'Berzerk',p:'waves',s:'creative-fx'},
+  {n:'CLA Effects',p:'waves',s:'creative-fx'}
+];
+
+// ========== GENRE TOP PICKS ==========
+// Maps genre → list of plugin names that are ⭐ top picks for that genre.
+// All genres pre-seeded from Kev's library — use "Request genre star review" to refine.
+const TOP_PICKS = {
+  trap: ['Insight 2','Sonnox Oxford EQ','Ozone 12 EQ','Neutron 5 EQ','Maag EQ4','Shadow Hills Mastering Comp','Slate FG-Grey','H-Comp','Black Box HG-2MS','NLS Buss','Softube Tape','SPL Transient Designer Plus','bx_subfilter','bx_boom','MaxxBass','RBass','Ozone 12 Maximizer','bx_clipper','Softube Clipper','Nectar 4 Advanced','Waves Tune Real-Time','bx_crispytuner','Raum','H-Delay','Replika XT','H-Reverb'],
+  drill: ['Insight 2','Sonnox Oxford EQ','Neutron 5 EQ','Maag EQ4','Shadow Hills Mastering Comp','Slate FG-Grey','H-Comp','CLA-76','Black Box HG-2MS','NLS Buss','Softube Tape','SPL Transient Designer Plus','bx_subfilter','bx_boom','RBass','MaxxBass','Ozone 12 Maximizer','bx_clipper','soothe2','Auto-Tune Pro X','Waves Tune Real-Time','bx_crispytuner','Nectar 4 Advanced','H-Delay','Replika XT','Raum','H-Reverb'],
+  ukdrill: ['Insight 2','Sonnox Oxford EQ','Neutron 5 EQ','Maag EQ4','Shadow Hills Mastering Comp','H-Comp','CLA-76','Black Box HG-2MS','Softube Tape','NLS Buss','SPL Transient Designer Plus','spiff','bx_subfilter','bx_boom','RBass','Ozone 12 Maximizer','bx_clipper','soothe2','Lindell 902 De-esser','Auto-Tune Pro X','Waves Tune Real-Time','Nectar 4 Advanced','H-Delay','Replika XT','Raum','H-Reverb','Cinematic Rooms'],
+  phonk: ['Insight 2','Sonnox Oxford EQ','Maag EQ4','Slate FG-Grey','Shadow Hills Mastering Comp','H-Comp','CLA-76','Black Box HG-2MS','Softube Tape','J37 Tape','Kramer Master Tape','Vinyl 2','Trash','Decapitator','bx_distorange','bx_yellowdrive','bx_greenscreamer','SPL Transient Designer Plus','bx_subfilter','bx_boom','RBass','bx_clipper','Waves Tune Real-Time','H-Delay','Replika XT','EchoBoy','H-Reverb','Raum','Little Plate','Ozone 12 Maximizer'],
+  rage: ['Insight 2','Sonnox Oxford EQ','Maag EQ4','Shadow Hills Mastering Comp','H-Comp','CLA-76','Slate FG-Stress','Black Box HG-2MS','Decapitator','Trash','Devil-Loc','bx_distorange','Softube Tape','SPL Transient Designer Plus','bx_subfilter','bx_boom','RBass','MaxxBass','Ozone 12 Maximizer','bx_clipper','Softube Clipper','Auto-Tune Pro X','Waves Tune Real-Time','bx_crispytuner','Nectar 4 Advanced','H-Reverb','Raum','H-Delay','Replika XT'],
+  cloud: ['Insight 2','Sonnox Oxford EQ','Maag EQ4','Ozone 12 EQ','Slate FG-Grey','H-Comp','CLA-2A','UA LA-2A','NLS Buss','Softube Tape','bx_subfilter','MaxxBass','Ozone 12 Maximizer','soothe2','Auto-Tune Pro X','Waves Tune Real-Time','Little Alter Boy','Nectar 4 Advanced','H-Reverb','Raum','Cinematic Rooms','UA Lexicon 224','UA EMT 250','Little Plate','H-Delay','Replika XT','EchoBoy','MicroShift','Doubler','Crystallizer'],
+  memphis: ['Insight 2','Sonnox Oxford EQ','Slate FG-Grey','Shadow Hills Mastering Comp','H-Comp','CLA-76','Black Box HG-2MS','J37 Tape','Kramer Master Tape','Softube Tape','Vinyl 2','Trash','bx_distorange','Decapitator','Devil-Loc','bx_subfilter','bx_boom','bx_clipper','Waves Tune Real-Time','H-Delay','EchoBoy','H-Reverb','Little Plate','Raum','Ozone 12 Maximizer'],
+  jersey: ['Insight 2','Sonnox Oxford EQ','Neutron 5 EQ','Ozone 12 EQ','Slate FG-Grey','Shadow Hills Mastering Comp','H-Comp','CLA-76','NLS Buss','Softube Tape','SPL Transient Designer Plus','Smack Attack','Neutron 5 Transient Shaper','bx_boom','bx_subfilter','RBass','Ozone 12 Maximizer','bx_clipper','Auto-Tune Pro X','Waves Tune Real-Time','Nectar 4 Advanced','H-Delay','Replika XT','H-Reverb','Raum','Little Plate','Ozone 12 Imager','S1 Imager'],
+  hyperpop: ['Insight 2','Sonnox Oxford EQ','Maag EQ4','Neutron 5 EQ','Slate FG-Grey','Shadow Hills Mastering Comp','H-Comp','CLA-76','Black Box HG-2MS','NLS Buss','Softube Tape','bx_distorange','bx_yellowdrive','Devil-Loc','SPL Transient Designer Plus','bx_subfilter','bx_boom','RBass','Ozone 12 Maximizer','bx_clipper','Softube Clipper','soothe2','Auto-Tune Pro X','Waves Tune Real-Time','bx_crispytuner','Little Alter Boy','Nectar 4 Advanced','VocalSynth 2','H-Delay','Replika XT','EchoBoy','MicroShift','Doubler','H-Reverb','Raum','Ozone 12 Imager'],
+  boombap: ['Insight 2','Sonnox Oxford EQ','Maag EQ4','bx_console SSL 9000 J','bx_console Focusrite SC','Shadow Hills Mastering Comp','Slate FG-Grey','SSL G-Master Buss','Abbey Road TG','CLA-76','CLA-2A','UA 1176 Rev E','UA LA-2A','H-Comp','Softube Tape','J37 Tape','Kramer Master Tape','Vinyl 2','NLS Buss','UA Studer A800','UA Ampex ATR-102','SPL Transient Designer Plus','Smack Attack','bx_subfilter','bx_boom','MaxxBass','RBass','L3-LL Ultramaximizer','Ozone 12 Maximizer','Lindell 902 De-esser','Waves Tune Real-Time','Nectar 4 Advanced','Scheps Omni Channel','CLA Vocals','H-Delay','EchoBoy','H-Reverb','Little Plate','UA EMT 250','UA Lexicon 224']
+};
+
+// ========== BUSES ==========
+const BUSES = [
+  {id:'master',label:'Master Bus'},{id:'vocal',label:'Vocal Bus'},
+  {id:'808',label:'808 / Bass'},{id:'drums',label:'Drum Bus'},
+  {id:'fx',label:'FX Returns'}
+];
+
+// ========== STATE ==========
+const STATE = {
+  chain:{}, meters:{}, symptoms:new Set(),
+  favorites: new Set(),
+  customPlugins: [],
+  genre: 'trap'
+};
+BUSES.forEach(b => STATE.chain[b.id]=[]);
+
+// ========== HELPERS ==========
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeJs(s){return String(s).replace(/['\\]/g,'\\$&');}
+function toast(msg,err){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200);}
+function allPlugins(){ return PLUGINS.concat(STATE.customPlugins); }
+function isTop(name){ return (TOP_PICKS[STATE.genre]||[]).includes(name); }
+function isFav(name){ return STATE.favorites.has(name); }
+function genreLabel(id){ return document.querySelector(`#genreSelect option[value="${id}"]`)?.textContent || id; }
+
+// ========== PERSISTENCE ==========
+const STORAGE_KEY='trapMasterState_v1';
+let _saveScheduled=false;
+function saveState(){
+  if(_saveScheduled)return;
+  _saveScheduled=true;
+  // Debounce: batch rapid mutations into a single write per tick.
+  setTimeout(()=>{
+    _saveScheduled=false;
+    try{
+      const ps=document.getElementById('platformSelect');
+      const data={
+        chain:STATE.chain,
+        favorites:[...STATE.favorites],
+        customPlugins:STATE.customPlugins,
+        symptoms:[...STATE.symptoms],
+        genre:STATE.genre,
+        meters:STATE.meters,
+        platform:ps?ps.value:null
+      };
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+    }catch(e){console.warn('saveState failed',e);}
+  },0);
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.chain&&typeof d.chain==='object'){
+      BUSES.forEach(b=>{if(Array.isArray(d.chain[b.id]))STATE.chain[b.id]=d.chain[b.id];});
+    }
+    if(Array.isArray(d.favorites))STATE.favorites=new Set(d.favorites);
+    if(Array.isArray(d.customPlugins))STATE.customPlugins=d.customPlugins;
+    if(Array.isArray(d.symptoms))STATE.symptoms=new Set(d.symptoms);
+    if(typeof d.genre==='string')STATE.genre=d.genre;
+    if(d.meters&&typeof d.meters==='object')STATE.meters=d.meters;
+    const gs=document.getElementById('genreSelect');
+    if(gs&&STATE.genre)gs.value=STATE.genre;
+    const ps=document.getElementById('platformSelect');
+    if(ps&&d.platform)ps.value=d.platform;
+  }catch(e){console.warn('loadState failed',e);}
+}
+
+// ========== CLIPBOARD (with fallback chain) ==========
+async function copyToClipboard(text,successMsg){
+  // 1) Modern secure-context API
+  if(navigator.clipboard&&window.isSecureContext){
+    try{await navigator.clipboard.writeText(text);toast(successMsg||'Copied');return true;}catch(_){}
+  }
+  // 2) Legacy execCommand via hidden textarea (works on many file:// setups)
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.setAttribute('readonly','');
+    ta.style.position='fixed';ta.style.left='-9999px';ta.style.top='0';ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.select();ta.setSelectionRange(0,text.length);
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    if(ok){toast(successMsg||'Copied');return true;}
+  }catch(_){}
+  // 3) Last resort: show the text in a modal so the user can ⌘A ⌘C
+  showCopyModal(text);
+  return false;
+}
+function showCopyModal(text){
+  const m=document.getElementById('copyModal');
+  const ta=document.getElementById('copyModalText');
+  ta.value=text;
+  m.classList.add('open');
+  setTimeout(()=>{ta.focus();ta.select();ta.setSelectionRange(0,text.length);},60);
+}
+function closeCopyModal(){document.getElementById('copyModal').classList.remove('open');}
+document.getElementById('copyModalClose').onclick=closeCopyModal;
+document.getElementById('copyModalCloseBtn').onclick=closeCopyModal;
+document.getElementById('copyModal').onclick=e=>{if(e.target.id==='copyModal')closeCopyModal();};
+document.getElementById('copyModalSelect').onclick=()=>{const ta=document.getElementById('copyModalText');ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);};
+
+// ========== CHAIN BUILDER ==========
+function renderChain(){
+  document.getElementById('busGrid').innerHTML=BUSES.map(b=>{
+    const items=STATE.chain[b.id];
+    const rows=items.length?items.map((p,i)=>renderChainItem(b.id,p,i,items.length)).join(''):'<div class="chain-empty">empty — add plugins below</div>';
+    return `<div class="bus-col"><h4>${b.label} <span class="count">${items.length}</span></h4><div class="chain-list">${rows}</div><button class="btn ghost sm" onclick="openPicker('${b.id}')">+ Add plugin</button></div>`;
+  }).join('');
+}
+function renderChainItem(busId,p,idx,total){
+  const pub=PUBS[p.p]||PUBS.other;
+  const hasNotes=!!(p.notes&&p.notes.trim());
+  const notesRow=hasNotes
+    ? `<div class="chain-notes-row"><div class="chain-notes" onclick="editChainNotes('${busId}',${idx})" title="Click to edit"><span class="nlabel">⚙ Settings</span>${escapeHtml(p.notes)}</div><button class="chain-notes-clear" title="Clear settings notes" onclick="clearChainNotes('${busId}',${idx})">×</button></div>`
+    : '';
+  return `<div class="chain-item${hasNotes?' has-notes':''}" data-bus="${busId}" data-idx="${idx}"><span class="order">${idx+1}</span><span class="name">${escapeHtml(p.n)}</span><span class="chip ${pub[1]}">${pub[0]}</span><button class="notes-btn${hasNotes?' has':''}" title="${hasNotes?'Edit settings notes':'Add settings notes'}" onclick="editChainNotes('${busId}',${idx})">📝</button><button onclick="moveChain('${busId}',${idx},-1)" ${idx===0?'disabled style="opacity:.2"':''}>↑</button><button onclick="moveChain('${busId}',${idx},1)" ${idx===total-1?'disabled style="opacity:.2"':''}>↓</button><button class="del" onclick="removeChain('${busId}',${idx})">×</button>${notesRow}</div>`;
+}
+function moveChain(busId,idx,dir){const arr=STATE.chain[busId];const j=idx+dir;if(j<0||j>=arr.length)return;[arr[idx],arr[j]]=[arr[j],arr[idx]];renderChain();saveState();}
+function removeChain(busId,idx){STATE.chain[busId].splice(idx,1);renderChain();saveState();}
+function editChainNotes(busId,idx){
+  const item=STATE.chain[busId]&&STATE.chain[busId][idx];if(!item)return;
+  const row=document.querySelector(`.chain-item[data-bus="${busId}"][data-idx="${idx}"]`);
+  if(!row)return;
+  const existing=row.querySelector('.chain-notes-row');if(existing)existing.remove();
+  const div=document.createElement('div');
+  div.className='chain-notes-row editing';
+  div.innerHTML=`<textarea class="chain-notes-edit" placeholder="e.g.\nDrive: 3–4\nTone: brighter (A)\nMix: 60% wet"></textarea><div class="chain-notes-actions"><button class="btn sm green" data-act="save">Save</button><button class="btn sm secondary" data-act="cancel">Cancel</button></div>`;
+  row.appendChild(div);
+  const ta=div.querySelector('textarea');
+  ta.value=item.notes||'';
+  ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+  div.querySelector('[data-act="save"]').onclick=()=>saveChainNotes(busId,idx,ta.value);
+  div.querySelector('[data-act="cancel"]').onclick=()=>renderChain();
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){e.preventDefault();renderChain();}
+    else if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();saveChainNotes(busId,idx,ta.value);}
+  });
+}
+function saveChainNotes(busId,idx,text){
+  const item=STATE.chain[busId]&&STATE.chain[busId][idx];if(!item)return;
+  const t=(text||'').trim();
+  if(t)item.notes=t;else delete item.notes;
+  renderChain();saveState();
+}
+function clearChainNotes(busId,idx){
+  const item=STATE.chain[busId]&&STATE.chain[busId][idx];if(!item)return;
+  delete item.notes;renderChain();saveState();
+}
+
+// ========== PICKER ==========
+// Populate stage dropdown
+{
+  const sel=document.getElementById('pickerStage');
+  STAGES.forEach(s=>sel.innerHTML+=`<option value="${s.id}">${s.label.replace(/^[^A-Za-z]+/,'')}</option>`);
+}
+let pickerActiveBus=null;
+function openPicker(busId){pickerActiveBus=busId;document.getElementById('pickerBusName').textContent=BUSES.find(b=>b.id===busId).label;document.getElementById('pickerModal').classList.add('open');document.getElementById('pickerSearch').value='';document.getElementById('pickerStage').value='';renderPickerList();setTimeout(()=>document.getElementById('pickerSearch').focus(),50);}
+function closePicker(){document.getElementById('pickerModal').classList.remove('open');}
+function renderPickerList(){
+  const q=document.getElementById('pickerSearch').value.toLowerCase();
+  const stage=document.getElementById('pickerStage').value;
+  const filtered=allPlugins().filter(p=>{if(stage&&p.s!==stage)return false;if(q&&!p.n.toLowerCase().includes(q))return false;return true;});
+  const list=document.getElementById('pickerList');
+  if(!filtered.length){list.innerHTML='<div style="padding:20px;text-align:center;color:#6b7280;font-size:13px;">No plugins match.</div>';return;}
+  list.innerHTML=filtered.map(p=>{const pub=PUBS[p.p]||PUBS.other;return `<div class="plugin-option" onclick="addFromPicker('${escapeJs(p.n)}','${p.p}','${p.s}')"><span class="name">${escapeHtml(p.n)}</span><span class="stage-tag">${p.s}</span><span class="chip ${pub[1]}">${pub[0]}</span></div>`;}).join('');
+}
+function addFromPicker(n,p,s){STATE.chain[pickerActiveBus].push({n,p,s});renderChain();closePicker();saveState();}
+document.getElementById('pickerClose').onclick=closePicker;
+document.getElementById('pickerModal').onclick=e=>{if(e.target.id==='pickerModal')closePicker();};
+document.getElementById('pickerSearch').oninput=renderPickerList;
+document.getElementById('pickerStage').onchange=renderPickerList;
+
+// ========== ADD PLUGIN MODAL ==========
+// populate pubs + stages
+{
+  const pubSel=document.getElementById('addPub');
+  Object.entries(PUBS).forEach(([k,v])=>pubSel.innerHTML+=`<option value="${k}">${v[0]}</option>`);
+  const stSel=document.getElementById('addStage');
+  STAGES.forEach(s=>stSel.innerHTML+=`<option value="${s.id}">${s.label}</option>`);
+}
+function openAddModal(){document.getElementById('addModal').classList.add('open');document.getElementById('addName').value='';document.getElementById('addPub').value='other';document.getElementById('addStage').value='eq-clean';document.getElementById('addPubCustom').value='';setTimeout(()=>document.getElementById('addName').focus(),50);}
+function closeAddModal(){document.getElementById('addModal').classList.remove('open');}
+document.getElementById('addPluginBtn').onclick=openAddModal;
+document.getElementById('addClose').onclick=closeAddModal;
+document.getElementById('addCancel').onclick=closeAddModal;
+document.getElementById('addModal').onclick=e=>{if(e.target.id==='addModal')closeAddModal();};
+document.getElementById('addSave').onclick=()=>{
+  const n=document.getElementById('addName').value.trim();
+  if(!n){toast('Name required',true);return;}
+  let p=document.getElementById('addPub').value;
+  const pCustom=document.getElementById('addPubCustom').value.trim();
+  const s=document.getElementById('addStage').value;
+  // For 'other' with custom label, stash label on plugin.pLabel
+  const entry={n,p,s,custom:true};
+  if(p==='other' && pCustom) entry.pLabel=pCustom;
+  if(allPlugins().some(x=>x.n.toLowerCase()===n.toLowerCase())){toast('Already in library',true);return;}
+  STATE.customPlugins.push(entry);
+  STATE.favorites.add(n); // added plugins auto-fav
+  closeAddModal();
+  renderLibrary();
+  renderPickerList();
+  saveState();
+  toast('Added & favorited — send for star review when ready');
+};
+
+// ========== LIBRARY RENDER ==========
+function renderLibrary(){
+  document.getElementById('currentGenreLabel').textContent = genreLabel(STATE.genre).replace(/^\S+\s*/,'');
+  const all = allPlugins();
+  document.getElementById('libraryGrid').innerHTML = STAGES.map(stage=>{
+    const items = all.filter(p => p.s === stage.id);
+    // Sort: top picks first, then favorites, then the rest
+    items.sort((a,b) => {
+      const aT = isTop(a.n)?0:1, bT=isTop(b.n)?0:1;
+      if (aT !== bT) return aT - bT;
+      const aF = isFav(a.n)?0:1, bF=isFav(b.n)?0:1;
+      if (aF !== bF) return aF - bF;
+      return a.n.localeCompare(b.n);
+    });
+    const rows = items.length
+      ? items.map(p=>renderLibraryRow(p)).join('')
+      : '<div class="empty">nothing here yet — add with ⊕ Add my plugin</div>';
+    return `<div class="stage-card"><h4>${stage.label}</h4>${rows}</div>`;
+  }).join('');
+}
+function renderLibraryRow(p){
+  const pub = PUBS[p.p]||PUBS.other;
+  const pubLabel = p.pLabel || pub[0];
+  const top = isTop(p.n), fav = isFav(p.n);
+  const cls = 'plugin-row' + (top?' top':'') + (fav?' fav':'');
+  const star = top ? '<span class="star">⭐</span>' : '';
+  const custom = p.custom ? '<span class="custom-badge">mine</span>' : '';
+  const delBtn = p.custom ? `<button class="del-custom" title="Remove" onclick="removeCustom('${escapeJs(p.n)}')">×</button>` : '';
+  return `<div class="${cls}">${star}<span class="name">${escapeHtml(p.n)} ${custom}</span><span class="chip ${pub[1]}">${escapeHtml(pubLabel)}</span><button class="fav-btn ${fav?'on':''}" title="Favorite" onclick="toggleFav('${escapeJs(p.n)}')">${fav?'❤':'♡'}</button>${delBtn}</div>`;
+}
+function toggleFav(name){if(STATE.favorites.has(name))STATE.favorites.delete(name);else STATE.favorites.add(name);renderLibrary();saveState();}
+function removeCustom(name){
+  STATE.customPlugins = STATE.customPlugins.filter(p=>p.n!==name);
+  STATE.favorites.delete(name);
+  renderLibrary();
+  saveState();
+}
+
+// ========== GENRE PICKER ==========
+document.getElementById('genreSelect').onchange = e => {
+  STATE.genre = e.target.value;
+  renderLibrary();
+  saveState();
+};
+
+// ========== METER ==========
+const METER_TARGETS={
+  trap:{iLufs:[-9,-7],tp:[-1.5,-0.3],lra:[3,7],corr:[0.2,0.9],crest:[7,11]},
+  spotify:{iLufs:[-15,-13],tp:[-1.5,-1.0],lra:[5,9],corr:[0.2,0.9],crest:[9,13]},
+  apple:{iLufs:[-17,-15],tp:[-1.5,-1.0],lra:[6,10],corr:[0.2,0.9],crest:[10,14]},
+  soundcloud:{iLufs:[-12,-10],tp:[-1.0,-0.3],lra:[4,8],corr:[0.2,0.9],crest:[8,12]}
+};
+const METERS=[
+  {id:'iLufs',label:'Integrated LUFS',unit:'LUFS',hint:'Overall loudness'},
+  {id:'tp',label:'True Peak',unit:'dBTP',hint:'Highest inter-sample peak'},
+  {id:'lra',label:'Loudness Range',unit:'LU',hint:'Dynamic range'},
+  {id:'corr',label:'Stereo Correlation',unit:'',hint:'+1 mono, 0 wide, -1 phase'},
+  {id:'crest',label:'Crest Factor',unit:'dB',hint:'Peak-to-RMS'}
+];
+function renderMeters(){
+  const t=METER_TARGETS[document.getElementById('platformSelect').value];
+  document.getElementById('meterGrid').innerHTML=METERS.map(m=>`<div class="meter-card"><label>${m.label}</label><div class="target">Target: ${t[m.id][0]} to ${t[m.id][1]} ${m.unit}</div><input type="number" step="0.1" id="meter-${m.id}" placeholder="—" oninput="updateMeters()" value="${STATE.meters[m.id]??''}"><div class="verdict neutral" id="verdict-${m.id}">—</div><div class="note">${m.hint}</div></div>`).join('');
+}
+function updateMeters(){
+  const platform=document.getElementById('platformSelect').value;const t=METER_TARGETS[platform];
+  STATE.meters={};
+  METERS.forEach(m=>{const el=document.getElementById('meter-'+m.id);const v=parseFloat(el.value);const ver=document.getElementById('verdict-'+m.id);if(isNaN(v)){ver.className='verdict neutral';ver.textContent='—';return;}STATE.meters[m.id]=v;const [lo,hi]=t[m.id];if(v>=lo&&v<=hi){ver.className='verdict green';ver.textContent='✓ in range';}else{const off=v<lo?lo-v:v-hi;if(off<1){ver.className='verdict amber';ver.textContent='⚠ close';}else{ver.className='verdict red';ver.textContent='✗ off';}}});
+  renderDiagnosis(platform);
+  saveState();
+}
+function renderDiagnosis(platform){
+  const t=METER_TARGETS[platform];const notes=[];const m=STATE.meters;
+  if(m.iLufs!=null){if(m.iLufs<t.iLufs[0])notes.push({c:'warn',t:`Integrated LUFS ${m.iLufs} — quiet. Push limiter ${(t.iLufs[0]-m.iLufs).toFixed(1)} dB more.`});else if(m.iLufs>t.iLufs[1])notes.push({c:'warn',t:`Integrated LUFS ${m.iLufs} — louder than target. Back off ${(m.iLufs-t.iLufs[1]).toFixed(1)} dB.`});else notes.push({c:'ok',t:`Integrated LUFS ${m.iLufs} in range.`});}
+  if(m.tp!=null){if(m.tp>t.tp[1])notes.push({c:'err',t:`True Peak ${m.tp} — will clip on streaming. Ceiling ${t.tp[1].toFixed(1)} dBTP.`});else if(m.tp<t.tp[0])notes.push({c:'warn',t:`True Peak low (${m.tp}) — headroom unused.`});else notes.push({c:'ok',t:`True Peak ${m.tp} safe.`});}
+  if(m.lra!=null){if(m.lra<t.lra[0])notes.push({c:'err',t:`LRA ${m.lra} — crushed. Back off bus comp.`});else if(m.lra>t.lra[1])notes.push({c:'warn',t:`LRA ${m.lra} — very dynamic.`});else notes.push({c:'ok',t:`LRA ${m.lra} right.`});}
+  if(m.corr!=null){if(m.corr<0)notes.push({c:'err',t:`Correlation ${m.corr} — phase issues. bx_solo check mono.`});else if(m.corr>0.95)notes.push({c:'warn',t:`Correlation ${m.corr} — almost mono. Open highs.`});else notes.push({c:'ok',t:`Correlation ${m.corr} healthy.`});}
+  if(m.crest!=null){if(m.crest<t.crest[0])notes.push({c:'err',t:`Crest ${m.crest} — transients gone. SPL Transient Designer on drums.`});else if(m.crest>t.crest[1])notes.push({c:'warn',t:`Crest ${m.crest} — uncompressed. Glue with NLS Buss.`});else notes.push({c:'ok',t:`Crest ${m.crest} balanced.`});}
+  document.getElementById('diagnosisList').innerHTML=notes.length?notes.map(n=>`<li class="${n.c}">${escapeHtml(n.t)}</li>`).join(''):'<li class="ok">Enter your readings above.</li>';
+}
+
+// ========== TROUBLESHOOTER ==========
+const SYMPTOMS=[
+  {id:'muddy',label:'Low end is muddy / woofy',dx:'Excess 200-400Hz from 808 overtones + kick + bass masking.',chain:[{n:'Sonnox Oxford EQ',p:'sonnox',set:'Cut 2-3 dB @ 250-350Hz (Q 1.2) on 808 bus.'},{n:'Neutron 5 Unmask',p:'izotope',set:'Sidechain kick→808. AI carves overlap.'},{n:'bx_subfilter',p:'pa',set:'Stereo→Mono at 100 Hz.'}],alt:'C6 for manual dynamic EQ.'},
+  {id:'small',label:'Mix feels small on phone speakers',dx:'Weak mids / no upper harmonics.',chain:[{n:'MaxxBass',p:'waves',set:'808 bus. Freq 60Hz, Harmonics +4 dB.'},{n:'Ozone 12 Exciter',p:'izotope',set:'Mid band +1-2 dB, Retro.'},{n:'NLS Buss',p:'waves',set:'Master, Drive 3-4 dB.'},{n:'Maag EQ4',p:'pa',set:'+2-3 dB @ 2.5k on vocal.'}],alt:'bx_enhancer or Vitamin.'},
+  {id:'car',label:"808 doesn't hit in the car",dx:'Car speakers roll off below ~80Hz.',chain:[{n:'RBass',p:'waves',set:'Intensity 4-6, Freq 80-100Hz.'},{n:'Softube Saturation Knob',p:'softube',set:'Low mode, Drive 30-50%.'},{n:'bx_boom',p:'pa',set:'Bass +3, Boom +2.'},{n:'Ozone 12 Low End Focus',p:'izotope',set:'Punchy, Contrast +2.'}],alt:'Trash for aggressive harmonics.'},
+  {id:'vocalback',label:'Vocal sits behind the beat',dx:'Lacking presence + air, masked by beat high-mids.',chain:[{n:'Maag EQ4',p:'pa',set:'+3-4 dB @ 40k on vocal. Trap secret.'},{n:'Nectar 4 Advanced',p:'izotope',set:'Unmask — sidechain from beat.'},{n:'CLA Vocals',p:'waves',set:'Parallel aux, Bright Vocal, blend 30-40%.'},{n:'H-Delay',p:'waves',set:'1/16 slap, 15-20% wet, FB 0-15.'},{n:'soothe2',p:'oek',set:'Wideband, depth 20%.'}],alt:'Scheps Omni or Fresh Air.'},
+  {id:'harsh',label:'Hi-hats too harsh (8-12k)',dx:'Resonances in 7-10k.',chain:[{n:'soothe2',p:'oek',set:'5-10kHz, depth 15-25%, sharp 4.'},{n:'F6 Dynamic EQ',p:'waves',set:'Dynamic -3 dB @ 7-8k.'},{n:'Waves Sibilance',p:'waves',set:'Range 6-10k.'}],alt:'Oxford SuprEsser.'},
+  {id:'crushed',label:'Mix is crushed / no dynamics',dx:'Limiter squashing. LRA <3.',chain:[{n:'Ozone 12 Maximizer',p:'izotope',set:'IRC IV. Back off 1 dB.'},{n:'Sonnox Oxford Inflator',p:'sonnox',set:'Before limiter. Effect 50%, Curve +5.'},{n:'NLS Buss',p:'waves',set:'Master, Drive 2 dB.'}],alt:'Pro-L2 / Oxford Limiter.'},
+  {id:'punch',label:'Kick/snare lack punch',dx:'Transients smoothed.',chain:[{n:'SPL Transient Designer Plus',p:'pa',set:'Drum bus. Attack +3-4, Sustain -1.'},{n:'Smack Attack',p:'waves',set:'Kick/snare. Attack +3.'},{n:'CLA-76',p:'waves',set:'Parallel. All buttons in. 25%.'}],alt:'Transient Master FX.'},
+  {id:'mono',label:'Stereo image collapses in mono',dx:'Phase issues.',chain:[{n:'bx_solo',p:'pa',set:'Master. A/B mono.'},{n:'bx_subfilter',p:'pa',set:'Mono below 100Hz.'},{n:'Waves Center',p:'waves',set:'Tighten low sides.'}],alt:'Check reverb sends.'},
+  {id:'tp',label:'Master clips on streaming',dx:'Inter-sample peaks.',chain:[{n:'Ozone 12 Maximizer',p:'izotope',set:'Ceiling -1.0 dBTP. True peak ON.'},{n:'Sonnox Oxford Limiter',p:'sonnox',set:'True peak ON.'}],alt:'Replace L2 (not TP-aware).'},
+  {id:'sib',label:'Vocal too sibilant',dx:'Peaks 5-8k.',chain:[{n:'Eiosis E2Deesser',p:'eiosis',set:'6-8k, 2-4 dB cut.'},{n:'Lindell 902 De-esser',p:'pa',set:'Alternative.'},{n:'soothe2',p:'oek',set:'Soft, depth 15%.'}],alt:'Waves Sibilance.'},
+  {id:'autotune',label:'Auto-tune feels weak',dx:'Retune too slow.',chain:[{n:'Waves Tune Real-Time',p:'waves',set:'Retune 0. Scale locked.'},{n:'bx_crispytuner',p:'pa',set:'Speed max.'},{n:'Melodyne 5',p:'cele',set:'Stubborn notes.'}],alt:'Auto-Tune Pro X.'},
+  {id:'pump',label:'Pumping on master',dx:'Bus comp + limiter both hard.',chain:[{n:'Shadow Hills Mastering Comp',p:'pa',set:'Discrete, attack 30ms, GR 1-2 dB.'},{n:'Ozone 12 Maximizer',p:'izotope',set:'Transient mode.'},{n:'bx_clipper',p:'pa',set:'BEFORE limiter. -2-3 dB.'}],alt:'Slower attack on bus comp.'}
+];
+function renderSymptoms(){
+  document.getElementById('symptomGrid').innerHTML=SYMPTOMS.map(s=>`<button class="symptom ${STATE.symptoms.has(s.id)?'active':''}" onclick="toggleSymptom('${s.id}')">${escapeHtml(s.label)}</button>`).join('');
+  renderRecipes();
+}
+function toggleSymptom(id){if(STATE.symptoms.has(id))STATE.symptoms.delete(id);else STATE.symptoms.add(id);renderSymptoms();saveState();}
+function renderRecipes(){
+  const active=SYMPTOMS.filter(s=>STATE.symptoms.has(s.id));
+  const out=document.getElementById('recipesOutput');
+  if(!active.length){out.innerHTML='';return;}
+  out.innerHTML=active.map(s=>{const steps=s.chain.map((c,i)=>{const pub=PUBS[c.p]||PUBS.other;return `<div class="recipe-step"><span class="num">${i+1}</span><div class="plugin"><strong>${escapeHtml(c.n)}</strong> <span class="chip ${pub[1]}">${pub[0]}</span><div class="setting">${escapeHtml(c.set)}</div></div></div>`;}).join('');return `<div class="recipe-card"><h4>${escapeHtml(s.label)}</h4><div class="dx">${escapeHtml(s.dx)}</div>${steps}<div class="recipe-alt">Alt: ${escapeHtml(s.alt)}</div></div>`;}).join('');
+}
+
+// ========== TABS ==========
+document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.tab).classList.add('active');});});
+document.getElementById('platformSelect').onchange=()=>{renderMeters();updateMeters();saveState();};
+
+// ========== SNAPSHOT EXPORT ==========
+function buildSnapshot(){
+  const platform=document.getElementById('platformSelect').value;
+  const platformLabel=document.getElementById('platformSelect').selectedOptions[0].textContent;
+  const lines=[];
+  lines.push('# Trap Master Workbench — Session Snapshot');
+  lines.push('Date: '+new Date().toISOString().slice(0,16).replace('T',' '));
+  lines.push('Genre: '+genreLabel(STATE.genre));
+  lines.push('Target: '+platformLabel);
+  lines.push('');
+  lines.push('## Signal Chain');
+  let anyChain=false;
+  BUSES.forEach(b=>{const items=STATE.chain[b.id];if(!items.length)return;anyChain=true;lines.push('');lines.push('**'+b.label+'**');items.forEach((p,i)=>{lines.push(`${i+1}. ${p.n}  (${(PUBS[p.p]||PUBS.other)[0]})`);if(p.notes){p.notes.split(/\n/).forEach(ln=>{const t=ln.trim();if(t)lines.push('   • '+t);});}});});
+  if(!anyChain)lines.push('_No chain built yet._');
+  lines.push('');
+  lines.push('## Meter Readings');
+  const m=STATE.meters;const t=METER_TARGETS[platform];let anyMeter=false;
+  METERS.forEach(mt=>{if(m[mt.id]==null)return;anyMeter=true;const v=m[mt.id];const [lo,hi]=t[mt.id];const status=(v>=lo&&v<=hi)?'OK':(v<lo?`LOW (target ${lo} to ${hi})`:`HIGH (target ${lo} to ${hi})`);lines.push(`- **${mt.label}:** ${v} ${mt.unit}  —  ${status}`);});
+  if(!anyMeter)lines.push('_No meter readings entered._');
+  lines.push('');
+  lines.push('## Flagged Issues');
+  if(!STATE.symptoms.size)lines.push('_None flagged._');
+  else SYMPTOMS.filter(s=>STATE.symptoms.has(s.id)).forEach(s=>lines.push('- '+s.label));
+  return lines;
+}
+document.getElementById('snapshotBtn').onclick=()=>{
+  const lines=buildSnapshot();
+  lines.push('');
+  lines.push('---');
+  lines.push('_Please review against my library and suggest specific next moves, plugin swaps, chain reordering, or settings tweaks._');
+  copyToClipboard(lines.join('\n'),'Copied — paste into chat');
+};
+
+// ========== STAR REVIEW EXPORT ==========
+document.getElementById('reviewStarsBtn').onclick=()=>{
+  const lines=[];
+  lines.push('# Genre Star Review Request');
+  lines.push('Genre: '+genreLabel(STATE.genre));
+  lines.push('');
+  lines.push('## My Favorites (❤)');
+  const favs=[...STATE.favorites];
+  if(!favs.length) lines.push('_None marked yet — heart some in the Library._');
+  else {
+    // group by stage
+    const byStage={};
+    favs.forEach(name=>{
+      const p=allPlugins().find(x=>x.n===name);
+      if(!p)return;
+      (byStage[p.s]=byStage[p.s]||[]).push(p);
+    });
+    STAGES.forEach(st=>{if(!byStage[st.id])return;lines.push('');lines.push('**'+st.label+'**');byStage[st.id].forEach(p=>lines.push(`- ${p.n} (${(PUBS[p.p]||PUBS.other)[0]})${p.custom?' [custom]':''}`));});
+  }
+  lines.push('');
+  lines.push('## My Custom Additions');
+  if(!STATE.customPlugins.length) lines.push('_None._');
+  else STATE.customPlugins.forEach(p=>lines.push(`- ${p.n} (${p.pLabel||(PUBS[p.p]||PUBS.other)[0]}) — stage: ${p.s}`));
+  lines.push('');
+  lines.push('## Currently starred as top picks for '+genreLabel(STATE.genre));
+  const curTop=TOP_PICKS[STATE.genre]||[];
+  if(!curTop.length) lines.push('_Nothing starred yet for this genre._');
+  else curTop.forEach(n=>lines.push(`- ${n}`));
+  lines.push('');
+  lines.push('---');
+  lines.push(`_Claude — please review my favorites and custom additions, then update the artifact so the ⭐ top picks for **${genreLabel(STATE.genre)}** reflect what's actually iconic for this genre from my library. Promote / demote / add / remove as needed. Also add any genre-specific recipes or tips if helpful. Bake my custom plugins into the built-in PLUGINS list so they persist._`);
+  copyToClipboard(lines.join('\n'),'Copied — paste into chat for star review');
+};
+
+document.getElementById('resetBtn').onclick=()=>{if(!confirm('Clear chain, meters, flags, favorites, and custom plugins?'))return;BUSES.forEach(b=>STATE.chain[b.id]=[]);STATE.meters={};STATE.symptoms.clear();STATE.favorites.clear();STATE.customPlugins=[];renderChain();renderMeters();renderSymptoms();renderLibrary();saveState();toast('Reset');};
+
+// ========== REALTIME VOICE (OpenAI Realtime API via WebRTC) ==========
+// Everything runs client-side: your API key mints an ephemeral token, which is used
+// to set up a WebRTC session with OpenAI. Audio streams both ways directly from your
+// browser; nothing is proxied through any other server.
+const RT={
+  pc:null,dc:null,micStream:null,active:false,connecting:false,
+  startedAt:0,timer:null,keyVisible:false,
+  pendingToolCalls:{},             // call_id -> {name,args (accumulating string)}
+  transcriptIndex:{},              // item_id -> {el, role, text}
+  usage:{inAudio:0,outAudio:0,inText:0,outText:0}
+};
+const RT_KEY_STORAGE='trapMasterApiKey_v1';
+const RT_PREFS_STORAGE='trapMasterRtPrefs_v1';
+
+// Warn if we're not in a secure context — Realtime needs mic + fetch to api.openai.com.
+if(!window.isSecureContext){
+  const w=document.getElementById('browserWarn');
+  if(w)w.style.display='block';
+}
+
+// -- Key + prefs persistence (separate from workbench state) --
+function rtLoadKey(){
+  try{
+    const k=localStorage.getItem(RT_KEY_STORAGE);
+    if(k){
+      document.getElementById('rtApiKey').value=k;
+      rtSetKeyStatus('Key loaded from this browser.','ok');
+      document.getElementById('rtCallBtn').disabled=false;
+      document.getElementById('rtCallLabel').textContent='Start call';
+    }
+  }catch(_){}
+}
+function rtSaveKey(){
+  const k=document.getElementById('rtApiKey').value.trim();
+  if(!k){rtSetKeyStatus('Paste a key first.','err');return;}
+  if(!k.startsWith('sk-')){rtSetKeyStatus('That doesn\'t look like an OpenAI key (should start with sk-).','err');return;}
+  try{localStorage.setItem(RT_KEY_STORAGE,k);rtSetKeyStatus('Saved to this browser\'s localStorage.','ok');
+    document.getElementById('rtCallBtn').disabled=false;
+    document.getElementById('rtCallLabel').textContent='Start call';
+    toast('Key saved');
+  }catch(e){rtSetKeyStatus('Save failed: '+e.message,'err');}
+}
+function rtClearKey(){
+  try{localStorage.removeItem(RT_KEY_STORAGE);document.getElementById('rtApiKey').value='';rtSetKeyStatus('Key removed.','ok');
+    document.getElementById('rtCallBtn').disabled=true;
+    document.getElementById('rtCallLabel').textContent='Save a key to start';
+  }catch(_){}
+}
+function rtSetKeyStatus(msg,cls){const s=document.getElementById('rtKeyStatus');s.textContent=msg;s.className='rt-key-status'+(cls?' '+cls:'');}
+
+function rtLoadPrefs(){
+  try{
+    const raw=localStorage.getItem(RT_PREFS_STORAGE);if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.model)document.getElementById('rtModel').value=d.model;
+    if(d.voice)document.getElementById('rtVoice').value=d.voice;
+  }catch(_){}
+}
+function rtSavePrefs(){
+  try{localStorage.setItem(RT_PREFS_STORAGE,JSON.stringify({model:document.getElementById('rtModel').value,voice:document.getElementById('rtVoice').value}));}catch(_){}
+}
+
+// -- Key UI wiring --
+document.getElementById('rtKeySave').onclick=rtSaveKey;
+document.getElementById('rtKeyClear').onclick=rtClearKey;
+document.getElementById('rtKeyShow').onclick=()=>{const inp=document.getElementById('rtApiKey');RT.keyVisible=!RT.keyVisible;inp.type=RT.keyVisible?'text':'password';};
+document.getElementById('rtApiKey').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();rtSaveKey();}});
+document.getElementById('rtModel').onchange=rtSavePrefs;
+document.getElementById('rtVoice').onchange=rtSavePrefs;
+
+// -- Status helpers --
+function rtSetStatus(state,label){
+  const dot=document.getElementById('rtDot'),st=document.getElementById('rtStatus'),btn=document.getElementById('rtCallBtn');
+  dot.className='rt-dot'+(state?' '+state:'');
+  st.textContent=label||state||'Idle';
+  btn.classList.remove('connecting','live','speaking');
+  if(state==='connecting')btn.classList.add('connecting');
+  else if(state==='live'||state==='listening')btn.classList.add('live');
+  else if(state==='speaking')btn.classList.add('speaking');
+}
+function rtFmtTime(ms){const s=Math.floor(ms/1000);const m=Math.floor(s/60);const r=s%60;return `${m}:${String(r).padStart(2,'0')}`;}
+function rtTickTimer(){
+  if(!RT.startedAt)return;
+  document.getElementById('rtTimer').textContent=rtFmtTime(Date.now()-RT.startedAt);
+  rtRenderCost();
+}
+// Rough Realtime API pricing (Apr 2026 ballpark; user can refine). Per 1M tokens.
+// https://openai.com/api/pricing/
+const RT_PRICING={
+  'gpt-4o-realtime-preview':{in:5,out:20,inCached:2.50,textIn:5,textOut:20},
+  'gpt-4o-mini-realtime-preview':{in:0.60,out:2.40,inCached:0.30,textIn:0.60,textOut:2.40}
+};
+function rtRenderCost(){
+  const model=document.getElementById('rtModel').value;
+  const p=RT_PRICING[model];if(!p)return;
+  const cost=(RT.usage.inAudio*p.in+RT.usage.outAudio*p.out+RT.usage.inText*p.textIn+RT.usage.outText*p.textOut)/1e6;
+  document.getElementById('rtCost').textContent=cost>0?'$'+cost.toFixed(3):'';
+}
+
+// -- Transcript rendering --
+function rtClearTranscriptPlaceholder(){const ph=document.querySelector('#rtTranscript .rt-placeholder');if(ph)ph.remove();}
+function rtGetOrCreateTurn(itemId,role){
+  if(RT.transcriptIndex[itemId])return RT.transcriptIndex[itemId];
+  rtClearTranscriptPlaceholder();
+  const wrap=document.createElement('div');
+  wrap.className='rt-turn '+role+' partial';
+  wrap.innerHTML=`<div class="who">${role==='user'?'You':'AI'}</div><div class="txt"></div>`;
+  document.getElementById('rtTranscript').appendChild(wrap);
+  const rec={el:wrap,txt:wrap.querySelector('.txt'),role,text:''};
+  RT.transcriptIndex[itemId]=rec;
+  return rec;
+}
+function rtAppendTurnText(itemId,role,delta,finalize){
+  const t=rtGetOrCreateTurn(itemId,role);
+  if(delta)t.text+=delta;
+  t.txt.textContent=t.text;
+  if(finalize)t.el.classList.remove('partial');
+  const box=document.getElementById('rtTranscript');
+  box.scrollTop=box.scrollHeight;
+}
+function rtLogTool(fn,args,result,isErr){
+  const log=document.getElementById('rtToolsLog');log.style.display='block';
+  const list=document.getElementById('rtToolsList');
+  const row=document.createElement('div');
+  row.className='rt-tool'+(isErr?' err':'');
+  row.innerHTML=`<span class="fn">${escapeHtml(fn)}</span><span class="args">${escapeHtml(JSON.stringify(args))}</span><span class="res">${escapeHtml(String(result).slice(0,60))}</span>`;
+  list.appendChild(row);
+  while(list.children.length>20)list.removeChild(list.firstChild);
+}
+
+// ========== TOOLS exposed to the model ==========
+// These mutate STATE and re-render. The model uses them to read + modify the workbench.
+const TOOL_DEFS=[
+  {type:'function',name:'get_context',description:'Get the current workbench state: genre, loudness target, each bus\'s chain, meter readings, flagged symptoms, favorite count, custom plugin count. Call this before advising so you know what the producer is actually looking at.',parameters:{type:'object',properties:{},required:[]}},
+  {type:'function',name:'set_genre',description:'Switch the active genre (changes which plugins are starred as top picks).',parameters:{type:'object',properties:{genre:{type:'string',enum:['trap','drill','ukdrill','phonk','rage','cloud','memphis','jersey','hyperpop','boombap']}},required:['genre']}},
+  {type:'function',name:'set_platform',description:'Change the loudness target / platform (master bus reference).',parameters:{type:'object',properties:{platform:{type:'string',enum:['trap','spotify','apple','soundcloud']}},required:['platform']}},
+  {type:'function',name:'add_plugin_to_bus',description:'Add a plugin to a bus. Plugin is matched by name against the full library (built-in + custom). Position is 1-indexed; omit to append at end.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — e.g. "Ozone 12 Maximizer", "Maag EQ4", "Pro-L 2". Fuzzy match is fine.'},position:{type:'integer',description:'1-indexed insertion point; omit to append'}},required:['bus','plugin']}},
+  {type:'function',name:'remove_plugin_from_bus',description:'Remove a plugin from a bus by its 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},position:{type:'integer'}},required:['bus','position']}},
+  {type:'function',name:'move_plugin',description:'Reorder a plugin within a bus. Positions are 1-indexed.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},from:{type:'integer'},to:{type:'integer'}},required:['bus','from','to']}},
+  {type:'function',name:'clear_bus',description:'Remove all plugins from a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']}},required:['bus']}},
+  {type:'function',name:'toggle_symptom',description:'Toggle a flagged mix symptom in the Troubleshooter. Use the symptom id from list_symptoms.',parameters:{type:'object',properties:{symptom:{type:'string'}},required:['symptom']}},
+  {type:'function',name:'list_symptoms',description:'List available symptom ids and their labels.',parameters:{type:'object',properties:{},required:[]}},
+  {type:'function',name:'toggle_favorite',description:'Heart / un-heart a plugin in the library (fuzzy name match).',parameters:{type:'object',properties:{plugin:{type:'string'}},required:['plugin']}},
+  {type:'function',name:'record_meter',description:'Record a meter reading. meter is one of: iLufs, tp, lra, corr, crest.',parameters:{type:'object',properties:{meter:{type:'string',enum:['iLufs','tp','lra','corr','crest']},value:{type:'number'}},required:['meter','value']}},
+  {type:'function',name:'add_custom_plugin',description:'Add a plugin to the library that isn\'t already built in. stage must be one of the known stage ids.',parameters:{type:'object',properties:{name:{type:'string'},publisher:{type:'string',description:'slate, ssl, ua, softube, sonnox, sonible, sndtoys, izotope, eiosis, weiss, oek, waves, ni, pa, ant, cele, liq, or other'},publisher_label:{type:'string',description:'If publisher is "other", supply a label like "FabFilter"'},stage:{type:'string'}},required:['name','publisher','stage']}},
+  {type:'function',name:'list_plugins',description:'Search the plugin library. Pass stage_id or search text.',parameters:{type:'object',properties:{stage:{type:'string'},search:{type:'string'}},required:[]}},
+  {type:'function',name:'set_plugin_settings',description:'Pin concrete setting notes to a specific plugin on a bus so they appear directly under the plugin in the chain view. USE THIS EVERY TIME you give specific parameter values (drive/threshold/Q/freq/attack/release/mix%/etc.) — the notes persist in the UI so Kev doesn\'t have to scroll the transcript. Replaces existing notes for that plugin. Target by plugin name (fuzzy match) OR by 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — fuzzy match. Use this OR position.'},position:{type:'integer',description:'1-indexed position on the bus. Use this OR plugin.'},settings:{type:'string',description:'Terse, actionable notes. Prefer one parameter per line like "Drive: 3–4" or "HPF: 80 Hz, 12 dB/oct". Include mix% if parallel. Max ~6 lines.'}},required:['bus','settings']}},
+  {type:'function',name:'clear_plugin_settings',description:'Remove settings notes from a plugin on a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string'},position:{type:'integer'}},required:['bus']}}
+];
+
+// Resolve a plugin on a bus by position or fuzzy plugin name. Returns its 0-based index or -1.
+function resolveChainIdx(bus,args){
+  const arr=STATE.chain[bus];if(!arr)return -1;
+  if(args.position!=null){const i=(args.position|0)-1;return(i>=0&&i<arr.length)?i:-1;}
+  if(args.plugin){
+    const q=args.plugin.toLowerCase().trim();
+    let i=arr.findIndex(p=>p.n.toLowerCase()===q);if(i>=0)return i;
+    i=arr.findIndex(p=>p.n.toLowerCase().startsWith(q));if(i>=0)return i;
+    i=arr.findIndex(p=>p.n.toLowerCase().includes(q));if(i>=0)return i;
+    const qw=q.split(/\s+/).filter(Boolean);
+    const scored=arr.map((p,i)=>{const hay=p.n.toLowerCase();return{i,m:qw.filter(w=>hay.includes(w)).length};}).filter(x=>x.m>0).sort((a,b)=>b.m-a.m);
+    if(scored[0])return scored[0].i;
+  }
+  return -1;
+}
+
+function fuzzyFindPlugin(name){
+  const q=name.toLowerCase().trim();
+  const pool=allPlugins();
+  let hit=pool.find(p=>p.n.toLowerCase()===q);
+  if(hit)return hit;
+  hit=pool.find(p=>p.n.toLowerCase().startsWith(q));
+  if(hit)return hit;
+  hit=pool.find(p=>p.n.toLowerCase().includes(q));
+  if(hit)return hit;
+  // Word-level loose match
+  const qWords=q.split(/\s+/).filter(Boolean);
+  const best=pool.map(p=>{const hay=p.n.toLowerCase();const matched=qWords.filter(w=>hay.includes(w)).length;return{p,matched};}).filter(x=>x.matched>0).sort((a,b)=>b.matched-a.matched)[0];
+  return best?best.p:null;
+}
+
+function buildContextSummary(){
+  const platform=document.getElementById('platformSelect').value;
+  const t=METER_TARGETS[platform];
+  const verdicts={};
+  METERS.forEach(m=>{
+    const v=STATE.meters?.[m.id];if(v==null){verdicts[m.id]=null;return;}
+    const [lo,hi]=t[m.id];verdicts[m.id]={value:v,target:[lo,hi],unit:m.unit,status:(v>=lo&&v<=hi)?'ok':(v<lo?'low':'high')};
+  });
+  const chainByBus={};
+  BUSES.forEach(b=>{chainByBus[b.id]=STATE.chain[b.id].map((p,i)=>{
+    const base=`${i+1}. ${p.n} (${(PUBS[p.p]||PUBS.other)[0]})`;
+    if(!p.notes)return base;
+    return `${base} — pinned: ${p.notes.replace(/\s*\n\s*/g,' | ').trim()}`;
+  });});
+  return{
+    genre:STATE.genre,
+    genre_label:genreLabel(STATE.genre),
+    platform,
+    platform_label:document.getElementById('platformSelect').selectedOptions[0].textContent,
+    chain:chainByBus,
+    meters:verdicts,
+    flagged_symptoms:[...STATE.symptoms].map(id=>{const s=SYMPTOMS.find(x=>x.id===id);return s?{id:s.id,label:s.label}:{id};}),
+    favorites_count:STATE.favorites.size,
+    custom_plugins_count:STATE.customPlugins.length
+  };
+}
+
+async function handleToolCall(name,args){
+  try{
+    switch(name){
+      case 'get_context':return buildContextSummary();
+      case 'set_genre':{
+        const g=args.genre;if(!TOP_PICKS[g])throw new Error('Unknown genre: '+g);
+        STATE.genre=g;document.getElementById('genreSelect').value=g;renderLibrary();saveState();
+        return{ok:true,genre:g,label:genreLabel(g)};
+      }
+      case 'set_platform':{
+        const p=args.platform;if(!METER_TARGETS[p])throw new Error('Unknown platform: '+p);
+        document.getElementById('platformSelect').value=p;renderMeters();updateMeters();saveState();
+        return{ok:true,platform:p};
+      }
+      case 'add_plugin_to_bus':{
+        const bus=args.bus;if(!STATE.chain[bus])throw new Error('Unknown bus: '+bus);
+        const pl=fuzzyFindPlugin(args.plugin);if(!pl)throw new Error('Plugin not in library: '+args.plugin+'. Call add_custom_plugin first if new.');
+        const entry={n:pl.n,p:pl.p,s:pl.s};
+        if(args.position!=null){
+          const idx=Math.max(0,Math.min(args.position-1,STATE.chain[bus].length));
+          STATE.chain[bus].splice(idx,0,entry);
+        }else{STATE.chain[bus].push(entry);}
+        renderChain();saveState();
+        return{ok:true,bus,added:pl.n,chain:STATE.chain[bus].map((p,i)=>`${i+1}. ${p.n}`)};
+      }
+      case 'remove_plugin_from_bus':{
+        const bus=args.bus;const arr=STATE.chain[bus];if(!arr)throw new Error('Unknown bus: '+bus);
+        const i=(args.position|0)-1;if(i<0||i>=arr.length)throw new Error('Position out of range');
+        const removed=arr.splice(i,1)[0];renderChain();saveState();
+        return{ok:true,bus,removed:removed.n,chain:arr.map((p,i)=>`${i+1}. ${p.n}`)};
+      }
+      case 'move_plugin':{
+        const bus=args.bus;const arr=STATE.chain[bus];if(!arr)throw new Error('Unknown bus: '+bus);
+        const from=(args.from|0)-1,to=(args.to|0)-1;
+        if(from<0||from>=arr.length||to<0||to>=arr.length)throw new Error('Position out of range');
+        const [item]=arr.splice(from,1);arr.splice(to,0,item);renderChain();saveState();
+        return{ok:true,bus,chain:arr.map((p,i)=>`${i+1}. ${p.n}`)};
+      }
+      case 'clear_bus':{
+        const bus=args.bus;if(!STATE.chain[bus])throw new Error('Unknown bus: '+bus);
+        STATE.chain[bus]=[];renderChain();saveState();return{ok:true,bus,cleared:true};
+      }
+      case 'list_symptoms':
+        return SYMPTOMS.map(s=>({id:s.id,label:s.label}));
+      case 'toggle_symptom':{
+        const id=args.symptom;const s=SYMPTOMS.find(x=>x.id===id)||SYMPTOMS.find(x=>x.label.toLowerCase().includes(id.toLowerCase()));
+        if(!s)throw new Error('Unknown symptom: '+id);
+        toggleSymptom(s.id);
+        return{ok:true,symptom:s.id,flagged:STATE.symptoms.has(s.id)};
+      }
+      case 'toggle_favorite':{
+        const pl=fuzzyFindPlugin(args.plugin);if(!pl)throw new Error('Plugin not in library: '+args.plugin);
+        toggleFav(pl.n);
+        return{ok:true,plugin:pl.n,favorited:STATE.favorites.has(pl.n)};
+      }
+      case 'record_meter':{
+        if(!METERS.find(m=>m.id===args.meter))throw new Error('Unknown meter: '+args.meter);
+        STATE.meters[args.meter]=args.value;
+        const el=document.getElementById('meter-'+args.meter);if(el)el.value=args.value;
+        updateMeters();
+        return{ok:true,meter:args.meter,value:args.value,context:buildContextSummary().meters[args.meter]};
+      }
+      case 'add_custom_plugin':{
+        const name=args.name.trim();
+        if(allPlugins().some(x=>x.n.toLowerCase()===name.toLowerCase()))return{ok:false,reason:'already in library',name};
+        const pub=PUBS[args.publisher]?args.publisher:'other';
+        const stage=STAGES.find(s=>s.id===args.stage)?args.stage:'eq-clean';
+        const entry={n:name,p:pub,s:stage,custom:true};
+        if(pub==='other'&&args.publisher_label)entry.pLabel=args.publisher_label;
+        STATE.customPlugins.push(entry);STATE.favorites.add(name);renderLibrary();saveState();
+        return{ok:true,added:name,stage};
+      }
+      case 'list_plugins':{
+        const stage=args.stage;const q=(args.search||'').toLowerCase().trim();
+        const res=allPlugins().filter(p=>{if(stage&&p.s!==stage)return false;if(q&&!p.n.toLowerCase().includes(q))return false;return true;}).slice(0,60).map(p=>({n:p.n,publisher:(PUBS[p.p]||PUBS.other)[0],stage:p.s,custom:!!p.custom}));
+        return{count:res.length,plugins:res};
+      }
+      case 'set_plugin_settings':{
+        const bus=args.bus;const arr=STATE.chain[bus];if(!arr)throw new Error('Unknown bus: '+bus);
+        const idx=resolveChainIdx(bus,args);
+        if(idx<0)throw new Error('Plugin not on '+bus+' bus. Current chain: '+(arr.length?arr.map((p,i)=>`${i+1}. ${p.n}`).join(', '):'(empty)')+'. Add it with add_plugin_to_bus first.');
+        const text=(args.settings||'').trim();
+        if(text)arr[idx].notes=text;else delete arr[idx].notes;
+        renderChain();saveState();
+        return{ok:true,bus,position:idx+1,plugin:arr[idx].n,settings:arr[idx].notes||''};
+      }
+      case 'clear_plugin_settings':{
+        const bus=args.bus;const arr=STATE.chain[bus];if(!arr)throw new Error('Unknown bus: '+bus);
+        const idx=resolveChainIdx(bus,args);
+        if(idx<0)throw new Error('Plugin not on '+bus+' bus');
+        delete arr[idx].notes;renderChain();saveState();
+        return{ok:true,bus,position:idx+1,plugin:arr[idx].n};
+      }
+      default:throw new Error('Unknown tool: '+name);
+    }
+  }catch(e){return{error:e.message||String(e)};}
+}
+
+// ========== SESSION INSTRUCTIONS ==========
+const RT_INSTRUCTIONS=`You are Kev's mix/master assistant embedded inside his Trap Master Workbench. You talk to him by voice while he's producing.
+
+SPECIALTY: trap / hip-hop / drill mixing and mastering. You know plugin ecosystems (Waves, iZotope, UA, Softube, SSL Native, Plugin Alliance, Native Instruments, Sonnox, Slate, Eiosis, LiquidSonics, oeksound, Soundtoys, Antares, Celemony, etc.) and you speak the producer vernacular — 808s, drill hats, vocal ad-libs, slap delay, parallel comp, bus glue, not academic mixing language.
+
+TONE: producer-to-producer. Terse, practical, confident. No encyclopedic dumps. One or two focused moves at a time, with specific settings (freq, Q, dB, attack/release, blend %) when you suggest a plugin. Don't over-explain what he already knows — he's experienced.
+
+VOICE STYLE: since this is real-time speech, talk naturally — contractions, short sentences, pauses. Don't read bullet lists aloud. Ask a clarifying question if you need one piece of information before committing to advice.
+
+TOOLS: you have live tools to read and modify his workbench. USE THEM.
+- Call get_context BEFORE giving advice so you know his current genre, platform target, chains per bus, meter readings, flagged issues, and any pinned settings notes already on plugins.
+- When he asks you to change something ("add Pro-L 2 to the master", "flag muddy bass", "switch to drill"), call the matching tool directly instead of telling him to click it.
+- When the chain changes, you can call get_context again to reconfirm.
+- If he names a plugin you don't recognize, try add_custom_plugin so his library grows.
+
+PIN YOUR SETTINGS (CRITICAL):
+Whenever you give concrete parameter values for a plugin ("drive around 3", "HPF at 80", "ratio 4:1, attack 30ms", "mix 60%"), you MUST call set_plugin_settings with those exact values, targeting that plugin on its bus. The notes appear directly under the plugin in the chain view so Kev doesn't have to scroll the transcript to remember what you said. Format: short key:value lines, one parameter per line, max ~6 lines. Examples:
+
+  Drive: 3–4
+  Tone: brighter (A side)
+  Mix: 60% wet
+
+or for a comp:
+
+  Threshold: -18 dB
+  Ratio: 4:1
+  Attack: 30 ms
+  Release: auto
+  Makeup: +3 dB
+
+If you revise the recommendation later, call set_plugin_settings again — it overwrites. If he says "scrap those settings" call clear_plugin_settings. After pinning, you can just say something like "pinned those to Decapitator" — no need to re-read the values aloud.
+
+WORKFLOW:
+- On start, call get_context ONCE, then greet him briefly and mention what he's got going (e.g. "You're on drill, -8 LUFS target, master bus looks light. What are you hearing?").
+- Don't dump the whole state; surface only the useful 1–2 observations.
+- Diagnose before prescribing. Ask what he's actually hearing.
+- Prescribe with specific plugin + settings, ideally from his library.
+- Offer to apply changes via tools ("want me to drop bx_clipper in before the limiter?").
+
+DON'T:
+- Don't narrate every tool call out loud.
+- Don't repeat back what he said verbatim.
+- Don't push Spotify-safe mastering if he's chasing -8 LUFS club loudness; ask which he's aiming for.
+- Don't moralize about loudness wars.`;
+
+// ========== WEBRTC + SESSION ==========
+async function rtStart(){
+  if(RT.active||RT.connecting)return;
+  const apiKey=localStorage.getItem(RT_KEY_STORAGE);
+  if(!apiKey){rtSetKeyStatus('Save a key first.','err');return;}
+  if(!window.isSecureContext){toast('Not in secure context — use http://localhost or Cowork sidebar',true);return;}
+  RT.connecting=true;rtSetStatus('connecting','Connecting…');
+  document.getElementById('rtCallLabel').textContent='Connecting…';
+  RT.usage={inAudio:0,outAudio:0,inText:0,outText:0};
+  try{
+    // 1. Mint ephemeral client secret from OpenAI using the user's secret key.
+    const model=document.getElementById('rtModel').value;
+    const voice=document.getElementById('rtVoice').value;
+    const sessResp=await fetch('https://api.openai.com/v1/realtime/sessions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
+      body:JSON.stringify({model,voice,modalities:['audio','text'],input_audio_transcription:{model:'whisper-1'}})
+    });
+    if(!sessResp.ok){const errTxt=await sessResp.text();throw new Error('Session mint failed: '+sessResp.status+' '+errTxt.slice(0,200));}
+    const sessData=await sessResp.json();
+    const ephemeralKey=sessData.client_secret?.value;
+    if(!ephemeralKey)throw new Error('No ephemeral token returned');
+
+    // 2. Set up peer connection + data channel + mic track.
+    RT.pc=new RTCPeerConnection();
+    const audioEl=document.getElementById('rtAudio');
+    RT.pc.ontrack=e=>{audioEl.srcObject=e.streams[0];};
+    RT.micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    RT.micStream.getTracks().forEach(t=>RT.pc.addTrack(t,RT.micStream));
+    RT.dc=RT.pc.createDataChannel('oai-events');
+    RT.dc.addEventListener('message',onRtEvent);
+    RT.dc.addEventListener('open',()=>{
+      // Push session.update with our instructions + tools once the channel is open.
+      rtSend({type:'session.update',session:{
+        instructions:RT_INSTRUCTIONS,
+        tools:TOOL_DEFS,
+        tool_choice:'auto',
+        turn_detection:{type:'server_vad',threshold:0.55,prefix_padding_ms:300,silence_duration_ms:650},
+        voice,
+        modalities:['audio','text']
+      }});
+      // Kick off with a greeting request so the model opens the conversation.
+      rtSend({type:'response.create',response:{modalities:['audio','text'],instructions:'Greet Kev briefly (one short sentence). Then call get_context and note ONE useful observation about his current session, then ask what he\'s hearing.'}});
+    });
+    RT.pc.addEventListener('connectionstatechange',()=>{
+      const s=RT.pc.connectionState;
+      if(s==='connected'){RT.active=true;RT.connecting=false;RT.startedAt=Date.now();RT.timer=setInterval(rtTickTimer,1000);rtSetStatus('live','Connected — listening');document.getElementById('rtCallLabel').textContent='End call';}
+      else if(s==='failed'||s==='disconnected'||s==='closed'){if(RT.active||RT.connecting)rtEnd('Connection '+s);}
+    });
+
+    // 3. SDP offer → OpenAI → set remote answer.
+    const offer=await RT.pc.createOffer();
+    await RT.pc.setLocalDescription(offer);
+    const sdpResp=await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+ephemeralKey,'Content-Type':'application/sdp'},
+      body:offer.sdp
+    });
+    if(!sdpResp.ok){const errTxt=await sdpResp.text();throw new Error('SDP exchange failed: '+sdpResp.status+' '+errTxt.slice(0,200));}
+    const answerSdp=await sdpResp.text();
+    await RT.pc.setRemoteDescription({type:'answer',sdp:answerSdp});
+  }catch(e){
+    console.error(e);
+    rtSetStatus('err','Error: '+e.message);
+    document.getElementById('rtCallLabel').textContent='Start call';
+    rtCleanup();
+  }
+}
+
+function rtSend(obj){
+  if(RT.dc&&RT.dc.readyState==='open'){try{RT.dc.send(JSON.stringify(obj));}catch(e){console.warn('rtSend failed',e);}}
+}
+
+async function onRtEvent(e){
+  let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
+  // console.debug('rt<-',msg.type,msg);
+  switch(msg.type){
+    case 'session.created':case 'session.updated':break;
+    case 'input_audio_buffer.speech_started':rtSetStatus('live','You: speaking…');break;
+    case 'input_audio_buffer.speech_stopped':rtSetStatus('live','Thinking…');break;
+    case 'response.created':break;
+    case 'response.output_item.added':{
+      // Function-call items carry their name + call_id here (not on the arguments deltas).
+      const it=msg.item;
+      if(it&&it.type==='function_call'&&it.call_id){
+        RT.pendingToolCalls[it.call_id]=RT.pendingToolCalls[it.call_id]||{name:'',args:''};
+        if(it.name)RT.pendingToolCalls[it.call_id].name=it.name;
+      }
+      break;
+    }
+    case 'response.audio.delta':rtSetStatus('speaking','AI speaking…');break;
+    case 'response.audio.done':rtSetStatus('live','Listening…');break;
+    case 'response.audio_transcript.delta':
+      rtAppendTurnText(msg.item_id,'ai',msg.delta,false);break;
+    case 'response.audio_transcript.done':
+      rtAppendTurnText(msg.item_id,'ai','',true);break;
+    case 'conversation.item.input_audio_transcription.completed':
+      rtAppendTurnText(msg.item_id,'user',msg.transcript,true);break;
+    case 'conversation.item.input_audio_transcription.failed':
+      rtAppendTurnText(msg.item_id,'user','[transcription failed]',true);break;
+    case 'response.function_call_arguments.delta':{
+      const cid=msg.call_id;
+      if(!RT.pendingToolCalls[cid])RT.pendingToolCalls[cid]={name:msg.name||'',args:''};
+      RT.pendingToolCalls[cid].args+=msg.delta||'';
+      if(msg.name)RT.pendingToolCalls[cid].name=msg.name;
+      break;
+    }
+    case 'response.function_call_arguments.done':{
+      const cid=msg.call_id;
+      const name=msg.name||(RT.pendingToolCalls[cid]?.name);
+      const rawArgs=msg.arguments||(RT.pendingToolCalls[cid]?.args)||'{}';
+      delete RT.pendingToolCalls[cid];
+      let args={};try{args=rawArgs?JSON.parse(rawArgs):{};}catch(_){args={_raw:rawArgs};}
+      let result;try{result=await handleToolCall(name,args);}catch(e){result={error:e.message||String(e)};}
+      const isErr=result&&result.error;
+      rtLogTool(name,args,isErr?result.error:'ok',!!isErr);
+      rtSend({type:'conversation.item.create',item:{type:'function_call_output',call_id:cid,output:JSON.stringify(result).slice(0,8000)}});
+      rtSend({type:'response.create'});
+      break;
+    }
+    case 'response.done':{
+      const usage=msg.response?.usage;
+      if(usage){
+        RT.usage.inAudio+=usage.input_token_details?.audio_tokens||0;
+        RT.usage.outAudio+=usage.output_token_details?.audio_tokens||0;
+        RT.usage.inText+=(usage.input_token_details?.text_tokens)||0;
+        RT.usage.outText+=(usage.output_token_details?.text_tokens)||0;
+        rtRenderCost();
+      }
+      break;
+    }
+    case 'error':
+      rtSetStatus('err','API error: '+(msg.error?.message||'unknown'));
+      console.error('Realtime error',msg.error);
+      break;
+  }
+}
+
+function rtEnd(reason){
+  if(!RT.active&&!RT.connecting)return;
+  rtCleanup();
+  rtSetStatus('',reason?'Ended — '+reason:'Ended');
+  document.getElementById('rtCallLabel').textContent='Start call';
+}
+function rtCleanup(){
+  RT.active=false;RT.connecting=false;
+  if(RT.timer){clearInterval(RT.timer);RT.timer=null;}
+  RT.startedAt=0;
+  if(RT.dc){try{RT.dc.close();}catch(_){}RT.dc=null;}
+  if(RT.pc){try{RT.pc.close();}catch(_){}RT.pc=null;}
+  if(RT.micStream){RT.micStream.getTracks().forEach(t=>t.stop());RT.micStream=null;}
+  RT.pendingToolCalls={};
+  RT.transcriptIndex={};
+}
+
+// Main call button
+document.getElementById('rtCallBtn').addEventListener('click',()=>{
+  if(RT.active||RT.connecting)rtEnd();
+  else rtStart();
+});
+
+// Floating mic now routes to the voice tab + starts a call.
+document.getElementById('floatMic').addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab[data-tab="voice"]').classList.add('active');
+  document.getElementById('voice').classList.add('active');
+  if(!localStorage.getItem(RT_KEY_STORAGE))return;
+  if(!RT.active&&!RT.connecting)rtStart();
+});
+
+// End call on page hide / unload so we don't leave the mic open.
+window.addEventListener('beforeunload',()=>rtCleanup());
+
+// Load saved key + prefs.
+rtLoadKey();
+rtLoadPrefs();
+
+// ========== INIT ==========
+loadState();            // Restore persisted chain/favorites/custom plugins/symptoms/genre/meters/platform
+renderChain();
+renderMeters();
+// After renderMeters() the meter inputs exist — re-apply persisted values before rendering the diagnosis.
+METERS.forEach(m=>{
+  const v=STATE.meters?.[m.id];
+  if(v==null)return;
+  const el=document.getElementById('meter-'+m.id);
+  if(el)el.value=v;
+});
+updateMeters();
+renderSymptoms();
+renderLibrary();
+</script>
+</body>
+</html>

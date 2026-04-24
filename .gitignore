@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local env / secrets (we don't use these but in case)
+.env
+.env.local
+*.log
+
+# Cowork artifact version history (internal — not for the repo)
+versions/
+
+# Node (not used, but in case a tool adds it)
+node_modules/
