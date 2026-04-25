@@ -258,6 +258,55 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-opts select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:12px}
 .rt-dot.researching{background:#f59e0b;animation:blink .7s infinite}
 .rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;width:100%}
+.rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0}
+.rt-cost-card.openai{border-left:3px solid #10a37f}
+.rt-cost-card.anthropic{border-left:3px solid #d97757}
+.rt-cost-card h5{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#e5e7eb;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.rt-cost-card .openai-dot{width:7px;height:7px;border-radius:50%;background:#10a37f}
+.rt-cost-card .anthropic-dot{width:7px;height:7px;border-radius:50%;background:#d97757}
+.rt-cost-card .row{display:flex;justify-content:space-between;align-items:center;color:#9ca3af;font-family:'SF Mono',monospace;font-size:11px}
+.rt-cost-card .row .v{color:#e5e7eb;font-weight:600}
+.rt-cost-card .row.session .v{color:#fbbf24}
+.rt-cost-card .row.left .v{color:#6ee7b7}
+.rt-cost-card .row.left.warn .v{color:#fbbf24}
+.rt-cost-card .row.left.danger .v{color:#f87171}
+.rt-cost-card .row.balance .v{color:#a5b4fc;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
+.rt-cost-card .row.balance .v:hover{color:#c7d2fe}
+.rt-cost-card .actions{display:flex;gap:5px;margin-top:6px}
+.rt-cost-card .actions button{flex:1;padding:5px 6px;font-size:10px;background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.2px}
+.rt-cost-card .actions button:hover{background:#374151;color:#f3f4f6}
+.rt-cost-card .actions button.topup{border-color:#fbbf24;color:#fbbf24}
+.rt-cost-card .actions button.topup:hover{background:#451a03;color:#fcd34d}
+.rt-cost-card .none{color:#6b7280;font-style:italic;font-size:10px;padding:2px 0}
+
+/* Session tools section */
+.rt-tools-panel{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:14px 16px;margin-top:14px}
+.rt-tools-panel h4{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.rt-tools-panel h4 .badge{font-size:10px;color:#9ca3af;font-weight:500;text-transform:none;letter-spacing:0}
+.rt-tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.rt-tool-card{background:#111827;border:1px solid #374151;border-radius:8px;padding:11px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.rt-tool-card .label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.rt-tool-card .v{color:#e5e7eb;font-weight:600;font-size:14px;font-family:'SF Mono',monospace}
+.rt-tool-card .v.amber{color:#fbbf24}.rt-tool-card .v.red{color:#f87171}.rt-tool-card .v.green{color:#6ee7b7}
+.rt-tool-card .sub{color:#6b7280;font-size:10px}
+.rt-tool-card select{background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:5px;padding:5px 7px;font-size:11px;width:100%}
+.rt-tool-card label.tog{display:flex;align-items:center;gap:6px;color:#d1d5db;cursor:pointer;font-size:11px;font-weight:500}
+.rt-tool-card label.tog input{margin:0}
+.rt-tool-card button.linkbtn{background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:5px;padding:6px 8px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px}
+.rt-tool-card button.linkbtn:hover{background:#374151;color:#f3f4f6}
+.rt-tool-card.breakdown .br-line{display:flex;justify-content:space-between;font-family:'SF Mono',monospace;font-size:10px;color:#9ca3af}
+.rt-tool-card.breakdown .br-line .br-v{color:#e5e7eb}
+.rt-tool-card.history{grid-column:span 2}
+.rt-tool-card.history .bars{display:flex;align-items:flex-end;gap:6px;height:48px;margin-top:4px}
+.rt-tool-card.history .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:#6b7280}
+.rt-tool-card.history .bar{width:100%;background:#374151;border-radius:2px 2px 0 0;min-height:2px;transition:height .2s}
+.rt-tool-card.history .bar.openai{background:linear-gradient(to top,#065f46,#10a37f)}
+.rt-tool-card.history .bar.anthropic{background:linear-gradient(to top,#7c2d12,#d97757)}
+@media (max-width: 720px){
+  .rt-call-row{grid-template-columns:1fr;gap:10px}
+  .rt-tool-card.history{grid-column:auto}
+}
 .rt-call-btn{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#7c3aed,#4c1d95);border:4px solid #a78bfa;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all .15s;box-shadow:0 6px 28px rgba(124,58,237,.35);padding:16px;font-family:inherit}
 .rt-call-btn:hover:not(:disabled){transform:scale(1.02);box-shadow:0 10px 36px rgba(124,58,237,.55)}
 .rt-call-btn:disabled{opacity:.35;cursor:not-allowed;background:radial-gradient(circle,#374151,#1f2937);border-color:#4b5563;box-shadow:none}
@@ -411,15 +460,46 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   </div>
 
   <div class="rt-main">
-    <button class="rt-call-btn" id="rtCallBtn" disabled>
-      <span class="rt-call-icon">🎙️</span>
-      <span class="rt-call-label" id="rtCallLabel">Save a key to start</span>
-    </button>
-    <div class="rt-status-row">
-      <span class="rt-dot" id="rtDot"></span>
-      <span class="rt-status" id="rtStatus">Idle</span>
-      <span class="rt-timer" id="rtTimer"></span>
-      <span class="rt-cost" id="rtCost"></span>
+    <div class="rt-call-row">
+      <!-- LEFT: OpenAI cost card -->
+      <div class="rt-cost-card openai" id="costCardOpenAI">
+        <h5><span class="openai-dot"></span>OpenAI <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Realtime</span></h5>
+        <div class="row session"><span>Session</span><span class="v" id="oaSession">$0.000</span></div>
+        <div class="row balance"><span>Balance</span><span class="v" id="oaBalance" title="Click to update — read this from openai.com">— set —</span></div>
+        <div class="row spent"><span>Spent</span><span class="v" id="oaSpent">$0.000</span></div>
+        <div class="row left"><span>Left</span><span class="v" id="oaLeft">—</span></div>
+        <div class="actions">
+          <button class="topup" id="oaTopup" title="Open OpenAI billing in a new tab">Top up ↗</button>
+          <button id="oaUpdate" title="Enter your current balance from the website">Update balance</button>
+        </div>
+      </div>
+
+      <!-- CENTER: Call button + status row -->
+      <div class="rt-main" style="background:transparent;border:none;padding:0;margin:0;gap:12px;">
+        <button class="rt-call-btn" id="rtCallBtn" disabled>
+          <span class="rt-call-icon">🎙️</span>
+          <span class="rt-call-label" id="rtCallLabel">Save a key to start</span>
+        </button>
+        <div class="rt-status-row">
+          <span class="rt-dot" id="rtDot"></span>
+          <span class="rt-status" id="rtStatus">Idle</span>
+          <span class="rt-timer" id="rtTimer"></span>
+          <span class="rt-cost" id="rtCost"></span>
+        </div>
+      </div>
+
+      <!-- RIGHT: Anthropic cost card -->
+      <div class="rt-cost-card anthropic" id="costCardAnthropic">
+        <h5><span class="anthropic-dot"></span>Anthropic <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Research</span></h5>
+        <div class="row session"><span>Session</span><span class="v" id="anSession">$0.000</span></div>
+        <div class="row balance"><span>Balance</span><span class="v" id="anBalance" title="Click to update — read this from console.anthropic.com">— set —</span></div>
+        <div class="row spent"><span>Spent</span><span class="v" id="anSpent">$0.000</span></div>
+        <div class="row left"><span>Left</span><span class="v" id="anLeft">—</span></div>
+        <div class="actions">
+          <button class="topup" id="anTopup" title="Open Anthropic billing in a new tab">Top up ↗</button>
+          <button id="anUpdate" title="Enter your current balance from the website">Update balance</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -427,9 +507,55 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div class="rt-placeholder">Transcript will appear here once the call starts.</div>
   </div>
 
-  <div class="rt-tools-log" id="rtToolsLog" style="display:none;">
-    <h4>Live actions</h4>
-    <div id="rtToolsList"></div>
+  <!-- SESSION TOOLS — replaces the old Live actions log -->
+  <div class="rt-tools-panel">
+    <h4>🛠 Session tools <span class="badge">cost &amp; safety</span></h4>
+    <div class="rt-tools-grid">
+      <div class="rt-tool-card">
+        <div class="label">Cost / minute</div>
+        <div class="v" id="cpmValue">—</div>
+        <div class="sub" id="cpmHint">Live during call. Amber over $0.10/min.</div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="label">Soft budget cap</div>
+        <select id="budgetCap">
+          <option value="0">No limit</option>
+          <option value="0.5">$0.50 per call</option>
+          <option value="1">$1 per call</option>
+          <option value="2">$2 per call</option>
+          <option value="5">$5 per call</option>
+        </select>
+        <div class="sub" id="budgetSub">Voice warning + amber pulse when crossed.</div>
+      </div>
+
+      <div class="rt-tool-card breakdown">
+        <div class="label">Session breakdown</div>
+        <div class="br-line"><span>Audio in</span><span class="br-v" id="brAudioIn">$0.000</span></div>
+        <div class="br-line"><span>Audio out</span><span class="br-v" id="brAudioOut">$0.000</span></div>
+        <div class="br-line"><span>Text in/out</span><span class="br-v" id="brText">$0.000</span></div>
+        <div class="br-line"><span>Research</span><span class="br-v" id="brResearch">$0.000</span></div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="label">Auto-pause if stuck</div>
+        <label class="tog"><input type="checkbox" id="autoPause" /> End call after 30s silence</label>
+        <div class="sub">Saves you from a runaway session if the model hangs.</div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="label">Usage dashboards</div>
+        <button class="linkbtn" id="oaUsageLink">📊 OpenAI usage ↗</button>
+        <button class="linkbtn" id="anUsageLink">📊 Anthropic usage ↗</button>
+        <div class="sub">Real numbers live on the providers' sites.</div>
+      </div>
+
+      <div class="rt-tool-card history">
+        <div class="label">Last 7 days <span style="float:right;color:#6b7280;font-weight:500;font-size:10px;">OpenAI · Anthropic · total</span></div>
+        <div class="bars" id="historyBars"></div>
+        <div class="sub" id="historySub">Total: $0.00 over the last week.</div>
+      </div>
+    </div>
   </div>
 
   <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Pro-L 2 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em></div>
@@ -1491,7 +1617,10 @@ const RT={
   startedAt:0,timer:null,keyVisible:false,
   pendingToolCalls:{},             // call_id -> {name,args (accumulating string)}
   transcriptIndex:{},              // item_id -> {el, role, text}
-  usage:{inAudio:0,outAudio:0,inText:0,outText:0}
+  usage:{inAudio:0,outAudio:0,inText:0,outText:0},
+  lastOaCost:0,                    // for delta tracking when streaming spend
+  budgetWarned:false,
+  lastEventAt:0                    // for auto-pause stuck-call detection
 };
 const RT_KEY_STORAGE='trapMasterApiKey_v1';
 const RT_ANT_KEY_STORAGE='trapMasterAntKey_v1';
@@ -1605,11 +1734,161 @@ const RT_PRICING={
   'gpt-4o-realtime-preview':{in:5,out:20,inCached:2.50,textIn:5,textOut:20},
   'gpt-4o-mini-realtime-preview':{in:0.60,out:2.40,inCached:0.30,textIn:0.60,textOut:2.40}
 };
+// Anthropic pricing per 1M tokens (Apr 2026 ballpark).
+// https://docs.claude.com/en/docs/about-claude/pricing
+const ANT_PRICING={
+  'claude-opus-4-6':{in:15,out:75},
+  'claude-sonnet-4-6':{in:3,out:15},
+  'claude-haiku-4-5-20251001':{in:1,out:5}
+};
+// Anthropic web_search server-side tool: $10 per 1000 searches.
+const ANT_WEB_SEARCH_RATE=10/1000;
+
+// Spend tracking: persistent across sessions in localStorage.
+// Each provider has: balance (what user typed in from website), spent (cumulative since last balance update),
+// and a 7-day log keyed by YYYY-MM-DD for the history bars.
+const SPEND_KEY_OAI='trapMasterSpendOpenAI_v1';
+const SPEND_KEY_ANT='trapMasterSpendAnthropic_v1';
+const SESSION_BREAKDOWN={audioIn:0,audioOut:0,text:0,research:0};
+
+function loadSpend(key){
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return{balance:null,spent:0,history:{}};
+    const d=JSON.parse(raw);
+    return{balance:typeof d.balance==='number'?d.balance:null,spent:+d.spent||0,history:d.history||{}};
+  }catch(e){return{balance:null,spent:0,history:{}};}
+}
+function saveSpend(key,data){localStorage.setItem(key,JSON.stringify(data));}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// Add cost to a provider's running total + today's history bucket. Persist + re-render.
+function addSpend(provider,delta){
+  if(!isFinite(delta)||delta<=0)return;
+  const key=provider==='oai'?SPEND_KEY_OAI:SPEND_KEY_ANT;
+  const d=loadSpend(key);
+  d.spent+=delta;
+  const today=todayKey();
+  d.history[today]=(d.history[today]||0)+delta;
+  // Trim history to last 30 days
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
+  const cutKey=cutoff.toISOString().slice(0,10);
+  Object.keys(d.history).forEach(k=>{if(k<cutKey)delete d.history[k];});
+  saveSpend(key,d);
+  renderCostPanels();renderHistoryBars();
+}
+
 function rtRenderCost(){
   const model=document.getElementById('rtModel').value;
-  const p=RT_PRICING[model];if(!p)return;
-  const cost=(RT.usage.inAudio*p.in+RT.usage.outAudio*p.out+RT.usage.inText*p.textIn+RT.usage.outText*p.textOut)/1e6;
+  const p=RT_PRICING[model];if(!p)return 0;
+  const audioIn=RT.usage.inAudio*p.in/1e6;
+  const audioOut=RT.usage.outAudio*p.out/1e6;
+  const textCost=(RT.usage.inText*p.textIn+RT.usage.outText*p.textOut)/1e6;
+  SESSION_BREAKDOWN.audioIn=audioIn;
+  SESSION_BREAKDOWN.audioOut=audioOut;
+  SESSION_BREAKDOWN.text=textCost;
+  const cost=audioIn+audioOut+textCost;
+  // Stream the delta into the OpenAI cumulative spend so the panel updates live.
+  const delta=cost-RT.lastOaCost;
+  if(delta>0){RT.lastOaCost=cost;addSpend('oai',delta);}
   document.getElementById('rtCost').textContent=cost>0?'$'+cost.toFixed(3):'';
+  document.getElementById('oaSession').textContent='$'+cost.toFixed(3);
+  document.getElementById('anSession').textContent='$'+SESSION_BREAKDOWN.research.toFixed(3);
+  // Breakdown card
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent='$'+v.toFixed(3);};
+  set('brAudioIn',audioIn);set('brAudioOut',audioOut);set('brText',textCost);set('brResearch',SESSION_BREAKDOWN.research);
+  // Cost-per-minute (only meaningful while a call is active)
+  const cpm=document.getElementById('cpmValue');
+  if(RT.startedAt&&cpm){
+    const mins=Math.max(0.05,(Date.now()-RT.startedAt)/60000);
+    const total=cost+SESSION_BREAKDOWN.research;
+    const rate=total/mins;
+    cpm.textContent='$'+rate.toFixed(3)+'/min';
+    cpm.classList.toggle('amber',rate>0.10&&rate<=0.20);
+    cpm.classList.toggle('red',rate>0.20);
+  }else if(cpm){cpm.textContent='—';cpm.classList.remove('amber','red');}
+  // Budget cap warning
+  const cap=parseFloat(document.getElementById('budgetCap').value);
+  const total=cost+SESSION_BREAKDOWN.research;
+  if(cap>0&&total>=cap&&!RT.budgetWarned){
+    RT.budgetWarned=true;
+    toast(`Budget cap hit: $${total.toFixed(2)} ≥ $${cap.toFixed(2)}`,true);
+    document.getElementById('budgetSub').innerHTML=`<span style="color:#fbbf24;">⚠ Hit $${cap.toFixed(2)} cap at ${rtFmtTime(Date.now()-RT.startedAt)}</span>`;
+  }
+  return cost;
+}
+
+function renderCostPanels(){
+  const oa=loadSpend(SPEND_KEY_OAI);
+  const an=loadSpend(SPEND_KEY_ANT);
+  const fmt=v=>v==null?'— set —':'$'+v.toFixed(2);
+  const fmt3=v=>'$'+v.toFixed(3);
+  document.getElementById('oaBalance').textContent=fmt(oa.balance);
+  document.getElementById('oaSpent').textContent=fmt3(oa.spent);
+  document.getElementById('anBalance').textContent=fmt(an.balance);
+  document.getElementById('anSpent').textContent=fmt3(an.spent);
+  // Left = balance - spent (only if balance is set)
+  const oaLeftEl=document.getElementById('oaLeft');
+  const oaLeftRow=oaLeftEl.parentElement;
+  if(oa.balance==null){oaLeftEl.textContent='—';oaLeftRow.classList.remove('warn','danger');}
+  else{
+    const left=oa.balance-oa.spent;
+    oaLeftEl.textContent='$'+left.toFixed(2);
+    oaLeftRow.classList.toggle('warn',left>0&&left<=2);
+    oaLeftRow.classList.toggle('danger',left<=0);
+  }
+  const anLeftEl=document.getElementById('anLeft');
+  const anLeftRow=anLeftEl.parentElement;
+  if(an.balance==null){anLeftEl.textContent='—';anLeftRow.classList.remove('warn','danger');}
+  else{
+    const left=an.balance-an.spent;
+    anLeftEl.textContent='$'+left.toFixed(2);
+    anLeftRow.classList.toggle('warn',left>0&&left<=2);
+    anLeftRow.classList.toggle('danger',left<=0);
+  }
+}
+
+function renderHistoryBars(){
+  const oa=loadSpend(SPEND_KEY_OAI).history;
+  const an=loadSpend(SPEND_KEY_ANT).history;
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  let max=0,total=0;
+  const data=days.map(k=>{const a=oa[k]||0,b=an[k]||0,t=a+b;if(t>max)max=t;total+=t;return{k,a,b,t};});
+  const wrap=document.getElementById('historyBars');
+  if(!wrap)return;
+  const dayLabel=k=>{const d=new Date(k+'T12:00:00');return['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];};
+  wrap.innerHTML=data.map(d=>{
+    const aH=max>0?Math.round(d.a/max*44):0;
+    const bH=max>0?Math.round(d.b/max*44):0;
+    const totalCents=d.t>0?d.t.toFixed(2):'';
+    return `<div class="bar-wrap" title="${d.k}: $${d.t.toFixed(3)} (OAI $${d.a.toFixed(3)} · ANT $${d.b.toFixed(3)})">
+      <div style="display:flex;align-items:flex-end;height:48px;width:100%;gap:1px;">
+        <div class="bar openai" style="height:${aH}px;flex:1;"></div>
+        <div class="bar anthropic" style="height:${bH}px;flex:1;"></div>
+      </div>
+      <span>${dayLabel(d.k)}</span>
+      <span style="color:#9ca3af;">${totalCents?'$'+totalCents:''}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('historySub').textContent='Total: $'+total.toFixed(2)+' over the last 7 days.';
+}
+
+// Prompt the user for a new balance and store it. Resetting `spent` to 0 anchors the
+// "left" calculation to whatever they read off the website moments ago.
+function updateBalance(provider){
+  const label=provider==='oai'?'OpenAI':'Anthropic';
+  const url=provider==='oai'?'https://platform.openai.com/settings/organization/billing/overview':'https://console.anthropic.com/settings/billing';
+  const cur=loadSpend(provider==='oai'?SPEND_KEY_OAI:SPEND_KEY_ANT);
+  const promptMsg=`Read your current ${label} balance from\n${url}\n\nEnter that amount in dollars (e.g. 17.43):`;
+  const v=window.prompt(promptMsg,cur.balance!=null?String(cur.balance):'');
+  if(v==null)return;
+  const num=parseFloat(v);
+  if(!isFinite(num)||num<0){toast('Not a valid number',true);return;}
+  cur.balance=num;
+  cur.spent=0;
+  saveSpend(provider==='oai'?SPEND_KEY_OAI:SPEND_KEY_ANT,cur);
+  renderCostPanels();
+  toast(label+' balance set to $'+num.toFixed(2));
 }
 
 // -- Transcript rendering --
@@ -1634,13 +1913,9 @@ function rtAppendTurnText(itemId,role,delta,finalize){
   box.scrollTop=box.scrollHeight;
 }
 function rtLogTool(fn,args,result,isErr){
-  const log=document.getElementById('rtToolsLog');log.style.display='block';
-  const list=document.getElementById('rtToolsList');
-  const row=document.createElement('div');
-  row.className='rt-tool'+(isErr?' err':'');
-  row.innerHTML=`<span class="fn">${escapeHtml(fn)}</span><span class="args">${escapeHtml(JSON.stringify(args))}</span><span class="res">${escapeHtml(String(result).slice(0,60))}</span>`;
-  list.appendChild(row);
-  while(list.children.length>20)list.removeChild(list.firstChild);
+  // Old "Live actions" panel was replaced by Session tools — no-op now.
+  // Tool calls still get reflected via the workbench UI updates and chat transcript.
+  if(window.console&&console.debug)console.debug('[tool]',fn,args,isErr?'ERR':'OK');
 }
 
 // ========== TOOLS exposed to the model ==========
@@ -1803,11 +2078,24 @@ async function research(question, contextHint){
         b.citations.forEach(c=>{if(c.url&&!cites.includes(c.url))cites.push(c.url);});
       }
     });
+    // Capture token usage + cost into Anthropic spend tracking
+    const u=data.usage||{};
+    const pp=ANT_PRICING[model]||ANT_PRICING['claude-sonnet-4-6'];
+    const inTok=(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0);
+    const outTok=u.output_tokens||0;
+    const searches=u.server_tool_use?.web_search_requests||0;
+    const callCost=(inTok*pp.in+outTok*pp.out)/1e6+searches*ANT_WEB_SEARCH_RATE;
+    if(callCost>0){
+      SESSION_BREAKDOWN.research+=callCost;
+      addSpend('an',callCost);
+      rtRenderCost(); // refresh breakdown display
+    }
     return{
       answer:text||'(no text returned)',
       citations:cites.slice(0,5),
       model,
-      stop_reason:data.stop_reason
+      stop_reason:data.stop_reason,
+      cost_usd:callCost
     };
   }catch(e){
     return{error:'Research call failed: '+(e.message||String(e))};
@@ -2024,6 +2312,9 @@ async function rtStart(){
   RT.connecting=true;rtSetStatus('connecting','Connecting…');
   document.getElementById('rtCallLabel').textContent='Connecting…';
   RT.usage={inAudio:0,outAudio:0,inText:0,outText:0};
+  RT.lastOaCost=0;RT.budgetWarned=false;RT.lastEventAt=Date.now();
+  SESSION_BREAKDOWN.audioIn=0;SESSION_BREAKDOWN.audioOut=0;SESSION_BREAKDOWN.text=0;SESSION_BREAKDOWN.research=0;
+  document.getElementById('budgetSub').textContent='Voice warning + amber pulse when crossed.';
   try{
     // 1. Mint ephemeral client secret from OpenAI using the user's secret key.
     const model=document.getElementById('rtModel').value;
@@ -2097,6 +2388,7 @@ function rtSend(obj){
 async function onRtEvent(e){
   let msg;try{msg=JSON.parse(e.data);}catch(_){return;}
   // console.debug('rt<-',msg.type,msg);
+  RT.lastEventAt=Date.now();
   switch(msg.type){
     case 'session.created':case 'session.updated':break;
     case 'input_audio_buffer.speech_started':rtSetStatus('live','You: speaking…');break;
@@ -2199,6 +2491,38 @@ window.addEventListener('beforeunload',()=>rtCleanup());
 rtLoadKey();
 rtLoadAntKey();
 rtLoadPrefs();
+
+// ========== COST PANEL WIRING ==========
+document.getElementById('oaTopup').onclick=()=>window.open('https://platform.openai.com/settings/organization/billing/overview','_blank','noopener');
+document.getElementById('anTopup').onclick=()=>window.open('https://console.anthropic.com/settings/billing','_blank','noopener');
+document.getElementById('oaUpdate').onclick=()=>updateBalance('oai');
+document.getElementById('anUpdate').onclick=()=>updateBalance('an');
+document.getElementById('oaBalance').onclick=()=>updateBalance('oai');
+document.getElementById('anBalance').onclick=()=>updateBalance('an');
+document.getElementById('oaUsageLink').onclick=()=>window.open('https://platform.openai.com/usage','_blank','noopener');
+document.getElementById('anUsageLink').onclick=()=>window.open('https://console.anthropic.com/settings/usage','_blank','noopener');
+
+// Soft budget cap selector — persisted with prefs
+const BUDGET_KEY='trapMasterBudgetCap_v1';
+const savedCap=localStorage.getItem(BUDGET_KEY);
+if(savedCap)document.getElementById('budgetCap').value=savedCap;
+document.getElementById('budgetCap').onchange=e=>{localStorage.setItem(BUDGET_KEY,e.target.value);RT.budgetWarned=false;};
+
+// Auto-pause toggle — persisted
+const AUTOPAUSE_KEY='trapMasterAutoPause_v1';
+document.getElementById('autoPause').checked=localStorage.getItem(AUTOPAUSE_KEY)==='1';
+document.getElementById('autoPause').onchange=e=>localStorage.setItem(AUTOPAUSE_KEY,e.target.checked?'1':'0');
+
+// Auto-pause check: if enabled and no transcript event for 30s during a live call, end it.
+setInterval(()=>{
+  if(!RT.active||!document.getElementById('autoPause').checked)return;
+  const idle=Date.now()-(RT.lastEventAt||RT.startedAt||Date.now());
+  if(idle>30000){toast('Auto-pause: 30s silence — ending call',true);rtEnd('auto-pause (silence)');}
+},5000);
+
+// Initial render of cost panels + history
+renderCostPanels();
+renderHistoryBars();
 
 // ========== INIT ==========
 loadState();            // Restore persisted chain/favorites/custom plugins/symptoms/genre/meters/platform
