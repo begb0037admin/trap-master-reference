@@ -42,6 +42,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .tab.voice-tab.active{color:#fb923c;border-bottom-color:#fb923c}
 .panel{display:none}.panel.active{display:block}
 .row-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.section-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #374151}
+.section-head:first-child{margin-top:0}
+.section-head h2{font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin:0}
+.section-head .blurb{color:#9ca3af;font-size:12px;flex:1}
 .card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
 .card h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:8px}
 .card .big{font-size:22px;font-weight:700;color:#f9fafb;margin-bottom:2px}
@@ -376,10 +380,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <button class="tab active-section" data-tab="meter">📊 Meter Check</button>
   <button class="tab active-section" data-tab="trouble">🔧 Troubleshooter</button>
   <button class="tab voice-tab" data-tab="voice">🎙️ Voice Chat</button>
-  <button class="tab" data-tab="loudness">Loudness</button>
-  <button class="tab" data-tab="peak">True Peak</button>
-  <button class="tab" data-tab="eq">EQ / Freq</button>
-  <button class="tab" data-tab="stereo">Stereo</button>
+  <button class="tab" data-tab="eq">📐 Mastering Reference</button>
   <button class="tab" data-tab="library">🔌 Plugin Library</button>
   <button class="tab" data-tab="ab">🔀 A/B Compare</button>
   <button class="tab" data-tab="journal">📜 Journal</button>
@@ -503,10 +504,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     </div>
   </div>
 
-  <div class="rt-transcript" id="rtTranscript">
-    <div class="rt-placeholder">Transcript will appear here once the call starts.</div>
-  </div>
-
   <!-- SESSION TOOLS — replaces the old Live actions log -->
   <div class="rt-tools-panel">
     <h4>🛠 Session tools <span class="badge">cost &amp; safety</span></h4>
@@ -558,44 +555,63 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     </div>
   </div>
 
-  <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Pro-L 2 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em></div>
+  <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Maag EQ4 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em> &nbsp;📜 The live transcript lives on the <strong>Journal</strong> tab.</div>
 
   <div class="tip-box warn" id="browserWarn" style="display:none;"><strong>Heads up:</strong> voice needs a secure context (HTTPS or localhost). Chrome blocks the mic on <code>file://</code> URLs — open this artifact via the Cowork sidebar, or serve the folder with <code>python3 -m http.server</code> and open <code>http://localhost:8000</code>. Safari is more forgiving but still needs mic permission.</div>
 
   <audio id="rtAudio" autoplay playsinline></audio>
 </div>
 
-<div class="panel" id="loudness"><div class="row-grid">
-  <div class="card"><h3>Competitive Trap</h3><div class="big" style="color:#a78bfa;">-8 LUFS</div><div class="sub">Club-loud.</div></div>
-  <div class="card"><h3>Spotify/YouTube/Tidal</h3><div class="big">-14 LUFS</div><div class="sub">Platform normalization.</div></div>
-  <div class="card"><h3>Apple Music</h3><div class="big">-16 LUFS</div><div class="sub">Sound Check.</div></div>
-  <div class="card"><h3>Broadcast</h3><div class="big">-23 LUFS</div><div class="sub">TV/radio (EBU R128).</div></div>
-</div><div class="tip-box"><strong>Pro tip:</strong> master to -8, but A/B how it sounds after Spotify normalizes to -14.</div></div>
+<div class="panel" id="eq">
+  <div class="section-head">
+    <h2>🎚️ Frequency Map</h2>
+    <span class="blurb">Where each band lives and what to listen for.</span>
+  </div>
+  <div class="row-grid">
+    <div class="card"><h3>Sub-bass</h3><div class="freq">20-60 Hz</div><ul><li>808 fundamental</li><li>HP below 30Hz if muddy</li></ul></div>
+    <div class="card"><h3>Bass/Body</h3><div class="freq">60-200 Hz</div><ul><li>808 punch, kick weight</li><li>Watch masking</li></ul></div>
+    <div class="card"><h3>Low-Mid (mud)</h3><div class="freq">200-500 Hz</div><ul><li>Vocal warmth @ 250Hz</li><li>Cut if boxy</li></ul></div>
+    <div class="card"><h3>Mids</h3><div class="freq">500-2k Hz</div><ul><li>Vocal body, snare</li><li>Honk ~800Hz</li></ul></div>
+    <div class="card"><h3>Upper Mids</h3><div class="freq">2-6 kHz</div><ul><li>Presence, de-ess zone</li></ul></div>
+    <div class="card"><h3>Highs</h3><div class="freq">6-10 kHz</div><ul><li>Air, cymbal shimmer</li></ul></div>
+    <div class="card"><h3>Extreme</h3><div class="freq">10-20 kHz</div><ul><li>Maag magic band</li></ul></div>
+  </div>
 
-<div class="panel" id="peak"><div class="row-grid">
-  <div class="card"><h3>Streaming</h3><div class="big">-1.0 dBTP</div><div class="sub">Safe for MP3/AAC.</div></div>
-  <div class="card"><h3>SoundCloud</h3><div class="big">-0.5 dBTP</div><div class="sub">Stricter encoder.</div></div>
-  <div class="card"><h3>Safe headroom</h3><div class="big">-2.0 dBTP</div><div class="sub">Stems / print masters.</div></div>
-  <div class="card"><h3>Hard ceiling</h3><div class="big" style="color:#ef4444;">0 dBTP</div><div class="sub">Never exceed.</div></div>
-</div></div>
+  <div class="section-head">
+    <h2>🔊 Loudness Targets</h2>
+    <span class="blurb">Integrated LUFS by destination.</span>
+  </div>
+  <div class="row-grid">
+    <div class="card"><h3>Competitive Trap</h3><div class="big" style="color:#a78bfa;">-8 LUFS</div><div class="sub">Club-loud.</div></div>
+    <div class="card"><h3>Spotify/YouTube/Tidal</h3><div class="big">-14 LUFS</div><div class="sub">Platform normalization.</div></div>
+    <div class="card"><h3>Apple Music</h3><div class="big">-16 LUFS</div><div class="sub">Sound Check.</div></div>
+    <div class="card"><h3>Broadcast</h3><div class="big">-23 LUFS</div><div class="sub">TV/radio (EBU R128).</div></div>
+  </div>
+  <div class="tip-box"><strong>Pro tip:</strong> master to -8, but A/B how it sounds after Spotify normalizes to -14.</div>
 
-<div class="panel" id="eq"><div class="row-grid">
-  <div class="card"><h3>Sub-bass</h3><div class="freq">20-60 Hz</div><ul><li>808 fundamental</li><li>HP below 30Hz if muddy</li></ul></div>
-  <div class="card"><h3>Bass/Body</h3><div class="freq">60-200 Hz</div><ul><li>808 punch, kick weight</li><li>Watch masking</li></ul></div>
-  <div class="card"><h3>Low-Mid (mud)</h3><div class="freq">200-500 Hz</div><ul><li>Vocal warmth @ 250Hz</li><li>Cut if boxy</li></ul></div>
-  <div class="card"><h3>Mids</h3><div class="freq">500-2k Hz</div><ul><li>Vocal body, snare</li><li>Honk ~800Hz</li></ul></div>
-  <div class="card"><h3>Upper Mids</h3><div class="freq">2-6 kHz</div><ul><li>Presence, de-ess zone</li></ul></div>
-  <div class="card"><h3>Highs</h3><div class="freq">6-10 kHz</div><ul><li>Air, cymbal shimmer</li></ul></div>
-  <div class="card"><h3>Extreme</h3><div class="freq">10-20 kHz</div><ul><li>Maag magic band</li></ul></div>
-</div></div>
+  <div class="section-head">
+    <h2>🚧 True Peak Ceilings</h2>
+    <span class="blurb">Inter-sample peak limits before encoder distortion.</span>
+  </div>
+  <div class="row-grid">
+    <div class="card"><h3>Streaming</h3><div class="big">-1.0 dBTP</div><div class="sub">Safe for MP3/AAC.</div></div>
+    <div class="card"><h3>SoundCloud</h3><div class="big">-0.5 dBTP</div><div class="sub">Stricter encoder.</div></div>
+    <div class="card"><h3>Safe headroom</h3><div class="big">-2.0 dBTP</div><div class="sub">Stems / print masters.</div></div>
+    <div class="card"><h3>Hard ceiling</h3><div class="big" style="color:#ef4444;">0 dBTP</div><div class="sub">Never exceed.</div></div>
+  </div>
 
-<div class="panel" id="stereo"><div class="row-grid">
-  <div class="card"><h3>Sub-bass</h3><div class="big">Mono</div><div class="sub">Below 100Hz mono.</div></div>
-  <div class="card"><h3>Bass</h3><div class="big">10-30%</div><div class="sub">M/S not Haas.</div></div>
-  <div class="card"><h3>Mids</h3><div class="big">30-60%</div></div>
-  <div class="card"><h3>Highs</h3><div class="big">60-100%</div></div>
-  <div class="card"><h3>FX Tails</h3><div class="big">100%</div></div>
-</div></div>
+  <div class="section-head">
+    <h2>↔️ Stereo Width by Band</h2>
+    <span class="blurb">How wide each frequency range should image.</span>
+  </div>
+  <div class="row-grid">
+    <div class="card"><h3>Sub-bass</h3><div class="big">Mono</div><div class="sub">Below 100Hz mono.</div></div>
+    <div class="card"><h3>Bass</h3><div class="big">10-30%</div><div class="sub">M/S not Haas.</div></div>
+    <div class="card"><h3>Mids</h3><div class="big">30-60%</div></div>
+    <div class="card"><h3>Highs</h3><div class="big">60-100%</div></div>
+    <div class="card"><h3>FX Tails</h3><div class="big">100%</div></div>
+  </div>
+</div>
 
 <!-- LIBRARY -->
 <div class="panel" id="library">
@@ -630,8 +646,20 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 
 <!-- JOURNAL -->
 <div class="panel" id="journal">
+  <div class="section-head">
+    <h2>🎙 Live Voice Transcript</h2>
+    <span class="blurb">Conversation log from your current and most recent voice call.</span>
+  </div>
+  <div class="rt-transcript" id="rtTranscript">
+    <div class="rt-placeholder">Transcript will appear here once the call starts.</div>
+  </div>
+
+  <div class="section-head">
+    <h2>📜 Session Snapshots</h2>
+    <span class="blurb">Every snapshot you copy to chat is auto-saved here. Latest first. Tap an entry to expand it.</span>
+  </div>
   <div class="journal-toolbar">
-    <span class="subtitle" style="flex:1;">Every snapshot you copy to chat is auto-saved here. Latest first. Tap an entry to expand it.</span>
+    <div style="flex:1"></div>
     <button class="btn ghost sm" id="journalExport">⬇ Export all</button>
     <button class="btn ghost sm" id="journalClear">🗑 Clear</button>
   </div>
