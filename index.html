@@ -165,6 +165,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .lib-pub-pill .ct{font-size:9px;color:#6b7280;font-family:'SF Mono',monospace}
 .lib-pub-pill.on .ct{color:#c4b5fd}
 .lib-pub-pill.all{font-weight:600}
+.lib-pub-pill.clear{margin-left:auto;color:#fca5a5;border-color:#7f1d1d;font-weight:600}
+.lib-pub-pill.clear:hover:not(:disabled){background:#7f1d1d;color:#fee2e2;border-color:#b91c1c}
+.lib-pub-pill.clear:disabled{opacity:.35;cursor:not-allowed}
 .lib-empty{padding:30px 20px;text-align:center;color:#6b7280;font-size:13px;background:#111827;border:1px dashed #374151;border-radius:8px;grid-column:1/-1}
 
 /* AI CHAT TAB */
@@ -173,11 +176,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
 .aichat-bar .toggle{display:flex;align-items:center;gap:5px;font-size:11px;color:#9ca3af;cursor:pointer}
 .aichat-bar .blurb{color:#9ca3af;font-size:12px;flex:1;min-width:200px}
-.aichat-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;overflow-y:auto;font-size:13px;line-height:1.55;min-height:380px;max-height:560px}
-.aichat-msg{display:flex;gap:10px;margin-bottom:14px;align-items:flex-start}
-.aichat-msg .who{font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;min-width:60px;padding-top:2px;flex-shrink:0}
+.aichat-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;overflow-y:auto;font-size:26px;line-height:1.5;min-height:380px;max-height:680px}
+.aichat-msg{display:flex;gap:12px;margin-bottom:18px;align-items:flex-start}
+.aichat-msg .who{font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;min-width:72px;padding-top:6px;flex-shrink:0}
 .aichat-msg.user .who{color:#fb923c}.aichat-msg.ai .who{color:#34d399}.aichat-msg.system .who{color:#a78bfa}
-.aichat-msg .body{flex:1;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-width:0}
+.aichat-msg .body{flex:1;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-width:0;font-size:26px;line-height:1.5}
 .aichat-msg.user .body{color:#fed7aa;background:#1c1410;padding:8px 12px;border-radius:6px;border:1px solid #7c2d12}
 .aichat-msg.ai .body{color:#e5e7eb}
 .aichat-msg .body a{color:#a5b4fc;text-decoration:underline}
@@ -207,6 +210,12 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-tts-btn.loading{color:#fbbf24;border-color:#b45309;cursor:wait}
 .aichat-tts-btn:disabled{opacity:.5;cursor:not-allowed}
 .aichat-tts-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:#9ca3af;flex-wrap:wrap}
+.aichat-msg .body::selection,.aichat-msg .body *::selection{background:#fde68a;color:#111827}
+.aichat-word{transition:background-color .08s,color .08s;border-radius:3px;padding:0 1px}
+.aichat-word.spoken{background:#fbbf24;color:#111827;font-weight:600;box-shadow:0 0 0 2px #fbbf24}
+.aichat-word.done{background:#1f2937;color:#9ca3af}
+.aichat-tts-hint{font-size:11px;color:#6b7280;margin-top:4px;font-style:italic}
+.aichat-tts-hint.armed{color:#fbbf24;font-style:normal;font-weight:500}
 .aichat-tts-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:5px;padding:4px 7px;font-size:11px}
 
 /* VOICE */
@@ -1185,14 +1194,31 @@ document.getElementById('addSave').onclick=()=>{
 };
 
 // ========== LIBRARY RENDER ==========
-const LIB_PUB_FILTER_KEY='trapMasterLibPub_v1';
-STATE.libPubFilter = (function(){try{return localStorage.getItem(LIB_PUB_FILTER_KEY)||'all';}catch(_){return 'all';}})();
+// Multi-select publisher filter — comma-separated list of publisher keys in localStorage.
+// Empty Set means "show all".
+const LIB_PUB_FILTER_KEY='trapMasterLibPubMulti_v1';
+function loadLibPubFilter(){
+  try{
+    const raw = localStorage.getItem(LIB_PUB_FILTER_KEY);
+    if (!raw) return new Set();
+    return new Set(raw.split(',').map(s=>s.trim()).filter(Boolean));
+  }catch(_){ return new Set(); }
+}
+function saveLibPubFilter(){
+  try{
+    const arr = Array.from(STATE.libPubFilter||[]);
+    if (arr.length) localStorage.setItem(LIB_PUB_FILTER_KEY, arr.join(','));
+    else localStorage.removeItem(LIB_PUB_FILTER_KEY);
+  }catch(_){}
+}
+STATE.libPubFilter = loadLibPubFilter();
 
 function renderLibrary(){
   document.getElementById('currentGenreLabel').textContent = genreLabel(STATE.genre).replace(/^\S+\s*/,'');
   const all = allPlugins();
-  const pubFilter = STATE.libPubFilter || 'all';
-  const filtered = pubFilter === 'all' ? all : all.filter(p => p.p === pubFilter);
+  const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
+  const isFiltered = filterSet.size > 0;
+  const filtered = isFiltered ? all.filter(p => filterSet.has(PUBS[p.p] ? p.p : 'other')) : all;
   const cards = STAGES.map(stage=>{
     const items = filtered.filter(p => p.s === stage.id);
     // Sort: top picks first, then favorites, then the rest
@@ -1203,8 +1229,8 @@ function renderLibrary(){
       if (aF !== bF) return aF - bF;
       return a.n.localeCompare(b.n);
     });
-    // When filtering by publisher, hide stages that have no plugins from that publisher.
-    if (pubFilter !== 'all' && !items.length) return '';
+    // When filtering by publisher, hide stages that have no plugins from those publishers.
+    if (isFiltered && !items.length) return '';
     const rows = items.length
       ? items.map(p=>renderLibraryRow(p)).join('')
       : '<div class="empty">nothing here yet — add with ⊕ Add my plugin</div>';
@@ -1214,13 +1240,17 @@ function renderLibrary(){
   if (cards){
     grid.innerHTML = cards;
   } else {
-    const pubLabel = pubFilter==='all' ? 'any publisher' : (PUBS[pubFilter]||PUBS.other)[0];
-    grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — switch back to <strong>All</strong> or add some with ⊕ Add my plugin.</div>`;
+    const labels = Array.from(filterSet).map(k => (PUBS[k]||PUBS.other)[0]);
+    const pubLabel = labels.length ? labels.join(', ') : 'any publisher';
+    grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — clear the filter or add some with ⊕ Add my plugin.</div>`;
   }
   renderPubFilter();
 }
 
 // Build publisher filter pills from plugins actually in the library.
+// Multi-select: clicking a pill toggles it in/out of the filter set.
+// "All" clears the set (shows everything). The Clear button does the same — kept as
+// an explicit affordance because Kev asked for one.
 function renderPubFilter(){
   const host = document.getElementById('libPubFilter');
   if (!host) return;
@@ -1233,20 +1263,43 @@ function renderPubFilter(){
     if (d) return d;
     return ((PUBS[a]||PUBS.other)[0]).localeCompare((PUBS[b]||PUBS.other)[0]);
   });
-  const cur = STATE.libPubFilter || 'all';
+  const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
+  const isAll = filterSet.size === 0;
+  const selectedCount = filterSet.size;
+  const labelText = isAll
+    ? 'Filter by maker (click to multi-select)'
+    : `Filter by maker · ${selectedCount} selected`;
   const pillsHTML = [
-    `<span class="lib-pubs-label">Filter by maker</span>`,
-    `<button class="lib-pub-pill all ${cur==='all'?'on':''}" data-pub="all">All <span class="ct">${all.length}</span></button>`
+    `<span class="lib-pubs-label">${escapeHtml(labelText)}</span>`,
+    `<button class="lib-pub-pill all ${isAll?'on':''}" data-pub="__all">All <span class="ct">${all.length}</span></button>`
   ];
   pubs.forEach(p => {
     const meta = PUBS[p] || PUBS.other;
-    pillsHTML.push(`<button class="lib-pub-pill ${cur===p?'on':''}" data-pub="${p}">${escapeHtml(meta[0])} <span class="ct">${counts[p]}</span></button>`);
+    const on = filterSet.has(p) ? 'on' : '';
+    pillsHTML.push(`<button class="lib-pub-pill ${on}" data-pub="${escapeHtml(p)}">${escapeHtml(meta[0])} <span class="ct">${counts[p]}</span></button>`);
   });
+  // Clear button — only meaningful when something is selected, but keep visible for discoverability.
+  pillsHTML.push(`<button class="lib-pub-pill clear" id="libPubClear" title="Clear all selected publishers"${isAll?' disabled':''}>✕ Clear</button>`);
   host.innerHTML = pillsHTML.join('');
   host.querySelectorAll('.lib-pub-pill').forEach(btn => {
+    if (btn.id === 'libPubClear'){
+      btn.onclick = () => {
+        STATE.libPubFilter = new Set();
+        saveLibPubFilter();
+        renderLibrary();
+      };
+      return;
+    }
     btn.onclick = () => {
-      STATE.libPubFilter = btn.dataset.pub;
-      try{ localStorage.setItem(LIB_PUB_FILTER_KEY, STATE.libPubFilter); }catch(_){}
+      const pub = btn.dataset.pub;
+      if (pub === '__all'){
+        STATE.libPubFilter = new Set(); // empty = show all
+      } else {
+        if (!(STATE.libPubFilter instanceof Set)) STATE.libPubFilter = new Set();
+        if (STATE.libPubFilter.has(pub)) STATE.libPubFilter.delete(pub);
+        else STATE.libPubFilter.add(pub);
+      }
+      saveLibPubFilter();
       renderLibrary();
     };
   });
@@ -2274,9 +2327,10 @@ function aichatRender(){
         const isLoading = TTS.loadingIdx === i;
         const btnCls = 'aichat-tts-btn' + (isPlaying ? ' playing' : '') + (isLoading ? ' loading' : '');
         const label = isLoading ? '⏳ Loading…' : (isPlaying ? '⏹ Stop' : '🔊 Read aloud');
-        actions = `<div class="aichat-actions-row"><button class="${btnCls}" data-idx="${i}" onclick="aichatSpeak(${i})">${label}</button></div>`;
+        const hint = `<div class="aichat-tts-hint" id="aiChatTtsHint-${i}">Tip: highlight any text in this message before clicking Read aloud to speak just that selection.</div>`;
+        actions = `<div class="aichat-actions-row"><button class="${btnCls}" data-idx="${i}" onclick="aichatSpeak(${i})">${label}</button></div>${hint}`;
       }
-      return `<div class="${cls}"><div class="who">${who}</div><div class="body">${body}${cites}${actions}</div></div>`;
+      return `<div class="${cls}" data-msg-idx="${i}"><div class="who">${who}</div><div class="body"><div class="aichat-msg-content" data-msg-content="${i}">${body}</div>${cites}${actions}</div></div>`;
     }).join('');
     tEl.scrollTop = tEl.scrollHeight;
   }
@@ -2302,7 +2356,12 @@ const TTS = {
   audio: null,         // <audio> element, lazy-init
   playingIdx: -1,      // which message index is currently playing
   loadingIdx: -1,      // which message is being fetched (for spinner state)
-  abort: null
+  abort: null,
+  // word highlighting state
+  bodyEl: null,        // .aichat-msg-content element being decorated
+  savedHTML: null,     // original innerHTML to restore when done
+  wordCount: 0,        // number of word spans we generated
+  lastWord: -1         // last word index we highlighted (perf guard)
 };
 
 function aichatTtsAudioEl(){
@@ -2310,8 +2369,148 @@ function aichatTtsAudioEl(){
     TTS.audio = document.getElementById('aiChatTtsAudio') || new Audio();
     TTS.audio.onended = () => aichatStopTTS();
     TTS.audio.onerror = () => aichatStopTTS();
+    TTS.audio.ontimeupdate = aichatTtsHighlightTick;
   }
   return TTS.audio;
+}
+
+// Returns the selected text if the user's selection is anchored inside the
+// message body for `idx`, otherwise null. Empty/whitespace-only selections
+// are treated as no selection.
+function aichatGetSelectionInMsg(idx){
+  try{
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return null;
+    const txt = String(sel.toString()||'').trim();
+    if (!txt) return null;
+    const host = document.querySelector(`.aichat-msg-content[data-msg-content="${idx}"]`);
+    if (!host) return null;
+    // Selection must start (or end) inside the host element
+    const a = sel.anchorNode, f = sel.focusNode;
+    if (!a && !f) return null;
+    if ((a && host.contains(a)) || (f && host.contains(f))){
+      return txt;
+    }
+    return null;
+  }catch(_){ return null; }
+}
+
+// Tokenise text into word + whitespace runs so we can wrap each word in a span.
+function aichatTokenise(text){
+  const out = [];
+  const re = /\S+|\s+/g;
+  let m;
+  while((m = re.exec(text)) !== null){
+    out.push({ t: m[0], w: !/^\s+$/.test(m[0]) });
+  }
+  return out;
+}
+
+// Replaces the body of message `idx` with word-spans for the spoken text,
+// stashing the original markup so we can restore it on stop.
+function aichatInstallWordSpans(idx, spokenText){
+  const host = document.querySelector(`.aichat-msg-content[data-msg-content="${idx}"]`);
+  if (!host) return 0;
+  const toks = aichatTokenise(spokenText);
+  let wIdx = 0;
+  const html = toks.map(tok => {
+    if (tok.w){
+      const i = wIdx++;
+      return `<span class="aichat-word" data-w="${i}">${escapeHtml(tok.t)}</span>`;
+    }
+    return escapeHtml(tok.t);
+  }).join('');
+  TTS.bodyEl = host;
+  TTS.savedHTML = host.innerHTML;
+  TTS.wordCount = wIdx;
+  TTS.lastWord = -1;
+  host.innerHTML = html;
+  return wIdx;
+}
+
+// Restore the original markup (markdown-rendered HTML) on the message body.
+function aichatRemoveWordSpans(){
+  if (TTS.bodyEl && TTS.savedHTML !== null){
+    try{ TTS.bodyEl.innerHTML = TTS.savedHTML; }catch(_){}
+  }
+  TTS.bodyEl = null;
+  TTS.savedHTML = null;
+  TTS.wordCount = 0;
+  TTS.lastWord = -1;
+}
+
+// Called every audio.timeupdate tick — highlights the word that *should* be
+// playing right now based on currentTime / duration.
+function aichatTtsHighlightTick(){
+  const a = TTS.audio;
+  if (!a || !TTS.bodyEl || !TTS.wordCount) return;
+  const dur = a.duration;
+  if (!isFinite(dur) || dur <= 0) return;
+  const ratio = Math.min(1, Math.max(0, a.currentTime / dur));
+  const cur = Math.min(TTS.wordCount - 1, Math.floor(ratio * TTS.wordCount));
+  if (cur === TTS.lastWord) return;
+  TTS.lastWord = cur;
+  // Walk all word spans once; cheap enough at typical message lengths.
+  const spans = TTS.bodyEl.querySelectorAll('.aichat-word');
+  for (let i = 0; i < spans.length; i++){
+    const s = spans[i];
+    if (i < cur){
+      if (!s.classList.contains('done')) s.classList.add('done');
+      s.classList.remove('spoken');
+    } else if (i === cur){
+      s.classList.add('spoken');
+      s.classList.remove('done');
+      // Keep the active word in view if it scrolled out
+      try{
+        const r = s.getBoundingClientRect();
+        const t = TTS.bodyEl.closest('.aichat-transcript');
+        if (t){
+          const tr = t.getBoundingClientRect();
+          if (r.top < tr.top + 24 || r.bottom > tr.bottom - 24){
+            s.scrollIntoView({block:'center', behavior:'smooth'});
+          }
+        }
+      }catch(_){}
+    } else {
+      s.classList.remove('spoken');
+      s.classList.remove('done');
+    }
+  }
+}
+
+// Update the per-message hint label as the user makes/clears a selection.
+function aichatUpdateSelectionHints(){
+  try{
+    const sel = window.getSelection();
+    const allHints = document.querySelectorAll('.aichat-tts-hint');
+    let activeIdx = -1;
+    let activeLen = 0;
+    if (sel && !sel.isCollapsed){
+      const txt = String(sel.toString()||'').trim();
+      if (txt){
+        document.querySelectorAll('.aichat-msg-content').forEach(host => {
+          const a = sel.anchorNode, f = sel.focusNode;
+          if ((a && host.contains(a)) || (f && host.contains(f))){
+            activeIdx = parseInt(host.getAttribute('data-msg-content'), 10);
+            activeLen = txt.length;
+          }
+        });
+      }
+    }
+    allHints.forEach(h => {
+      const id = h.id || '';
+      const m = id.match(/^aiChatTtsHint-(\d+)$/);
+      if (!m) return;
+      const idx = parseInt(m[1], 10);
+      if (idx === activeIdx){
+        h.classList.add('armed');
+        h.textContent = `🔊 Read aloud will speak just your highlighted selection (${activeLen} char${activeLen===1?'':'s'}).`;
+      } else {
+        h.classList.remove('armed');
+        h.textContent = 'Tip: highlight any text in this message before clicking Read aloud to speak just that selection.';
+      }
+    });
+  }catch(_){}
 }
 
 function aichatStripMd(text){
@@ -2336,6 +2535,9 @@ async function aichatSpeak(idx){
     aichatStopTTS();
     return;
   }
+  // Capture selection BEFORE we tear down anything (re-render below clears it)
+  const selectedText = aichatGetSelectionInMsg(idx);
+
   // Stop anything else in flight
   aichatStopTTS();
 
@@ -2348,8 +2550,12 @@ async function aichatSpeak(idx){
     return;
   }
 
-  let text = aichatStripMd(msg.content);
-  if (!text){ aichatStatus('Nothing readable in that message.', 'err'); return; }
+  // If a selection inside this message exists, read just that. Otherwise the full message.
+  const usingSelection = !!selectedText;
+  let text = usingSelection
+    ? aichatStripMd(selectedText)
+    : aichatStripMd(msg.content);
+  if (!text){ aichatStatus('Nothing readable in that selection.', 'err'); return; }
   let truncated = false;
   if (text.length > TTS_MAX_CHARS){
     text = text.slice(0, TTS_MAX_CHARS) + '… The rest was cut off — open the message to read the remainder.';
@@ -2361,7 +2567,7 @@ async function aichatSpeak(idx){
 
   TTS.loadingIdx = idx;
   aichatRender(); // reflect loading state on the button
-  aichatStatus(`Generating speech (${model}, ${voice})…`, 'busy');
+  aichatStatus(`Generating speech (${model}, ${voice})${usingSelection?' · selection only':''}…`, 'busy');
 
   try{
     TTS.abort = new AbortController();
@@ -2402,13 +2608,17 @@ async function aichatSpeak(idx){
     TTS.loadingIdx = -1;
     TTS.playingIdx = idx;
     aichatRender();
+    // Decorate the message body with word spans so we can highlight as it reads.
+    aichatInstallWordSpans(idx, text);
 
     await audio.play();
     const note = truncated ? ' · message was truncated to fit TTS limit' : '';
-    aichatStatus(`Reading aloud · $${cost.toFixed(4)} · ${text.length} chars${note}`, 'ok');
+    const what = usingSelection ? `selection (${text.length} chars)` : `${text.length} chars`;
+    aichatStatus(`Reading aloud · $${cost.toFixed(4)} · ${what}${note}`, 'ok');
   } catch(e){
     TTS.loadingIdx = -1;
     TTS.playingIdx = -1;
+    aichatRemoveWordSpans();
     aichatRender();
     if (e.name !== 'AbortError'){
       aichatStatus('TTS failed: ' + (e.message||String(e)), 'err');
@@ -2427,6 +2637,7 @@ function aichatStopTTS(){
       delete TTS.audio.dataset.blobUrl;
     }
   }
+  aichatRemoveWordSpans();
   TTS.playingIdx = -1;
   TTS.loadingIdx = -1;
   aichatRender();
@@ -2751,6 +2962,9 @@ function aichatInit(){
   });
   // Stop any audio if Kev navigates away from the page
   window.addEventListener('beforeunload', () => aichatStopTTS());
+  // Update the per-message hint label as the user makes/clears a selection,
+  // so it's obvious that Read aloud will speak the selection rather than the whole message.
+  document.addEventListener('selectionchange', aichatUpdateSelectionHints);
   aichatRender();
 }
 
