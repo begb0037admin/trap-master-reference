@@ -550,8 +550,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <div class="recipes-strip" id="recipesStrip"></div>
   <div class="chain-toolbar">
     <button class="btn ghost sm" id="presetsBtn">📦 Load preset</button>
-    <button class="btn purple sm" id="loadAllPresetsBtn" title="Load the default chain for every bus matching the current genre">🚀 Load all presets</button>
-    <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns. <em>Load all</em> fills every bus with the genre default.</span>
+    <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
   <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "📋 Snapshot → Claude" when dialed in — every snapshot is auto-saved to the 📜 Journal.</div>
@@ -958,10 +957,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         <option value="lofi">Lo-Fi</option>
       </select>
       <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;"><input type="checkbox" id="presetReplace" checked> Replace bus chain (uncheck to append)</label>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center;padding:0 12px 12px;flex-wrap:wrap;border-bottom:1px solid #1f2937;">
-      <button class="btn purple sm" id="presetLoadAllInModalBtn" title="Load every preset shown below — first match per bus from the filtered list">🚀 Load all presets shown</button>
-      <span id="presetLoadAllHint" style="font-size:11px;color:#9ca3af;flex:1;line-height:1.45;">Loads one preset per bus from whatever's listed below. Re-filter (e.g. Genre = Trap) and click again to swap. Respects the <em>Replace bus chain</em> toggle.</span>
     </div>
     <div class="modal-body" id="presetList"></div>
   </div>
@@ -2038,7 +2033,6 @@ function renderPresetList(){
   const filtered=getFilteredPresets();
   if(!filtered.length){
     list.innerHTML='<div style="padding:20px;text-align:center;color:#6b7280;font-size:13px;">No presets match those filters.</div>';
-    updatePresetLoadAllHint();
     return;
   }
   list.innerHTML=filtered.map(p=>{
@@ -2047,70 +2041,8 @@ function renderPresetList(){
     const genres=p.genres.map(g=>`<span class="${g===STATE.genre?'match':''}">${escapeHtml(genreLabel(g).replace(/^[^A-Za-z]+/,''))}</span>`).join('');
     return `<div class="preset-card" onclick="applyPreset('${p.id}')"><div class="preset-card-head"><span class="preset-card-name">${escapeHtml(p.label)}</span><span class="preset-card-bus">${escapeHtml(busLabel)}</span></div><div class="preset-card-desc">${escapeHtml(p.desc)}</div><div class="preset-card-chain">${pills}</div><div class="preset-card-genres">${genres}</div></div>`;
   }).join('');
-  updatePresetLoadAllHint();
 }
 
-// Keep the hint under the "Load all presets shown" button in sync with the
-// current filter so Kev knows exactly what'll happen before clicking.
-function updatePresetLoadAllHint(){
-  const hint=document.getElementById('presetLoadAllHint');
-  const btn=document.getElementById('presetLoadAllInModalBtn');
-  if(!hint) return;
-  const filtered=getFilteredPresets();
-  if(!filtered.length){
-    hint.textContent='No presets match those filters — adjust above to enable Load all.';
-    if(btn) btn.disabled=true;
-    return;
-  }
-  // Tally first-match-per-bus so the hint reflects what'll actually load
-  const byBus={};
-  filtered.forEach(p=>{ if(!byBus[p.bus]) byBus[p.bus]={preset:p,extras:0}; else byBus[p.bus].extras++; });
-  const parts=Object.keys(byBus).map(busId=>{
-    const lbl=BUSES.find(x=>x.id===busId)?.label||busId;
-    const ex=byBus[busId].extras;
-    return ex>0 ? `${lbl} <span style="color:#6b7280;">(×${ex+1} — first wins)</span>` : lbl;
-  });
-  hint.innerHTML=`Will load <strong style="color:#fbbf24;">${parts.length}</strong> preset${parts.length===1?'':'s'} → ${parts.join(', ')}. Respects the <em>Replace bus chain</em> toggle above.`;
-  if(btn) btn.disabled=false;
-}
-
-// Load all visible presets at once — first match per bus from the filtered list.
-function loadAllFilteredPresets(){
-  const filtered=getFilteredPresets();
-  if(!filtered.length){ toast('No presets match those filters', true); return; }
-  // First match per bus wins — tally extras so we can flag them in the toast
-  const byBus={};
-  let extras=0;
-  filtered.forEach(p=>{
-    if(byBus[p.bus]){ extras++; }
-    else byBus[p.bus]=p;
-  });
-  const buses=Object.keys(byBus);
-  const replace=document.getElementById('presetReplace').checked;
-  // Confirm if we're about to overwrite anything populated
-  if(replace){
-    const populated=buses.filter(b=>(STATE.chain[b]||[]).length>0)
-      .map(b=>BUSES.find(x=>x.id===b)?.label||b);
-    if(populated.length){
-      const msg=`This will REPLACE your current chains on:\n  • ${populated.join('\n  • ')}\n\nLoad all ${buses.length} preset${buses.length===1?'':'s'} anyway?`;
-      if(!confirm(msg)) return;
-    }
-  }
-  let loaded=0;
-  buses.forEach(busId=>{
-    const p=byBus[busId];
-    if(replace) STATE.chain[busId]=p.chain.map(c=>({...c}));
-    else STATE.chain[busId]=(STATE.chain[busId]||[]).concat(p.chain.map(c=>({...c})));
-    loaded++;
-  });
-  renderChain(); saveState(); closePresetModal();
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
-  document.querySelector('.tab[data-tab="chain"]').classList.add('active');
-  document.getElementById('chain').classList.add('active');
-  const mode=replace?'replaced':'appended';
-  toast(`Loaded ${loaded} preset${loaded===1?'':'s'} across ${buses.length} bus${buses.length===1?'':'es'}${extras?` · ${extras} alt${extras===1?'':'s'} skipped`:''} · ${mode}`);
-}
 function applyPreset(id){
   const p=PRESETS.find(x=>x.id===id); if(!p) return;
   const replace=document.getElementById('presetReplace').checked;
@@ -2123,42 +2055,7 @@ function applyPreset(id){
   document.querySelector('.tab[data-tab="chain"]').classList.add('active');
   document.getElementById('chain').classList.add('active');
 }
-// Load default chain for every bus matching the current genre. One click → full
-// workbench. Replaces existing chains (with confirmation if any are populated).
-function loadAllPresets(){
-  const genre = STATE.genre || 'trap';
-  const defaults = GENRE_DEFAULTS[genre];
-  if (!defaults){ toast('No defaults configured for this genre', true); return; }
-  // Warn if any chain already has plugins loaded
-  const populated = BUSES.filter(b => (STATE.chain[b.id]||[]).length > 0).map(b => b.label);
-  if (populated.length){
-    const msg = `This will REPLACE your current chains on:\n  • ${populated.join('\n  • ')}\n\nLoad ${genreLabel(genre)} defaults anyway?`;
-    if (!confirm(msg)) return;
-  }
-  let loaded = 0;
-  let missing = [];
-  Object.entries(defaults).forEach(([busId, presetId]) => {
-    const p = PRESETS.find(x => x.id === presetId);
-    if (!p){ missing.push(`${busId} (${presetId})`); return; }
-    STATE.chain[busId] = p.chain.map(c => ({...c}));
-    loaded++;
-  });
-  renderChain(); saveState();
-  // Bring focus back to the chain tab in case Kev clicked from elsewhere
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
-  document.querySelector('.tab[data-tab="chain"]').classList.add('active');
-  document.getElementById('chain').classList.add('active');
-  if (missing.length){
-    toast(`Loaded ${loaded} chains · missing: ${missing.join(', ')}`, true);
-  } else {
-    toast(`Loaded ${genreLabel(genre)} defaults across all ${loaded} buses`);
-  }
-}
-
 document.getElementById('presetsBtn').onclick=openPresetModal;
-document.getElementById('loadAllPresetsBtn').onclick=loadAllPresets;
-document.getElementById('presetLoadAllInModalBtn').onclick=loadAllFilteredPresets;
 document.getElementById('presetClose').onclick=closePresetModal;
 document.getElementById('presetModal').onclick=e=>{if(e.target.id==='presetModal')closePresetModal();};
 document.getElementById('presetBusFilter').onchange=renderPresetList;
