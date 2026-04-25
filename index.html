@@ -524,6 +524,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <option value="apple">Apple -16</option>
       <option value="soundcloud">SoundCloud -10</option>
       <option value="youtube">YouTube -14</option>
+      <option value="tidal">Tidal -14</option>
     </select>
     <div class="cs cs-platform" id="csPlatform" data-target="platformSelect" data-set="platform" title="Master target">
       <button class="cs-btn" type="button"><span class="cs-icon"></span><span class="cs-label">Target</span><svg class="cs-caret" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -2265,7 +2266,9 @@ const METER_TARGETS={
   apple:{iLufs:[-17,-15],tp:[-1.5,-1.0],lra:[6,10],corr:[0.2,0.9],crest:[10,14]},
   soundcloud:{iLufs:[-12,-10],tp:[-1.0,-0.3],lra:[4,8],corr:[0.2,0.9],crest:[8,12]},
   // YouTube auto-normalises to ~-14 LUFS — same delivery sweet spot as Spotify, slightly more lenient on TP.
-  youtube:{iLufs:[-15,-13],tp:[-1.5,-1.0],lra:[5,9],corr:[0.2,0.9],crest:[9,13]}
+  youtube:{iLufs:[-15,-13],tp:[-1.5,-1.0],lra:[5,9],corr:[0.2,0.9],crest:[9,13]},
+  // Tidal normalises around -14 LUFS for streaming (Loudness Normalization). MQA delivery prefers more headroom.
+  tidal:{iLufs:[-15,-13],tp:[-1.5,-1.0],lra:[5,9],corr:[0.2,0.9],crest:[9,13]}
 };
 const METERS=[
   {id:'iLufs',label:'Integrated LUFS',unit:'LUFS',hint:'Overall loudness'},
@@ -4778,7 +4781,8 @@ const ICONS_PLATFORM = {
   spotify:    {label:'Spotify -14',      img:'https://cdn.simpleicons.org/spotify'},
   apple:      {label:'Apple -16',        img:'https://cdn.simpleicons.org/applemusic'},
   soundcloud: {label:'SoundCloud -10',   img:'https://cdn.simpleicons.org/soundcloud'},
-  youtube:    {label:'YouTube -14',      img:'https://cdn.simpleicons.org/youtube'}
+  youtube:    {label:'YouTube -14',      img:'https://cdn.simpleicons.org/youtube'},
+  tidal:      {label:'Tidal -14',        img:'https://cdn.simpleicons.org/tidal'}
 };
 
 function csIconHtml(ic){
