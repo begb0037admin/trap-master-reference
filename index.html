@@ -241,6 +241,29 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .kb-card .kb-summary-status{font-size:11px;color:#9ca3af;font-style:italic;margin-top:4px}
 .kb-card .kb-summary-status.busy{color:#fbbf24}
 .kb-card .kb-summary-status.err{color:#fca5a5}
+/* PLUGIN IMPORT (paste-many → Claude parses → preview → commit) */
+.imp-paste{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.55;resize:vertical;font-family:inherit;min-height:160px;max-height:360px}
+.imp-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+.imp-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
+.imp-status{font-size:12px;color:#9ca3af;flex:1;min-height:16px}
+.imp-status.busy{color:#fbbf24}.imp-status.err{color:#fca5a5}.imp-status.ok{color:#6ee7b7}
+.imp-preview{margin-top:10px;border:1px solid #374151;border-radius:8px;background:#111827;max-height:380px;overflow-y:auto}
+.imp-preview-empty{color:#6b7280;font-style:italic;padding:32px 16px;text-align:center;font-size:13px}
+.imp-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #374151;font-size:12px;color:#9ca3af;background:#0b1220;position:sticky;top:0;z-index:1}
+.imp-preview-head .imp-actions{margin-left:auto;display:flex;gap:6px}
+.imp-row{display:grid;grid-template-columns:auto 1fr 130px 130px auto;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid #1f2937;font-size:12px}
+.imp-row:last-child{border-bottom:none}
+.imp-row.exists{background:#0b1220;opacity:.65}
+.imp-row.lowconf{background:#2a1505}
+.imp-row input[type="text"],.imp-row select{background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:5px;padding:4px 6px;font-size:12px;width:100%;min-width:0}
+.imp-row .imp-name{font-weight:600;color:#e5e7eb}
+.imp-badge{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:8px;text-transform:uppercase;white-space:nowrap}
+.imp-badge.new{background:#064e3b;color:#6ee7b7}
+.imp-badge.exists{background:#374151;color:#9ca3af}
+.imp-badge.low{background:#7c2d12;color:#fed7aa}
+.imp-row .imp-meta{grid-column:1 / -1;font-size:11px;color:#6b7280;font-style:italic;padding-left:24px;margin-top:-4px}
+.imp-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;align-items:center}
+.imp-foot .imp-summary{flex:1;font-size:12px;color:#9ca3af}
 .aichat-msg .body::selection,.aichat-msg .body *::selection{background:#fde68a;color:#111827}
 .aichat-word{transition:background-color .08s,color .08s;border-radius:3px;padding:0 1px}
 .aichat-word.spoken{background:#fbbf24;color:#111827;font-weight:600;box-shadow:0 0 0 2px #fbbf24}
@@ -675,6 +698,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         </select>
       </span>
       <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save to the 📜 Journal">📜 TL;DR → Journal</button>
+      <button class="btn purple sm" id="aiChatImportPlugins" title="Paste a messy plugin list — Claude parses + normalises and adds them to your library">✨ Import plugins</button>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
     </div>
     <div class="aichat-transcript" id="aiChatTranscript">
@@ -773,6 +797,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span style="color:#6b7280;">⭐ = top pick for this genre &nbsp;•&nbsp; ❤ = your favorite</span>
     <div style="flex:1"></div>
     <button class="btn amber sm" id="addPluginBtn">⊕ Add my plugin</button>
+    <button class="btn purple sm" id="importPluginsBtn" title="Paste a messy plugin list — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
     <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
     <div class="lib-pubs" id="libPubFilter"></div>
   </div>
@@ -874,6 +899,34 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;"><input type="checkbox" id="presetReplace" checked> Replace bus chain (uncheck to append)</label>
     </div>
     <div class="modal-body" id="presetList"></div>
+  </div>
+</div>
+
+<!-- PLUGIN IMPORT MODAL -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal" style="max-width:880px;">
+    <div class="modal-header"><h3>✨ Bulk-import plugins via Claude</h3><button class="close-btn" id="importModalClose">×</button></div>
+    <div class="modal-form">
+      <div style="font-size:12px;color:#9ca3af;line-height:1.55;">
+        Paste anything — a list copied from Native Access / iLok / Plugin Alliance, an OCR'd screenshot of your plugin folder, a messy bullet list, or a chat snippet. Claude will normalise names (e.g. <em>"soothe 2"</em> → <em>soothe2</em>), guess the publisher and stage, and flag duplicates against your existing library before anything is added.
+      </div>
+      <div><label>Paste plugin list</label><textarea id="importPaste" class="imp-paste" placeholder="e.g.\nFabFilter Pro-Q 4\nsoothe 2 by oeksound\nWaves CLA-76\nsmack attack\n..."></textarea></div>
+      <div class="imp-bar">
+        <label style="font-size:11px;color:#9ca3af;">Parser:</label>
+        <select id="importModel">
+          <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 (cheap, fast)</option>
+          <option value="claude-sonnet-4-6">Sonnet 4.6 (stronger, costlier)</option>
+        </select>
+        <button class="btn green sm" id="importParseBtn">🔍 Parse with Claude</button>
+        <span class="imp-status" id="importStatus">&nbsp;</span>
+      </div>
+      <div class="imp-preview" id="importPreview"><div class="imp-preview-empty">Paste a list above and click <strong>Parse with Claude</strong> — parsed plugins will appear here for review before they're added.</div></div>
+      <div class="imp-foot">
+        <span class="imp-summary" id="importSummary">&nbsp;</span>
+        <button class="btn ghost sm" id="importCancel">Close</button>
+        <button class="btn green" id="importCommitBtn" disabled>⊕ Add selected to library</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2856,6 +2909,314 @@ function knowledgeInit(){
   knowledgeRender();
 }
 
+// ========== PLUGIN IMPORT (paste-many → Claude → preview → commit) ==========
+// Lets Kev paste a messy plugin list (Native Access dump, OCR'd screenshot, chat
+// snippet) and have Claude normalise names, guess publisher + stage, and flag
+// duplicates. The user reviews & edits in a preview list before anything hits
+// STATE.customPlugins.
+const IMPORT = {
+  parsed: [],   // [{name, publisher_key, publisher_label, stage_id, already_exists, confidence, notes, _check}]
+  busy: false
+};
+
+function importStatus(msg, kind){
+  const el = document.getElementById('importStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = 'imp-status' + (kind ? ' ' + kind : '');
+}
+
+function openImportModal(){
+  document.getElementById('importPaste').value = '';
+  IMPORT.parsed = [];
+  renderImportPreview();
+  importStatus('');
+  document.getElementById('importSummary').textContent = '';
+  document.getElementById('importCommitBtn').disabled = true;
+  document.getElementById('importModal').classList.add('open');
+  setTimeout(()=>document.getElementById('importPaste').focus(), 30);
+}
+function closeImportModal(){ document.getElementById('importModal').classList.remove('open'); }
+
+// Build the system prompt that ships PUBS, STAGES, and existing plugin names so
+// Claude can map the parse to keys we actually use.
+function buildImportSystemPrompt(){
+  const pubsLines = Object.entries(PUBS).map(([k,v]) => `  ${k} = ${v[0]}`).join('\n');
+  const stageLines = STAGES.map(s => `  ${s.id} = ${s.label.replace(/^[^A-Za-z]+/,'').trim()}`).join('\n');
+  // Existing names — keep this lean by not sending publishers, just names
+  const existing = allPlugins().map(p => p.n).join(', ');
+  return `You parse messy plugin lists for a music producer's mixing/mastering workbench. The user pastes whatever — a list copied from Native Access, an OCR'd screenshot, chat text — and you turn it into clean structured records the app can ingest.
+
+OUTPUT FORMAT — STRICT JSON ONLY, NO PROSE, NO MARKDOWN, NO CODE FENCES.
+
+Shape:
+{
+  "plugins": [
+    {
+      "name": "<canonical product name, EXACTLY as the publisher writes it>",
+      "publisher_key": "<one of the PUBLISHER KEYS below — or 'other' if no match>",
+      "publisher_label": "<for 'other', the actual publisher name; otherwise omit or copy the canonical label>",
+      "stage_id": "<one of the STAGE IDS below>",
+      "already_exists": <true | false>,
+      "confidence": <0.0 to 1.0>,
+      "notes": "<short reason if you corrected/inferred something — empty string if obvious>"
+    }
+  ]
+}
+
+PUBLISHER KEYS (use these exactly):
+${pubsLines}
+
+STAGE IDS (use these exactly):
+${stageLines}
+
+RULES
+- Normalise plugin names to the publisher's official spelling (e.g. "soothe 2" → "soothe2", "Pro Q 4" → "Pro-Q 4", "tube tech cl1b" → "Softube Tube-Tech CL 1B" if you can tell it's the Softube one).
+- For each plugin, pick the best 'stage_id' — what category it primarily lives in (e.g. a clipper goes to 'clipper' not 'limiter'; a vocal channel strip goes to 'vocal'; a transient shaper goes to 'transient'; a pitch correction goes to 'tuner').
+- For 'publisher_key': only use a key from the list above. If unsure or the publisher isn't listed, use "other" and put the actual publisher name in 'publisher_label'.
+- 'already_exists': true if the canonical name (case-insensitive) appears in the existing library list below. False otherwise.
+- 'confidence' reflects how sure you are about the canonical name + publisher + stage. Below 0.6 means the user should double-check.
+- 'notes' is for corrections / inferences only. Don't moralise. Empty string if the parse was obvious.
+- Skip blank lines, headers ("=== Synths ===" etc.), section markers, prices, version-only entries with no plugin name. If a line is clearly NOT a plugin (a kick sample, a DAW, a hardware unit), skip it — don't invent.
+- One plugin per object. If the paste mixes plugin bundles (e.g. "Waves Mercury") and individual plugins, prefer to expand into individuals only if the user clearly listed them; otherwise keep the bundle name as one entry.
+- If the paste has 0 valid plugins, return {"plugins": []}.
+
+EXISTING LIBRARY (so you can flag duplicates — case-insensitive name match):
+${existing}
+
+Output JSON only. No prose.`;
+}
+
+async function parseImportWithClaude(){
+  if (IMPORT.busy) return;
+  const text = document.getElementById('importPaste').value.trim();
+  if (!text){ importStatus('Paste something first.', 'err'); return; }
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey){ importStatus('No Anthropic key saved. Add one on the 🎙️ Voice Chat tab.', 'err'); return; }
+
+  const model = (document.getElementById('importModel')||{}).value || 'claude-haiku-4-5-20251001';
+  IMPORT.busy = true;
+  document.getElementById('importParseBtn').disabled = true;
+  document.getElementById('importCommitBtn').disabled = true;
+  importStatus(`Parsing with ${model.includes('haiku')?'Haiku':'Sonnet'}…`, 'busy');
+
+  const sys = buildImportSystemPrompt();
+  const body = {
+    model,
+    max_tokens: 4000,
+    system: sys,
+    messages: [{role:'user', content:'Parse this plugin list:\n\n'+text}]
+  };
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':antKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok){
+      const t = await resp.text();
+      throw new Error(`API ${resp.status}: ${t.slice(0,300)}`);
+    }
+    const data = await resp.json();
+    // Track Anthropic spend
+    try{
+      const u = data.usage || {};
+      const pp = (typeof ANT_PRICING !== 'undefined' && ANT_PRICING[model]) || {in:1, out:5};
+      const inT = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
+      const outT = u.output_tokens||0;
+      const cost = (inT*pp.in + outT*pp.out)/1e6;
+      if (cost > 0 && typeof addSpend === 'function'){ addSpend('an', cost); rtRenderCost(); }
+      importStatus(`Parsed · $${cost.toFixed(4)}`, 'ok');
+    }catch(_){ importStatus('Parsed', 'ok'); }
+
+    let raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    // Strip code fences if Claude added any
+    raw = raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+    let parsed;
+    try{ parsed = JSON.parse(raw); }
+    catch(e){
+      // Fallback: try to find a JSON block in the response
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Claude returned non-JSON: '+raw.slice(0,200));
+      parsed = JSON.parse(m[0]);
+    }
+    let plugins = Array.isArray(parsed.plugins) ? parsed.plugins : [];
+    // Re-validate already_exists locally so Claude's output can't poison the list
+    const existingNames = new Set(allPlugins().map(p => p.n.toLowerCase()));
+    plugins = plugins.map(p => {
+      const name = String(p.name||'').trim();
+      if (!name) return null;
+      const pubKey = (PUBS[p.publisher_key] ? p.publisher_key : 'other');
+      const stageId = STAGES.find(s => s.id === p.stage_id) ? p.stage_id : 'eq-clean';
+      const pubLabel = String(p.publisher_label||'').trim();
+      const conf = (typeof p.confidence === 'number') ? Math.max(0, Math.min(1, p.confidence)) : 0.7;
+      return {
+        name,
+        publisher_key: pubKey,
+        publisher_label: pubLabel,
+        stage_id: stageId,
+        already_exists: existingNames.has(name.toLowerCase()),
+        confidence: conf,
+        notes: String(p.notes||'').trim(),
+        _check: !existingNames.has(name.toLowerCase()) // default-check if it's NEW
+      };
+    }).filter(Boolean);
+    IMPORT.parsed = plugins;
+    renderImportPreview();
+  }catch(e){
+    importStatus('Parse failed: '+(e.message||String(e)), 'err');
+    IMPORT.parsed = [];
+    renderImportPreview();
+  } finally {
+    IMPORT.busy = false;
+    document.getElementById('importParseBtn').disabled = false;
+  }
+}
+
+function renderImportPreview(){
+  const host = document.getElementById('importPreview');
+  const summary = document.getElementById('importSummary');
+  const commit = document.getElementById('importCommitBtn');
+  if (!host) return;
+  if (!IMPORT.parsed.length){
+    host.innerHTML = '<div class="imp-preview-empty">Paste a list above and click <strong>Parse with Claude</strong> — parsed plugins will appear here for review before they\'re added.</div>';
+    if (summary) summary.textContent = '';
+    if (commit) commit.disabled = true;
+    return;
+  }
+  const pubOpts = Object.entries(PUBS).map(([k,v]) => `<option value="${k}">${escapeHtml(v[0])}</option>`).join('');
+  const stageOpts = STAGES.map(s => `<option value="${s.id}">${escapeHtml(s.label.replace(/^[^A-Za-z]+/,'').trim())}</option>`).join('');
+  const head = `<div class="imp-preview-head">
+    <input type="checkbox" id="impSelAll" title="Select / deselect all"> Select
+    <span style="margin-left:auto;font-size:11px;">Edit any field before committing.</span>
+    <span class="imp-actions">
+      <button class="btn ghost sm" id="impSelNew">New only</button>
+      <button class="btn ghost sm" id="impSelClear">None</button>
+    </span>
+  </div>`;
+  const rows = IMPORT.parsed.map((p, i) => {
+    const cls = 'imp-row' + (p.already_exists?' exists':'') + ((p.confidence < 0.6)?' lowconf':'');
+    let badge;
+    if (p.already_exists) badge = '<span class="imp-badge exists">Exists</span>';
+    else if (p.confidence < 0.6) badge = '<span class="imp-badge low">Low conf</span>';
+    else badge = '<span class="imp-badge new">New</span>';
+    const pubKeyOpts = pubOpts.replace(`value="${p.publisher_key}"`, `value="${p.publisher_key}" selected`);
+    const stageIdOpts = stageOpts.replace(`value="${p.stage_id}"`, `value="${p.stage_id}" selected`);
+    const meta = p.notes ? `<div class="imp-meta">${escapeHtml(p.notes)}${p.publisher_key==='other' && p.publisher_label ? ' · pub: '+escapeHtml(p.publisher_label) : ''}</div>` : (p.publisher_key==='other' && p.publisher_label ? `<div class="imp-meta">pub: ${escapeHtml(p.publisher_label)}</div>` : '');
+    return `<div class="${cls}">
+      <input type="checkbox" data-imp-idx="${i}" class="imp-check" ${p._check?'checked':''} ${p.already_exists?'disabled':''}>
+      <input type="text" class="imp-name" data-imp-idx="${i}" data-imp-field="name" value="${escapeHtml(p.name)}">
+      <select class="imp-pub" data-imp-idx="${i}" data-imp-field="publisher_key">${pubKeyOpts}</select>
+      <select class="imp-stage" data-imp-idx="${i}" data-imp-field="stage_id">${stageIdOpts}</select>
+      ${badge}
+      ${meta}
+    </div>`;
+  }).join('');
+  host.innerHTML = head + rows;
+
+  // Wire row events
+  host.querySelectorAll('.imp-check').forEach(cb => cb.addEventListener('change', e => {
+    const i = parseInt(e.target.dataset.impIdx, 10);
+    IMPORT.parsed[i]._check = e.target.checked;
+    updateImportSummary();
+  }));
+  host.querySelectorAll('input[data-imp-field], select[data-imp-field]').forEach(el => {
+    el.addEventListener('change', e => {
+      const i = parseInt(e.target.dataset.impIdx, 10);
+      const field = e.target.dataset.impField;
+      IMPORT.parsed[i][field] = e.target.value;
+      // If user retyped name, recompute existing flag
+      if (field === 'name'){
+        const existing = new Set(allPlugins().map(p => p.n.toLowerCase()));
+        IMPORT.parsed[i].already_exists = existing.has(String(e.target.value).toLowerCase());
+        renderImportPreview();
+      } else {
+        updateImportSummary();
+      }
+    });
+  });
+  // Header buttons
+  const sa = document.getElementById('impSelAll');
+  if (sa){
+    const newCount = IMPORT.parsed.filter(p=>!p.already_exists).length;
+    const checkedCount = IMPORT.parsed.filter(p=>p._check && !p.already_exists).length;
+    sa.checked = newCount > 0 && checkedCount === newCount;
+    sa.indeterminate = checkedCount > 0 && checkedCount < newCount;
+    sa.onchange = () => {
+      IMPORT.parsed.forEach(p => { if (!p.already_exists) p._check = sa.checked; });
+      renderImportPreview();
+    };
+  }
+  document.getElementById('impSelNew')?.addEventListener('click', () => {
+    IMPORT.parsed.forEach(p => { p._check = !p.already_exists; });
+    renderImportPreview();
+  });
+  document.getElementById('impSelClear')?.addEventListener('click', () => {
+    IMPORT.parsed.forEach(p => { p._check = false; });
+    renderImportPreview();
+  });
+  updateImportSummary();
+}
+
+function updateImportSummary(){
+  const summary = document.getElementById('importSummary');
+  const commit = document.getElementById('importCommitBtn');
+  if (!summary || !commit) return;
+  const total = IMPORT.parsed.length;
+  const exists = IMPORT.parsed.filter(p=>p.already_exists).length;
+  const checked = IMPORT.parsed.filter(p=>p._check && !p.already_exists).length;
+  summary.textContent = `${total} parsed · ${exists} already in library · ${checked} selected for import`;
+  commit.disabled = checked === 0;
+}
+
+function commitImports(){
+  const toAdd = IMPORT.parsed.filter(p => p._check && !p.already_exists);
+  if (!toAdd.length){ toast('Nothing selected', true); return; }
+  // Re-check duplicates one more time before pushing — prevents race with manual library edits
+  const existing = new Set(allPlugins().map(p => p.n.toLowerCase()));
+  let added = 0, skipped = 0;
+  toAdd.forEach(p => {
+    const name = String(p.name||'').trim();
+    if (!name){ skipped++; return; }
+    if (existing.has(name.toLowerCase())){ skipped++; return; }
+    const pubKey = PUBS[p.publisher_key] ? p.publisher_key : 'other';
+    const stageId = STAGES.find(s => s.id === p.stage_id) ? p.stage_id : 'eq-clean';
+    const entry = { n:name, p:pubKey, s:stageId, custom:true };
+    if (pubKey === 'other' && p.publisher_label) entry.pLabel = p.publisher_label;
+    STATE.customPlugins.push(entry);
+    existing.add(name.toLowerCase());
+    added++;
+  });
+  if (added > 0){
+    renderLibrary();
+    if (typeof renderPickerList === 'function') renderPickerList();
+    saveState();
+    closeImportModal();
+    toast(`Added ${added} plugin${added===1?'':'s'} to library${skipped?` · skipped ${skipped} duplicate${skipped===1?'':'s'}`:''}`);
+  } else {
+    importStatus('All selected plugins were already in the library — nothing added.', 'err');
+  }
+}
+
+function importInit(){
+  const wire = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+  wire('importPluginsBtn','click', openImportModal);
+  wire('aiChatImportPlugins','click', openImportModal);
+  wire('importModalClose','click', closeImportModal);
+  wire('importCancel','click', closeImportModal);
+  wire('importParseBtn','click', parseImportWithClaude);
+  wire('importCommitBtn','click', commitImports);
+  // Click outside modal closes
+  const back = document.getElementById('importModal');
+  if (back) back.addEventListener('click', e => { if (e.target.id === 'importModal') closeImportModal(); });
+}
+
 // ========== RESEARCH (Claude API + web search) ==========
 // Called from the research tool. Hits Anthropic's Messages API directly from the browser
 // using the user's own key. Web search is enabled as a server-side tool — Claude runs the
@@ -4141,6 +4502,7 @@ renderRecipes();
 renderJournal();
 aichatInit();
 knowledgeInit();
+importInit();
 </script>
 </body>
 </html>
