@@ -176,11 +176,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
 .aichat-bar .toggle{display:flex;align-items:center;gap:5px;font-size:11px;color:#9ca3af;cursor:pointer}
 .aichat-bar .blurb{color:#9ca3af;font-size:12px;flex:1;min-width:200px}
-.aichat-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;overflow-y:auto;font-size:26px;line-height:1.5;min-height:380px;max-height:680px}
-.aichat-msg{display:flex;gap:12px;margin-bottom:18px;align-items:flex-start}
-.aichat-msg .who{font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;min-width:72px;padding-top:6px;flex-shrink:0}
+.aichat-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;overflow-y:auto;font-size:13px;line-height:1.55;min-height:380px;max-height:560px}
+.aichat-msg{display:flex;gap:10px;margin-bottom:14px;align-items:flex-start}
+.aichat-msg .who{font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;min-width:60px;padding-top:2px;flex-shrink:0}
 .aichat-msg.user .who{color:#fb923c}.aichat-msg.ai .who{color:#34d399}.aichat-msg.system .who{color:#a78bfa}
-.aichat-msg .body{flex:1;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-width:0;font-size:26px;line-height:1.5}
+.aichat-msg .body{flex:1;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-width:0}
 .aichat-msg.user .body{color:#fed7aa;background:#1c1410;padding:8px 12px;border-radius:6px;border:1px solid #7c2d12}
 .aichat-msg.ai .body{color:#e5e7eb}
 .aichat-msg .body a{color:#a5b4fc;text-decoration:underline}
@@ -190,8 +190,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-msg .cites a{color:#9ca3af;margin-right:8px;display:inline-block;text-decoration:underline}
 .aichat-msg.thinking .body{font-style:italic;color:#9ca3af;opacity:.7}
 .aichat-empty{color:#6b7280;font-style:italic;text-align:center;padding:60px 20px}
-.aichat-compose{display:flex;gap:8px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:flex-end}
-.aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.5;resize:vertical;min-height:64px;max-height:240px;font-family:inherit}
+.aichat-compose{display:flex;gap:8px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:stretch}
+.aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:14px 16px;font-size:15px;line-height:1.55;resize:vertical;min-height:200px;max-height:520px;font-family:inherit}
 .aichat-compose textarea:focus{outline:none;border-color:#7c3aed}
 .aichat-compose .send-col{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:120px}
 .aichat-compose button{width:100%}
@@ -643,7 +643,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer's technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>
     </div>
     <div class="aichat-compose">
-      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste snapshots straight in." rows="3"></textarea>
+      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste snapshots straight in." rows="9"></textarea>
       <div class="send-col">
         <button class="btn" id="aiChatSend">Send ↵</button>
         <span class="aichat-status" id="aiChatStatus">&nbsp;</span>
