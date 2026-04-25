@@ -264,6 +264,23 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .imp-row .imp-meta{grid-column:1 / -1;font-size:11px;color:#6b7280;font-style:italic;padding-left:24px;margin-top:-4px}
 .imp-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;align-items:center}
 .imp-foot .imp-summary{flex:1;font-size:12px;color:#9ca3af}
+/* GENRE-CHANGE PRESET PICKER */
+.genre-pick-bus{background:#111827;border:1px solid #374151;border-radius:8px;padding:10px 12px;margin-top:10px}
+.genre-pick-bus-head{font-weight:600;color:#fbbf24;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1f2937;padding-bottom:6px}
+.genre-pick-bus-count{color:#6b7280;font-weight:400;font-size:11px;margin-left:auto;font-family:'SF Mono',monospace}
+.genre-pick-opt{display:flex;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;align-items:flex-start;transition:background .12s}
+.genre-pick-opt:hover{background:#1f2937}
+.genre-pick-opt input[type="radio"]{margin-top:3px;flex-shrink:0}
+.genre-pick-opt.skip{opacity:.7}
+.genre-pick-opt.skip .genre-pick-name{color:#9ca3af}
+.genre-pick-name{font-weight:600;color:#e5e7eb;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.genre-pick-rec{font-size:9px;font-weight:700;background:#3b1764;color:#e9d5ff;padding:2px 7px;border-radius:8px;letter-spacing:.5px;text-transform:uppercase}
+.genre-pick-desc{color:#9ca3af;font-size:11px;line-height:1.45;margin-top:3px}
+.genre-pick-count{color:#6b7280;font-family:'SF Mono',monospace;font-size:10px;margin-left:6px}
+.genre-pick-empty{color:#6b7280;font-style:italic;font-size:12px;padding:6px 10px}
+.genre-pick-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.genre-pick-pill{background:#0b1220;border:1px solid #374151;color:#9ca3af;border-radius:8px;padding:1px 6px;font-size:10px}
+#genrePickerBuses{max-height:60vh;overflow-y:auto;margin-top:4px}
 .aichat-msg .body::selection,.aichat-msg .body *::selection{background:#fde68a;color:#111827}
 .aichat-word{transition:background-color .08s,color .08s;border-radius:3px;padding:0 1px}
 .aichat-word.spoken{background:#fbbf24;color:#111827;font-weight:600;box-shadow:0 0 0 2px #fbbf24}
@@ -906,6 +923,24 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   </div>
 </div>
 
+<!-- GENRE-CHANGE PRESET PICKER MODAL -->
+<div class="modal-backdrop" id="genrePickerModal">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header"><h3 id="genrePickerTitle">Load presets into Chain Builder?</h3><button class="close-btn" id="genrePickerClose">×</button></div>
+    <div class="modal-form">
+      <div style="font-size:12px;color:#9ca3af;line-height:1.55;">
+        Pick which preset loads into each bus. Buses with multiple options for this genre let you choose your favourite — or skip a bus to leave its current chain alone. Closing this dialog without applying keeps your chain unchanged.
+      </div>
+      <div id="genrePickerBuses"></div>
+      <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;cursor:pointer;margin-top:12px;"><input type="checkbox" id="genrePickerReplace" checked> Replace bus chain (uncheck to append onto whatever's already loaded)</label>
+      <div class="actions">
+        <button class="btn ghost sm" id="genrePickerCancel">Cancel — keep current chain</button>
+        <button class="btn purple" id="genrePickerApply">⚡ Apply selections</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PLUGIN IMPORT MODAL -->
 <div class="modal-backdrop" id="importModal">
   <div class="modal" style="max-width:880px;">
@@ -1463,7 +1498,99 @@ document.getElementById('genreSelect').onchange = e => {
   renderLibrary();
   renderRecipes();
   saveState();
+  // After updating the library/recipes, offer a per-bus picker so the chain
+  // builder can also follow the genre change. Cancel keeps chains untouched.
+  openGenrePicker(STATE.genre);
 };
+
+// ===== GENRE-CHANGE PRESET PICKER =====
+let GENRE_PICK_PENDING = null;
+
+function openGenrePicker(newGenre){
+  GENRE_PICK_PENDING = newGenre;
+  const label = genreLabel(newGenre).replace(/^\S+\s*/,'');
+  const titleEl = document.getElementById('genrePickerTitle');
+  if (titleEl) titleEl.textContent = `Load ${label} presets into Chain Builder?`;
+  const host = document.getElementById('genrePickerBuses');
+  if (!host) return;
+  // Build a section per bus with all matching presets as radios + a Skip option
+  const sections = BUSES.map(bus => {
+    const matching = PRESETS.filter(p => p.bus === bus.id && p.genres.includes(newGenre));
+    const defaultId = (GENRE_DEFAULTS[newGenre]||{})[bus.id];
+    if (!matching.length){
+      return `<div class="genre-pick-bus"><div class="genre-pick-bus-head">${escapeHtml(bus.label)}<span class="genre-pick-bus-count">no preset</span></div><div class="genre-pick-empty">No ${escapeHtml(label)} preset for this bus — skipped automatically.</div></div>`;
+    }
+    const opts = matching.map(p => {
+      const isDefault = p.id === defaultId;
+      const checked = isDefault ? 'checked' : '';
+      const recBadge = isDefault ? '<span class="genre-pick-rec">recommended</span>' : '';
+      const pluginCount = p.chain.length;
+      const pills = p.chain.slice(0,5).map(c => `<span class="genre-pick-pill">${escapeHtml(c.n)}</span>`).join('');
+      const more = p.chain.length > 5 ? `<span class="genre-pick-pill">+${p.chain.length-5}</span>` : '';
+      return `<label class="genre-pick-opt"><input type="radio" name="gp_${escapeHtml(bus.id)}" value="${escapeHtml(p.id)}" ${checked}><div style="flex:1;min-width:0"><div class="genre-pick-name">${escapeHtml(p.label)}${recBadge}<span class="genre-pick-count">${pluginCount} plugins</span></div><div class="genre-pick-desc">${escapeHtml(p.desc)}</div><div class="genre-pick-pills">${pills}${more}</div></div></label>`;
+    }).join('');
+    // Default-pick logic: if there's a recommended preset, that's checked above.
+    // If no recommendation matched (e.g. genre default missing for this bus),
+    // pre-select Skip so we don't surprise-replace anything.
+    const skipChecked = !defaultId || !matching.find(m => m.id === defaultId) ? 'checked' : '';
+    const skip = `<label class="genre-pick-opt skip"><input type="radio" name="gp_${escapeHtml(bus.id)}" value="__skip" ${skipChecked}><div style="flex:1"><div class="genre-pick-name">⊘ Skip this bus</div><div class="genre-pick-desc">Keep the current chain on ${escapeHtml(bus.label)} unchanged.</div></div></label>`;
+    return `<div class="genre-pick-bus"><div class="genre-pick-bus-head">${escapeHtml(bus.label)}<span class="genre-pick-bus-count">${matching.length} option${matching.length===1?'':'s'}</span></div>${opts}${skip}</div>`;
+  }).join('');
+  host.innerHTML = sections;
+  document.getElementById('genrePickerModal').classList.add('open');
+}
+
+function closeGenrePicker(){
+  document.getElementById('genrePickerModal').classList.remove('open');
+  GENRE_PICK_PENDING = null;
+}
+
+function applyGenrePicker(){
+  const newGenre = GENRE_PICK_PENDING;
+  if (!newGenre){ return closeGenrePicker(); }
+  const replace = document.getElementById('genrePickerReplace').checked;
+  // Walk each bus's radio group, collect selected preset ids (skip __skip)
+  const chosen = {};
+  BUSES.forEach(bus => {
+    const r = document.querySelector(`input[name="gp_${bus.id}"]:checked`);
+    if (r && r.value && r.value !== '__skip') chosen[bus.id] = r.value;
+  });
+  const buses = Object.keys(chosen);
+  if (!buses.length){
+    closeGenrePicker();
+    toast('Genre changed — chain left as-is');
+    return;
+  }
+  if (replace){
+    const populated = buses.filter(b => (STATE.chain[b]||[]).length > 0)
+      .map(b => BUSES.find(x => x.id === b)?.label || b);
+    if (populated.length){
+      const msg = `This will REPLACE your current chains on:\n  • ${populated.join('\n  • ')}\n\nApply selections?`;
+      if (!confirm(msg)) return;
+    }
+  }
+  let loaded = 0;
+  buses.forEach(busId => {
+    const p = PRESETS.find(x => x.id === chosen[busId]);
+    if (!p) return;
+    if (replace) STATE.chain[busId] = p.chain.map(c => ({...c}));
+    else STATE.chain[busId] = (STATE.chain[busId]||[]).concat(p.chain.map(c => ({...c})));
+    loaded++;
+  });
+  renderChain(); saveState();
+  closeGenrePicker();
+  // Bring focus to the chain tab so Kev sees what landed
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
+  document.querySelector('.tab[data-tab="chain"]').classList.add('active');
+  document.getElementById('chain').classList.add('active');
+  toast(`Loaded ${loaded} ${genreLabel(newGenre).replace(/^\S+\s*/,'')} preset${loaded===1?'':'s'}${replace?'':' (appended)'}`);
+}
+
+document.getElementById('genrePickerClose').onclick = closeGenrePicker;
+document.getElementById('genrePickerCancel').onclick = closeGenrePicker;
+document.getElementById('genrePickerApply').onclick = applyGenrePicker;
+document.getElementById('genrePickerModal').onclick = e => { if (e.target.id === 'genrePickerModal') closeGenrePicker(); };
 
 // ========== STATE EXTENSIONS (session journal) ==========
 STATE.journal = STATE.journal || [];
