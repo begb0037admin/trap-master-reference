@@ -156,6 +156,50 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .fav-btn.on{color:#f472b6}
 .del-custom{background:transparent;border:none;color:#4b5563;cursor:pointer;font-size:12px;padding:2px}
 .del-custom:hover{color:#ef4444}
+/* Publisher filter pills */
+.lib-pubs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%;margin-top:8px;padding-top:8px;border-top:1px solid #374151}
+.lib-pubs-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#9ca3af;font-weight:700;margin-right:2px}
+.lib-pub-pill{background:#111827;color:#9ca3af;border:1px solid #374151;padding:4px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:5px;transition:all .12s}
+.lib-pub-pill:hover{color:#e5e7eb;border-color:#6b7280}
+.lib-pub-pill.on{background:#3b1764;color:#e9d5ff;border-color:#a78bfa}
+.lib-pub-pill .ct{font-size:9px;color:#6b7280;font-family:'SF Mono',monospace}
+.lib-pub-pill.on .ct{color:#c4b5fd}
+.lib-pub-pill.all{font-weight:600}
+.lib-empty{padding:30px 20px;text-align:center;color:#6b7280;font-size:13px;background:#111827;border:1px dashed #374151;border-radius:8px;grid-column:1/-1}
+
+/* AI CHAT TAB */
+.aichat-layout{display:flex;flex-direction:column;gap:10px}
+.aichat-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#1f2937;border:1px solid #374151;border-radius:10px;flex-wrap:wrap}
+.aichat-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
+.aichat-bar .toggle{display:flex;align-items:center;gap:5px;font-size:11px;color:#9ca3af;cursor:pointer}
+.aichat-bar .blurb{color:#9ca3af;font-size:12px;flex:1;min-width:200px}
+.aichat-transcript{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px;overflow-y:auto;font-size:13px;line-height:1.55;min-height:380px;max-height:560px}
+.aichat-msg{display:flex;gap:10px;margin-bottom:14px;align-items:flex-start}
+.aichat-msg .who{font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;min-width:60px;padding-top:2px;flex-shrink:0}
+.aichat-msg.user .who{color:#fb923c}.aichat-msg.ai .who{color:#34d399}.aichat-msg.system .who{color:#a78bfa}
+.aichat-msg .body{flex:1;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-width:0}
+.aichat-msg.user .body{color:#fed7aa;background:#1c1410;padding:8px 12px;border-radius:6px;border:1px solid #7c2d12}
+.aichat-msg.ai .body{color:#e5e7eb}
+.aichat-msg .body a{color:#a5b4fc;text-decoration:underline}
+.aichat-msg .body code{background:#0b1220;color:#fde68a;padding:1px 4px;border-radius:3px;font-size:12px;font-family:'SF Mono',monospace}
+.aichat-msg .body strong{color:#f9fafb}
+.aichat-msg .cites{margin-top:8px;font-size:11px;color:#9ca3af;padding-top:6px;border-top:1px dashed #374151}
+.aichat-msg .cites a{color:#9ca3af;margin-right:8px;display:inline-block;text-decoration:underline}
+.aichat-msg.thinking .body{font-style:italic;color:#9ca3af;opacity:.7}
+.aichat-empty{color:#6b7280;font-style:italic;text-align:center;padding:60px 20px}
+.aichat-compose{display:flex;gap:8px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:flex-end}
+.aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.5;resize:vertical;min-height:64px;max-height:240px;font-family:inherit}
+.aichat-compose textarea:focus{outline:none;border-color:#7c3aed}
+.aichat-compose .send-col{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:120px}
+.aichat-compose button{width:100%}
+.aichat-foot{display:flex;gap:14px;font-size:11px;color:#9ca3af;padding:0 8px;flex-wrap:wrap}
+.aichat-cost{font-family:'SF Mono',monospace;font-size:11px;color:#fbbf24}
+.aichat-status{font-size:11px;color:#9ca3af;text-align:center;min-height:14px}
+.aichat-status.err{color:#fca5a5}.aichat-status.ok{color:#6ee7b7}.aichat-status.busy{color:#fbbf24}
+.aichat-msg .body pre{background:#0b1220;color:#fde68a;padding:10px 12px;border-radius:6px;font-family:'SF Mono',monospace;font-size:12px;line-height:1.5;overflow-x:auto;margin:6px 0;white-space:pre}
+.aichat-msg .body ul,.aichat-msg .body ol{margin:6px 0 8px 22px}
+.aichat-msg .body li{margin-bottom:3px}
+.aichat-msg .body h2,.aichat-msg .body h3,.aichat-msg .body h4{margin:10px 0 4px;color:#f3f4f6}
 
 /* VOICE */
 .voice-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -380,6 +424,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <button class="tab active-section" data-tab="meter">📊 Meter Check</button>
   <button class="tab active-section" data-tab="trouble">🔧 Troubleshooter</button>
   <button class="tab voice-tab" data-tab="voice">🎙️ Voice Chat</button>
+  <button class="tab" data-tab="aichat" style="color:#34d399;">💬 Chat with Claude</button>
   <button class="tab" data-tab="eq">📐 Mastering Reference</button>
   <button class="tab" data-tab="library">🔌 Plugin Library</button>
   <button class="tab" data-tab="ab">🔀 A/B Compare</button>
@@ -562,6 +607,39 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <audio id="rtAudio" autoplay playsinline></audio>
 </div>
 
+<!-- AI CHAT (text-only Claude) -->
+<div class="panel" id="aichat">
+  <div class="aichat-layout">
+    <div class="aichat-bar">
+      <span class="blurb">💬 Live text chat with Claude. Paste session snapshots, ask follow-ups — Claude has your current chain, meters, and full plugin library as context every message.</span>
+      <select id="aiChatModel" title="Pick the Claude model for this chat">
+        <option value="claude-opus-4-6">Opus 4.6 — smartest</option>
+        <option value="claude-sonnet-4-6" selected>Sonnet 4.6 — balanced</option>
+        <option value="claude-haiku-4-5-20251001">Haiku 4.5 — fastest / cheapest</option>
+      </select>
+      <label class="toggle"><input type="checkbox" id="aiChatWebSearch" checked> 🌐 Web search</label>
+      <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
+    </div>
+    <div class="aichat-transcript" id="aiChatTranscript">
+      <div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer's technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>
+    </div>
+    <div class="aichat-compose">
+      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste snapshots straight in." rows="3"></textarea>
+      <div class="send-col">
+        <button class="btn" id="aiChatSend">Send ↵</button>
+        <span class="aichat-status" id="aiChatStatus">&nbsp;</span>
+      </div>
+    </div>
+    <div class="aichat-foot">
+      <span>Session: <span class="aichat-cost" id="aiChatSessionCost">$0.000</span></span>
+      <span>Last reply: <span id="aiChatLastCost">—</span></span>
+      <span>Messages: <span id="aiChatMsgCount">0</span></span>
+      <div style="flex:1"></div>
+      <span style="color:#6b7280;">Cost auto-tracks into the Anthropic spend counter on the Voice Chat tab.</span>
+    </div>
+  </div>
+</div>
+
 <div class="panel" id="eq">
   <div class="section-head">
     <h2>🎚️ Frequency Map</h2>
@@ -621,6 +699,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div style="flex:1"></div>
     <button class="btn amber sm" id="addPluginBtn">⊕ Add my plugin</button>
     <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
+    <div class="lib-pubs" id="libPubFilter"></div>
   </div>
   <div class="stage-grid" id="libraryGrid"></div>
 </div>
@@ -1122,11 +1201,16 @@ document.getElementById('addSave').onclick=()=>{
 };
 
 // ========== LIBRARY RENDER ==========
+const LIB_PUB_FILTER_KEY='trapMasterLibPub_v1';
+STATE.libPubFilter = (function(){try{return localStorage.getItem(LIB_PUB_FILTER_KEY)||'all';}catch(_){return 'all';}})();
+
 function renderLibrary(){
   document.getElementById('currentGenreLabel').textContent = genreLabel(STATE.genre).replace(/^\S+\s*/,'');
   const all = allPlugins();
-  document.getElementById('libraryGrid').innerHTML = STAGES.map(stage=>{
-    const items = all.filter(p => p.s === stage.id);
+  const pubFilter = STATE.libPubFilter || 'all';
+  const filtered = pubFilter === 'all' ? all : all.filter(p => p.p === pubFilter);
+  const cards = STAGES.map(stage=>{
+    const items = filtered.filter(p => p.s === stage.id);
     // Sort: top picks first, then favorites, then the rest
     items.sort((a,b) => {
       const aT = isTop(a.n)?0:1, bT=isTop(b.n)?0:1;
@@ -1135,11 +1219,53 @@ function renderLibrary(){
       if (aF !== bF) return aF - bF;
       return a.n.localeCompare(b.n);
     });
+    // When filtering by publisher, hide stages that have no plugins from that publisher.
+    if (pubFilter !== 'all' && !items.length) return '';
     const rows = items.length
       ? items.map(p=>renderLibraryRow(p)).join('')
       : '<div class="empty">nothing here yet — add with ⊕ Add my plugin</div>';
     return `<div class="stage-card"><h4>${stage.label}</h4>${rows}</div>`;
-  }).join('');
+  }).filter(Boolean).join('');
+  const grid = document.getElementById('libraryGrid');
+  if (cards){
+    grid.innerHTML = cards;
+  } else {
+    const pubLabel = pubFilter==='all' ? 'any publisher' : (PUBS[pubFilter]||PUBS.other)[0];
+    grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — switch back to <strong>All</strong> or add some with ⊕ Add my plugin.</div>`;
+  }
+  renderPubFilter();
+}
+
+// Build publisher filter pills from plugins actually in the library.
+function renderPubFilter(){
+  const host = document.getElementById('libPubFilter');
+  if (!host) return;
+  const all = allPlugins();
+  const counts = {};
+  all.forEach(p => { const k = PUBS[p.p] ? p.p : 'other'; counts[k] = (counts[k]||0) + 1; });
+  // Sort by count desc, then label A-Z
+  const pubs = Object.keys(counts).sort((a,b) => {
+    const d = counts[b] - counts[a];
+    if (d) return d;
+    return ((PUBS[a]||PUBS.other)[0]).localeCompare((PUBS[b]||PUBS.other)[0]);
+  });
+  const cur = STATE.libPubFilter || 'all';
+  const pillsHTML = [
+    `<span class="lib-pubs-label">Filter by maker</span>`,
+    `<button class="lib-pub-pill all ${cur==='all'?'on':''}" data-pub="all">All <span class="ct">${all.length}</span></button>`
+  ];
+  pubs.forEach(p => {
+    const meta = PUBS[p] || PUBS.other;
+    pillsHTML.push(`<button class="lib-pub-pill ${cur===p?'on':''}" data-pub="${p}">${escapeHtml(meta[0])} <span class="ct">${counts[p]}</span></button>`);
+  });
+  host.innerHTML = pillsHTML.join('');
+  host.querySelectorAll('.lib-pub-pill').forEach(btn => {
+    btn.onclick = () => {
+      STATE.libPubFilter = btn.dataset.pub;
+      try{ localStorage.setItem(LIB_PUB_FILTER_KEY, STATE.libPubFilter); }catch(_){}
+      renderLibrary();
+    };
+  });
 }
 function renderLibraryRow(p){
   const pub = PUBS[p.p]||PUBS.other;
@@ -2130,6 +2256,279 @@ async function research(question, contextHint){
   }
 }
 
+// ========== AI CHAT (text-only Claude conversation) ==========
+// Direct Messages API call from the browser using Kev's saved Anthropic key.
+// History is held in memory + persisted to localStorage. Costs route into the
+// existing Anthropic spend tracker so the Voice tab dashboard stays in sync.
+const AICHAT_HISTORY_KEY='trapMasterAiChatHistory_v1';
+const AICHAT_MODEL_KEY='trapMasterAiChatModel_v1';
+const AICHAT_SEARCH_KEY='trapMasterAiChatSearch_v1';
+const AICHAT_SYSTEM=`You are Claude, talking directly with Kev — a trap/hip-hop producer — inside his mixing/mastering workbench. This is text chat (no voice). Kev uses you to dig into specifics he doesn't want to bluff through.
+
+You can see his current chain, meters, flagged symptoms, full plugin library, genre, and platform target via the context block below every message. He often pastes session snapshots from the workbench — when he does, look at what's actually loaded and answer with reference to it.
+
+STYLE
+- Be specific and applied. Reference his actual plugins by name. Cite real control names (e.g. Decapitator's Drive / Tone / Punish, not invented names).
+- No fluff, no "great question", no "as a producer myself" — just answer.
+- Markdown is rendered. Use \`backticks\` for plugin/control names, ## for section headers when a reply is long, bullet lists are fine. Keep it scannable.
+- When suggesting a chain, give a numbered list with plugin name + 2-3 key settings each.
+
+LIBRARY DISCIPLINE
+- Recommend plugins ONLY from his library (listed below). Do not invent plugins he doesn't own.
+- If he asks about a plugin he doesn't own, say "you don't seem to own that — closest match in your library: X, Y, Z" and offer those.
+
+WEB SEARCH
+- You have web_search available. Use it for: producer/engineer techniques, plugin manuals, chart positions, recent releases — anything where bluffing would be worse than searching.
+- Don't search for general mixing principles you already know.
+
+When citing web sources, the platform will surface them automatically — no need to repeat URLs in your prose.`;
+
+let AICHAT = {
+  history: (function(){try{return JSON.parse(localStorage.getItem(AICHAT_HISTORY_KEY)||'[]');}catch(_){return [];}})(),
+  sessionCost: 0,
+  busy: false
+};
+
+function aichatSave(){
+  try{ localStorage.setItem(AICHAT_HISTORY_KEY, JSON.stringify(AICHAT.history.slice(-50))); }catch(_){}
+}
+
+function aichatStatus(msg, cls){
+  const el = document.getElementById('aiChatStatus');
+  if (!el) return;
+  el.innerHTML = msg || '&nbsp;';
+  el.className = 'aichat-status' + (cls?' '+cls:'');
+}
+
+// Lightweight markdown renderer — handles bold, italic, code, fences, headers,
+// bullets, numbered lists, links. Input is escaped first so we can write tags safely.
+function aichatFormatMd(text){
+  if (!text) return '';
+  let s = escapeHtml(text);
+  // Code fences (```…```)
+  s = s.replace(/```[a-zA-Z]*\n?([\s\S]*?)```/g, (_,c) => `<pre>${c}</pre>`);
+  // Inline code
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // Bold + italic
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>');
+  // Headers
+  s = s.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  // Bulleted lists
+  s = s.replace(/(?:^[ \t]*[-*]\s+.+(?:\n|$))+/gm, m => {
+    const items = m.trim().split('\n').map(l => '<li>' + l.replace(/^[ \t]*[-*]\s+/, '') + '</li>').join('');
+    return '<ul>' + items + '</ul>';
+  });
+  // Numbered lists
+  s = s.replace(/(?:^[ \t]*\d+\.\s+.+(?:\n|$))+/gm, m => {
+    const items = m.trim().split('\n').map(l => '<li>' + l.replace(/^[ \t]*\d+\.\s+/, '') + '</li>').join('');
+    return '<ol>' + items + '</ol>';
+  });
+  // Markdown links [txt](url)
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Bare URLs
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  return s;
+}
+
+function aichatRender(){
+  const tEl = document.getElementById('aiChatTranscript');
+  if (!tEl) return;
+  if (!AICHAT.history.length){
+    tEl.innerHTML = '<div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer\'s technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>';
+  } else {
+    tEl.innerHTML = AICHAT.history.map(m => {
+      const cls = 'aichat-msg ' + (m.role === 'ai' ? 'ai' : (m.role === 'system' ? 'system' : 'user'));
+      const who = m.role === 'user' ? 'You' : (m.role === 'system' ? 'System' : 'Claude');
+      const body = m.role === 'ai' ? aichatFormatMd(m.content) : escapeHtml(m.content);
+      let cites = '';
+      if (m.citations && m.citations.length){
+        const links = m.citations.map(c => {
+          let host = c;
+          try{ host = new URL(c).hostname.replace(/^www\./,''); }catch(_){}
+          return `<a href="${escapeHtml(c)}" target="_blank" rel="noopener">${escapeHtml(host)}</a>`;
+        }).join(' · ');
+        cites = `<div class="cites">Sources: ${links}</div>`;
+      }
+      return `<div class="${cls}"><div class="who">${who}</div><div class="body">${body}${cites}</div></div>`;
+    }).join('');
+    tEl.scrollTop = tEl.scrollHeight;
+  }
+  const cnt = AICHAT.history.filter(m => m.role !== 'system').length;
+  const cntEl = document.getElementById('aiChatMsgCount');
+  if (cntEl) cntEl.textContent = cnt;
+  const sEl = document.getElementById('aiChatSessionCost');
+  if (sEl) sEl.textContent = '$' + AICHAT.sessionCost.toFixed(3);
+}
+
+async function aichatSend(){
+  if (AICHAT.busy) return;
+  const input = document.getElementById('aiChatInput');
+  const txt = input.value.trim();
+  if (!txt) return;
+
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey){
+    aichatStatus('No Anthropic key saved. Add one on the 🎙️ Voice Chat tab first.', 'err');
+    return;
+  }
+
+  // Push user msg + clear input
+  AICHAT.history.push({role:'user', content:txt});
+  input.value = '';
+  aichatRender();
+  aichatSave();
+
+  AICHAT.busy = true;
+  document.getElementById('aiChatSend').disabled = true;
+  aichatStatus('Claude is thinking…', 'busy');
+
+  // Append a transient "thinking" indicator after the rendered messages
+  const tEl = document.getElementById('aiChatTranscript');
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'aichat-msg ai thinking';
+  thinkEl.innerHTML = '<div class="who">Claude</div><div class="body">…</div>';
+  tEl.appendChild(thinkEl);
+  tEl.scrollTop = tEl.scrollHeight;
+
+  const model = document.getElementById('aiChatModel').value || 'claude-sonnet-4-6';
+  const useSearch = document.getElementById('aiChatWebSearch').checked;
+
+  // Convert internal history to Anthropic API format
+  const apiMessages = AICHAT.history
+    .filter(m => m.role === 'user' || m.role === 'ai')
+    .map(m => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.content
+    }));
+
+  // Build full system prompt with current workbench context
+  let ctxBlock = '';
+  try{
+    const ctx = buildContextSummary();
+    const lib = buildLibraryDigest();
+    ctxBlock = '\n\n=== CURRENT WORKBENCH STATE ===\n' + JSON.stringify(ctx, null, 2) + '\n\n' + lib;
+  }catch(e){
+    ctxBlock = '\n\n(workbench context unavailable: ' + (e.message||e) + ')';
+  }
+  const fullSystem = AICHAT_SYSTEM + ctxBlock;
+
+  const reqBody = {
+    model,
+    max_tokens: 2048,
+    system: fullSystem,
+    messages: apiMessages
+  };
+  if (useSearch){
+    reqBody.tools = [{type:'web_search_20250305', name:'web_search', max_uses:5}];
+  }
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':antKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify(reqBody)
+    });
+
+    if (!resp.ok){
+      const errTxt = await resp.text();
+      AICHAT.history.push({role:'ai', content:`⚠️ API error ${resp.status}: ${errTxt.slice(0,500)}`});
+      aichatRender();aichatSave();
+      aichatStatus('Error ' + resp.status + ' — check key, model, or balance.', 'err');
+      return;
+    }
+
+    const data = await resp.json();
+    const text = (data.content||[]).filter(b => b.type === 'text').map(b => b.text).join('\n\n').trim();
+    const cites = [];
+    (data.content||[]).forEach(b => {
+      if (b.type === 'text' && Array.isArray(b.citations)){
+        b.citations.forEach(c => { if (c.url && !cites.includes(c.url)) cites.push(c.url); });
+      }
+    });
+
+    // Cost calc — same model as research()
+    const u = data.usage || {};
+    const pp = ANT_PRICING[model] || ANT_PRICING['claude-sonnet-4-6'];
+    const inTok = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
+    const outTok = u.output_tokens||0;
+    const searches = (u.server_tool_use && u.server_tool_use.web_search_requests) || 0;
+    const callCost = (inTok*pp.in + outTok*pp.out)/1e6 + searches*ANT_WEB_SEARCH_RATE;
+
+    AICHAT.history.push({
+      role:'ai',
+      content: text || '(empty response)',
+      citations: cites.slice(0,8),
+      cost: callCost
+    });
+    AICHAT.sessionCost += callCost;
+
+    if (callCost > 0){
+      try{ addSpend('an', callCost); rtRenderCost(); }catch(_){}
+    }
+
+    const lastEl = document.getElementById('aiChatLastCost');
+    if (lastEl){
+      lastEl.textContent = '$' + callCost.toFixed(4) + (searches ? ` · ${searches} search${searches>1?'es':''}` : '');
+    }
+    aichatRender();aichatSave();
+    aichatStatus(`Done — ${inTok} in / ${outTok} out tokens.`, 'ok');
+  } catch(e){
+    AICHAT.history.push({role:'ai', content:`⚠️ Request failed: ${e.message||String(e)}`});
+    aichatRender();aichatSave();
+    aichatStatus('Network error — see browser console.', 'err');
+  } finally {
+    AICHAT.busy = false;
+    document.getElementById('aiChatSend').disabled = false;
+  }
+}
+
+function aichatClear(){
+  if (!AICHAT.history.length){ aichatStatus('Nothing to clear.', 'ok'); return; }
+  if (!confirm('Clear the chat with Claude? Conversation history will be erased.')) return;
+  AICHAT.history = [];
+  AICHAT.sessionCost = 0;
+  aichatSave();
+  aichatRender();
+  const lastEl = document.getElementById('aiChatLastCost');
+  if (lastEl) lastEl.textContent = '—';
+  aichatStatus('Cleared.', 'ok');
+}
+
+function aichatInit(){
+  // Restore preferred model + search toggle
+  try{
+    const m = localStorage.getItem(AICHAT_MODEL_KEY);
+    if (m) document.getElementById('aiChatModel').value = m;
+    const s = localStorage.getItem(AICHAT_SEARCH_KEY);
+    if (s !== null) document.getElementById('aiChatWebSearch').checked = s === '1';
+  }catch(_){}
+  document.getElementById('aiChatModel').onchange = e => {
+    try{ localStorage.setItem(AICHAT_MODEL_KEY, e.target.value); }catch(_){}
+  };
+  document.getElementById('aiChatWebSearch').onchange = e => {
+    try{ localStorage.setItem(AICHAT_SEARCH_KEY, e.target.checked ? '1' : '0'); }catch(_){}
+  };
+  document.getElementById('aiChatSend').onclick = aichatSend;
+  document.getElementById('aiChatClear').onclick = aichatClear;
+  document.getElementById('aiChatInput').addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
+      e.preventDefault();
+      aichatSend();
+    }
+  });
+  aichatRender();
+}
+
 async function handleToolCall(name,args){
   try{
     switch(name){
@@ -2569,6 +2968,7 @@ renderLibrary();
 renderRecipes();
 renderAB();
 renderJournal();
+aichatInit();
 </script>
 </body>
 </html>
