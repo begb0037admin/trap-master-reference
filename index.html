@@ -263,26 +263,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .preset-card-genres{display:flex;gap:4px;margin-top:6px}
 .preset-card-genres span{font-size:10px;color:#6b7280;background:#0b1220;padding:2px 6px;border-radius:3px;border:1px solid #1f2937}
 .preset-card-genres span.match{color:#a78bfa;border-color:#4338ca}
-/* A/B COMPARE */
-.ab-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.ab-slots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.ab-slot{background:#111827;border:2px dashed #374151;border-radius:8px;padding:14px;min-height:80px;position:relative}
-.ab-slot.filled{border-style:solid;border-color:#7c3aed;background:#1f1d3a}
-.ab-slot-letter{position:absolute;top:8px;right:10px;font-size:24px;font-weight:700;color:#4338ca;opacity:.6}
-.ab-slot-meta{color:#9ca3af;font-size:13px;line-height:1.5}
-.ab-slot.filled .ab-slot-meta{color:#cbd5e1}
-.ab-slot-time{color:#6b7280;font-size:11px;margin-top:4px}
-.ab-diff{margin-top:8px}
-.ab-diff-section{background:#111827;border:1px solid #374151;border-radius:8px;padding:12px;margin-bottom:10px}
-.ab-diff-section h4{color:#a78bfa;font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.ab-diff-row{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:4px 0;font-size:12px;border-bottom:1px solid #1f2937}
-.ab-diff-row:last-child{border-bottom:none}
-.ab-diff-tag{font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;text-align:center}
-.ab-diff-tag.added{background:#065f46;color:#d1fae5}
-.ab-diff-tag.removed{background:#7f1d1d;color:#fecaca}
-.ab-diff-tag.changed{background:#78350f;color:#fef3c7}
-.ab-diff-tag.same{background:#1f2937;color:#9ca3af}
-.ab-diff-text{color:#e5e7eb}
 /* JOURNAL */
 .journal-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:8px}
 .journal-list{display:flex;flex-direction:column;gap:8px}
@@ -291,6 +271,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .journal-entry-head{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .journal-entry-head:hover{background:#1f2937}
 .journal-time{color:#9ca3af;font-size:12px;font-family:'SF Mono',monospace;min-width:140px}
+.journal-type{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.journal-type.snapshot{background:#4c1d95;color:#ede9fe}
+.journal-type.aichat{background:#064e3b;color:#a7f3d0}
+.journal-subject{flex:1;color:#f3f4f6;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .journal-genre{background:#4338ca;color:#e0e7ff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
 .journal-platform{background:#1f2937;color:#9ca3af;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid #374151}
 .journal-preview{flex:1;color:#cbd5e1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -435,7 +419,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <button class="tab" data-tab="aichat" style="color:#34d399;">💬 Chat with Claude</button>
   <button class="tab" data-tab="eq">📐 Mastering Reference</button>
   <button class="tab" data-tab="library">🔌 Plugin Library</button>
-  <button class="tab" data-tab="ab">🔀 A/B Compare</button>
   <button class="tab" data-tab="journal">📜 Journal</button>
 </div>
 
@@ -644,6 +627,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <option value="gpt-4o-mini-tts">4o-mini-tts (expressive)</option>
         </select>
       </span>
+      <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save to the 📜 Journal">📜 TL;DR → Journal</button>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
     </div>
     <div class="aichat-transcript" id="aiChatTranscript">
@@ -732,23 +716,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 </div>
 </div>
 
-<!-- A/B COMPARE -->
-<div class="panel" id="ab">
-  <div class="ab-controls">
-    <button class="btn" id="abSaveA">📸 Save current as A</button>
-    <button class="btn" id="abSaveB">📸 Save current as B</button>
-    <button class="btn green" id="abCompare">🔀 Compare A ↔ B</button>
-    <button class="btn ghost sm" id="abLoadA">↩ Restore A</button>
-    <button class="btn ghost sm" id="abLoadB">↩ Restore B</button>
-    <button class="btn ghost sm" id="abClear">Clear both</button>
-  </div>
-  <div class="ab-slots">
-    <div class="ab-slot" id="abSlotA"><div class="ab-slot-letter">A</div><div class="ab-slot-meta">empty — save current to capture</div></div>
-    <div class="ab-slot" id="abSlotB"><div class="ab-slot-letter">B</div><div class="ab-slot-meta">empty — save current to capture</div></div>
-  </div>
-  <div class="ab-diff" id="abDiff"></div>
-  <div class="tip-box alt"><strong>Workflow:</strong> dial in version A → "Save as A" → tweak → "Save as B" → "Compare" to see exactly what moved. Restore either back into the workbench whenever.</div>
-</div>
 
 <!-- JOURNAL -->
 <div class="panel" id="journal">
@@ -843,14 +810,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;"><input type="checkbox" id="presetReplace" checked> Replace bus chain (uncheck to append)</label>
     </div>
     <div class="modal-body" id="presetList"></div>
-  </div>
-</div>
-
-<!-- A/B DIFF MODAL -->
-<div class="modal-backdrop" id="abDiffModal">
-  <div class="modal" style="max-width:780px;">
-    <div class="modal-header"><h3>A ↔ B comparison</h3><button class="close-btn" id="abDiffClose">×</button></div>
-    <div class="modal-body" id="abDiffBody" style="padding:16px;"></div>
   </div>
 </div>
 
@@ -1058,7 +1017,6 @@ function saveState(){
         genre:STATE.genre,
         meters:STATE.meters,
         platform:ps?ps.value:null,
-        snapAB:STATE.snapAB||{a:null,b:null},
         journal:(STATE.journal||[]).slice(0,50)
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
@@ -1083,7 +1041,6 @@ function loadState(){
     if(gs&&STATE.genre)gs.value=STATE.genre;
     const ps=document.getElementById('platformSelect');
     if(ps&&d.platform)ps.value=d.platform;
-    if(d.snapAB&&typeof d.snapAB==='object')STATE.snapAB={a:d.snapAB.a||null,b:d.snapAB.b||null};
     if(Array.isArray(d.journal))STATE.journal=d.journal.slice(0,50);
   }catch(e){console.warn('loadState failed',e);}
 }
@@ -1320,8 +1277,7 @@ document.getElementById('genreSelect').onchange = e => {
   saveState();
 };
 
-// ========== STATE EXTENSIONS (A/B slots + session journal) ==========
-STATE.snapAB = STATE.snapAB || {a:null, b:null};
+// ========== STATE EXTENSIONS (session journal) ==========
 STATE.journal = STATE.journal || [];
 
 // ========== GENRE RECIPES ==========
@@ -1456,27 +1412,7 @@ document.getElementById('presetModal').onclick=e=>{if(e.target.id==='presetModal
 document.getElementById('presetBusFilter').onchange=renderPresetList;
 document.getElementById('presetGenreFilter').onchange=renderPresetList;
 
-// ========== A/B COMPARE ==========
-function captureCurrentSnap(){
-  const ps=document.getElementById('platformSelect');
-  return {
-    ts:Date.now(),
-    genre:STATE.genre, genreLabel:genreLabel(STATE.genre),
-    platform:ps?ps.value:null, platformLabel:ps?ps.selectedOptions[0].textContent:null,
-    chain:JSON.parse(JSON.stringify(STATE.chain)),
-    meters:{...STATE.meters},
-    symptoms:[...STATE.symptoms]
-  };
-}
-function saveAB(slot){
-  STATE.snapAB[slot]=captureCurrentSnap();
-  renderAB(); saveState(); toast('Saved current as '+slot.toUpperCase());
-}
-function loadFromAB(slot){
-  const s=STATE.snapAB[slot]; if(!s){toast('Slot '+slot.toUpperCase()+' empty',true); return;}
-  if(!confirm('Restore slot '+slot.toUpperCase()+'? This overwrites your current chain, meters, and flags.')) return;
-  applyCapturedSnap(s); toast('Restored '+slot.toUpperCase());
-}
+// applyCapturedSnap — restores a journal snapshot back into the workbench.
 function applyCapturedSnap(s){
   BUSES.forEach(b=>STATE.chain[b.id]=JSON.parse(JSON.stringify(s.chain[b.id]||[])));
   STATE.meters={...(s.meters||{})};
@@ -1487,78 +1423,6 @@ function applyCapturedSnap(s){
   METERS.forEach(m=>{const v=STATE.meters?.[m.id];if(v==null)return;const el=document.getElementById('meter-'+m.id);if(el)el.value=v;});
   updateMeters(); renderSymptoms(); renderLibrary(); renderRecipes(); saveState();
 }
-function clearAB(){
-  if(!confirm('Clear both A and B slots?')) return;
-  STATE.snapAB={a:null,b:null};
-  document.getElementById('abDiff').innerHTML='';
-  renderAB(); saveState();
-}
-function renderAB(){
-  ['a','b'].forEach(slot=>{
-    const el=document.getElementById('abSlot'+slot.toUpperCase()); if(!el) return;
-    const s=STATE.snapAB[slot];
-    const meta=el.querySelector('.ab-slot-meta');
-    if(!s){el.classList.remove('filled'); meta.innerHTML='empty — save current to capture'; return;}
-    el.classList.add('filled');
-    const chainCount=BUSES.reduce((n,b)=>n+(s.chain[b.id]?.length||0),0);
-    const meterCount=Object.keys(s.meters||{}).length;
-    meta.innerHTML=`<strong>${escapeHtml(s.genreLabel||s.genre||'')}</strong> · ${escapeHtml(s.platformLabel||'')}<br>${chainCount} plugins · ${meterCount} meters · ${s.symptoms?.length||0} flags<div class="ab-slot-time">${escapeHtml(new Date(s.ts).toLocaleString())}</div>`;
-  });
-}
-function diffChainBus(aArr,bArr){
-  const a=aArr||[], b=bArr||[];
-  const aN=a.map(p=>p.n), bN=b.map(p=>p.n);
-  const added=bN.filter(n=>!aN.includes(n));
-  const removed=aN.filter(n=>!bN.includes(n));
-  const reordered=(added.length===0 && removed.length===0 && JSON.stringify(aN)!==JSON.stringify(bN));
-  return {added,removed,reordered};
-}
-function compareAB(){
-  const a=STATE.snapAB.a, b=STATE.snapAB.b;
-  if(!a||!b){toast('Save A and B first',true); return;}
-  const sections=[];
-  const top=[];
-  if(a.genre!==b.genre) top.push({tag:'changed',text:`Genre: <strong>${escapeHtml(a.genreLabel||'')}</strong> → <strong>${escapeHtml(b.genreLabel||'')}</strong>`});
-  if(a.platform!==b.platform) top.push({tag:'changed',text:`Target: <strong>${escapeHtml(a.platformLabel||'')}</strong> → <strong>${escapeHtml(b.platformLabel||'')}</strong>`});
-  if(top.length) sections.push({h:'Session',rows:top});
-  const chainRows=[];
-  BUSES.forEach(bus=>{
-    const d=diffChainBus(a.chain[bus.id], b.chain[bus.id]);
-    if(!d.added.length && !d.removed.length && !d.reordered) return;
-    if(d.removed.length) chainRows.push({tag:'removed',text:`<strong>${escapeHtml(bus.label)}</strong> removed: ${d.removed.map(escapeHtml).join(', ')}`});
-    if(d.added.length) chainRows.push({tag:'added',text:`<strong>${escapeHtml(bus.label)}</strong> added: ${d.added.map(escapeHtml).join(', ')}`});
-    if(d.reordered) chainRows.push({tag:'changed',text:`<strong>${escapeHtml(bus.label)}</strong> reordered (same plugins, different sequence)`});
-  });
-  if(chainRows.length) sections.push({h:'Chain Changes',rows:chainRows});
-  const meterRows=[];
-  METERS.forEach(m=>{
-    const av=a.meters?.[m.id], bv=b.meters?.[m.id];
-    if(av==null && bv==null) return;
-    if(av==null) meterRows.push({tag:'added',text:`${escapeHtml(m.label)}: <strong>${bv}${escapeHtml(m.unit)}</strong>`});
-    else if(bv==null) meterRows.push({tag:'removed',text:`${escapeHtml(m.label)}: was <strong>${av}${escapeHtml(m.unit)}</strong>, cleared`});
-    else if(av!==bv){const delta=(bv-av).toFixed(1);meterRows.push({tag:'changed',text:`${escapeHtml(m.label)}: <strong>${av}${escapeHtml(m.unit)}</strong> → <strong>${bv}${escapeHtml(m.unit)}</strong> (Δ ${delta>=0?'+':''}${delta})`});}
-  });
-  if(meterRows.length) sections.push({h:'Meter Changes',rows:meterRows});
-  const aSym=new Set(a.symptoms||[]), bSym=new Set(b.symptoms||[]);
-  const symAdded=[...bSym].filter(s=>!aSym.has(s));
-  const symRemoved=[...aSym].filter(s=>!bSym.has(s));
-  const symRows=[];
-  symAdded.forEach(id=>{const s=SYMPTOMS.find(x=>x.id===id);symRows.push({tag:'added',text:'Flagged: '+escapeHtml(s?.label||id)});});
-  symRemoved.forEach(id=>{const s=SYMPTOMS.find(x=>x.id===id);symRows.push({tag:'removed',text:'Cleared: '+escapeHtml(s?.label||id)});});
-  if(symRows.length) sections.push({h:'Flag Changes',rows:symRows});
-  const body=document.getElementById('abDiffBody');
-  if(!sections.length){body.innerHTML='<div style="text-align:center;padding:30px 20px;color:#6b7280;">A and B are identical.</div>';}
-  else{body.innerHTML=sections.map(s=>`<div class="ab-diff-section"><h4>${escapeHtml(s.h)}</h4>${s.rows.map(r=>`<div class="ab-diff-row"><span class="ab-diff-tag ${r.tag}">${r.tag}</span><span class="ab-diff-text">${r.text}</span></div>`).join('')}</div>`).join('');}
-  document.getElementById('abDiffModal').classList.add('open');
-}
-document.getElementById('abSaveA').onclick=()=>saveAB('a');
-document.getElementById('abSaveB').onclick=()=>saveAB('b');
-document.getElementById('abLoadA').onclick=()=>loadFromAB('a');
-document.getElementById('abLoadB').onclick=()=>loadFromAB('b');
-document.getElementById('abCompare').onclick=compareAB;
-document.getElementById('abClear').onclick=clearAB;
-document.getElementById('abDiffClose').onclick=()=>document.getElementById('abDiffModal').classList.remove('open');
-document.getElementById('abDiffModal').onclick=e=>{if(e.target.id==='abDiffModal')document.getElementById('abDiffModal').classList.remove('open');};
 
 // ========== SESSION JOURNAL ==========
 function journalAdd(text){
@@ -1579,12 +1443,33 @@ function journalAdd(text){
 }
 function renderJournal(){
   const list=document.getElementById('journalList'); if(!list) return;
-  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — hit <strong>📋 Snapshot → Claude</strong> to start your session log.</div>';return;}
+  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No entries yet — hit <strong>📋 Snapshot → Claude</strong> to log a session, or use <strong>📜 TL;DR → Journal</strong> on the Chat tab to save a chat summary.</div>';return;}
   list.innerHTML=STATE.journal.map(e=>{
-    const time=new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-    const chainCount=BUSES.reduce((n,b)=>n+(e.chain[b.id]?.length||0),0);
-    const preview=`${chainCount} plugins · ${Object.keys(e.meters||{}).length} meters · ${e.symptoms?.length||0} flags`;
-    return `<div class="journal-entry" data-id="${e.id}"><div class="journal-entry-head"><span class="journal-time">${escapeHtml(time)}</span><span class="journal-genre">${escapeHtml(e.genreLabel||e.genre||'')}</span><span class="journal-platform">${escapeHtml(e.platformLabel||'')}</span><span class="journal-preview">${escapeHtml(preview)}</span><div class="journal-actions"><button class="btn ghost sm" onclick="event.stopPropagation();restoreFromJournal('${e.id}')" title="Restore this state">↩</button><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div></div><div class="journal-body"><pre>${escapeHtml(e.text||'')}</pre></div></div>`;
+    const type = e.type || 'snapshot';
+    const time = new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const typeBadge = `<span class="journal-type ${type}">${type==='aichat' ? '💬 chat' : '📋 snapshot'}</span>`;
+    const genrePill = e.genreLabel||e.genre ? `<span class="journal-genre">${escapeHtml(e.genreLabel||e.genre)}</span>` : '';
+    const platformPill = e.platformLabel ? `<span class="journal-platform">${escapeHtml(e.platformLabel)}</span>` : '';
+
+    let middle = '';
+    let actions = '';
+    if (type === 'aichat'){
+      // Chat TL;DR — show subject as the headline; no chain restore
+      const subject = e.subject || 'Chat with Claude';
+      const msgs = (e.messageCount!=null) ? `${e.messageCount} msgs` : '';
+      const preview = msgs ? `· ${msgs}` : '';
+      middle = `<span class="journal-subject" title="${escapeHtml(subject)}">${escapeHtml(subject)}</span><span class="journal-preview">${escapeHtml(preview)}</span>`;
+      actions = `<div class="journal-actions"><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
+    } else {
+      // Workbench snapshot — keep restore button
+      const chainCount = BUSES.reduce((n,b)=>n+(e.chain&&e.chain[b.id]?e.chain[b.id].length:0),0);
+      const subject = e.subject || `Session snapshot — ${chainCount} plugin${chainCount===1?'':'s'}`;
+      const preview = `${chainCount} plugins · ${Object.keys(e.meters||{}).length} meters · ${e.symptoms?e.symptoms.length:0} flags`;
+      middle = `<span class="journal-subject" title="${escapeHtml(subject)}">${escapeHtml(subject)}</span><span class="journal-preview">${escapeHtml(preview)}</span>`;
+      actions = `<div class="journal-actions"><button class="btn ghost sm" onclick="event.stopPropagation();restoreFromJournal('${e.id}')" title="Restore this state">↩</button><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
+    }
+
+    return `<div class="journal-entry" data-id="${e.id}"><div class="journal-entry-head"><span class="journal-time">${escapeHtml(time)}</span>${typeBadge}${genrePill}${platformPill}${middle}${actions}</div><div class="journal-body"><pre>${escapeHtml(e.text||'')}</pre></div></div>`;
   }).join('');
   list.querySelectorAll('.journal-entry-head').forEach(h=>{
     h.addEventListener('click',()=>h.closest('.journal-entry').classList.toggle('open'));
@@ -1592,6 +1477,7 @@ function renderJournal(){
 }
 function restoreFromJournal(id){
   const e=STATE.journal.find(x=>x.id===id); if(!e) return;
+  if(e.type==='aichat'){toast('Chat entries can\'t be restored — they\'re reference notes only',true);return;}
   if(!confirm('Restore this snapshot? Overwrites current chain, meters, and flags.')) return;
   applyCapturedSnap(e); toast('Restored from journal');
 }
@@ -2673,6 +2559,147 @@ async function aichatSend(){
   }
 }
 
+// ----- TL;DR → Journal -----
+// Asks Claude to summarise the current chat, then files the result into the
+// existing session journal so Kev can scroll back through chats by subject + date.
+async function aichatToJournal(){
+  if (AICHAT.busy){ aichatStatus('Wait for the current reply to finish.', 'err'); return; }
+  if (!AICHAT.history.length){ aichatStatus('Nothing to summarise — start a chat first.', 'err'); return; }
+
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey){
+    aichatStatus('No Anthropic key saved — add one on the Voice Chat tab to summarise.', 'err');
+    return;
+  }
+
+  AICHAT.busy = true;
+  document.getElementById('aiChatToJournal').disabled = true;
+  aichatStatus('Summarising chat…', 'busy');
+
+  // Build a compact transcript for the summariser
+  const lines = AICHAT.history
+    .filter(m => m.role === 'user' || m.role === 'ai')
+    .map(m => `${m.role === 'ai' ? 'Claude' : 'Kev'}: ${m.content}`);
+  const transcript = lines.join('\n\n');
+
+  // Ask Claude to return strict JSON so we can extract subject + body cleanly
+  const sumSystem = `You summarise music-production chat transcripts into a brief reference note for Kev's journal. Return STRICT JSON only — no prose before or after. Schema:
+
+{
+  "subject": "<8 words max — punchy headline of what was discussed>",
+  "topic": "<one of: chain, plugin, troubleshoot, technique, reference, other>",
+  "tldr": "<2-3 sentence plain summary>",
+  "key_points": ["<bullet>", "<bullet>", ...],
+  "recommendations": ["<actionable step Kev can take>", ...],
+  "open_questions": ["<question still unresolved>", ...]
+}
+
+Be concise. Pull only what's actually in the transcript — don't invent recommendations Claude didn't suggest.`;
+
+  const userPrompt = `Summarise this chat transcript into a journal entry per the schema.\n\n--- TRANSCRIPT ---\n${transcript}`;
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':antKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001', // cheapest model — summarising is easy
+        max_tokens:1024,
+        system:sumSystem,
+        messages:[{role:'user', content:userPrompt}]
+      })
+    });
+
+    if (!resp.ok){
+      const errTxt = await resp.text();
+      aichatStatus(`Summary error ${resp.status}: ${errTxt.slice(0,250)}`, 'err');
+      return;
+    }
+    const data = await resp.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+
+    // Track summary cost
+    const u = data.usage||{};
+    const pp = ANT_PRICING['claude-haiku-4-5-20251001'] || ANT_PRICING['claude-sonnet-4-6'];
+    const inTok = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
+    const outTok = u.output_tokens||0;
+    const sumCost = (inTok*pp.in + outTok*pp.out)/1e6;
+    if (sumCost > 0){ try{ addSpend('an', sumCost); rtRenderCost(); }catch(_){} }
+
+    // Parse JSON — strip ```json fences if Claude added them
+    let parsed = null;
+    try{
+      let cleaned = raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'');
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      if (start>=0 && end>start) cleaned = cleaned.slice(start, end+1);
+      parsed = JSON.parse(cleaned);
+    } catch(parseErr){
+      aichatStatus('Couldn\'t parse summary JSON — saved raw text instead.', 'err');
+      parsed = { subject:'Chat with Claude', topic:'other', tldr: raw.slice(0,500) };
+    }
+
+    // Compose human-readable body for the journal "expand" pre block
+    const ps = document.getElementById('platformSelect');
+    const dateStr = new Date().toLocaleString();
+    const body = [
+      `# ${parsed.subject || 'Chat with Claude'}`,
+      `Date: ${dateStr}`,
+      `Topic: ${parsed.topic || 'other'}`,
+      `Genre: ${genreLabel(STATE.genre)} · Target: ${ps?ps.selectedOptions[0].textContent:''}`,
+      `Messages summarised: ${AICHAT.history.filter(m=>m.role==='user'||m.role==='ai').length}`,
+      '',
+      '## TL;DR',
+      parsed.tldr || '(no summary returned)',
+    ];
+    if (Array.isArray(parsed.key_points) && parsed.key_points.length){
+      body.push('', '## Key points');
+      parsed.key_points.forEach(p => body.push('- ' + p));
+    }
+    if (Array.isArray(parsed.recommendations) && parsed.recommendations.length){
+      body.push('', '## Recommendations');
+      parsed.recommendations.forEach(p => body.push('- ' + p));
+    }
+    if (Array.isArray(parsed.open_questions) && parsed.open_questions.length){
+      body.push('', '## Open questions');
+      parsed.open_questions.forEach(p => body.push('- ' + p));
+    }
+    body.push('', '---', '## Full transcript', transcript);
+
+    const entry = {
+      id:'j_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      ts:Date.now(),
+      type:'aichat',
+      subject: parsed.subject || 'Chat with Claude',
+      topic: parsed.topic || 'other',
+      genre:STATE.genre, genreLabel:genreLabel(STATE.genre),
+      platform: ps?ps.value:null, platformLabel: ps?ps.selectedOptions[0].textContent:null,
+      messageCount: AICHAT.history.filter(m=>m.role==='user'||m.role==='ai').length,
+      tldr: parsed.tldr || '',
+      key_points: Array.isArray(parsed.key_points) ? parsed.key_points : [],
+      recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+      open_questions: Array.isArray(parsed.open_questions) ? parsed.open_questions : [],
+      text: body.join('\n')
+    };
+    STATE.journal.unshift(entry);
+    if (STATE.journal.length>50) STATE.journal = STATE.journal.slice(0,50);
+    renderJournal();
+    saveState();
+    aichatStatus(`Saved to Journal — "${entry.subject}"`, 'ok');
+    toast('Chat summary saved to Journal');
+  } catch(e){
+    aichatStatus('Summary failed: ' + (e.message||String(e)), 'err');
+  } finally {
+    AICHAT.busy = false;
+    document.getElementById('aiChatToJournal').disabled = false;
+  }
+}
+
 function aichatClear(){
   if (!AICHAT.history.length){ aichatStatus('Nothing to clear.', 'ok'); return; }
   if (!confirm('Clear the chat with Claude? Conversation history will be erased.')) return;
@@ -2715,6 +2742,7 @@ function aichatInit(){
   };
   document.getElementById('aiChatSend').onclick = aichatSend;
   document.getElementById('aiChatClear').onclick = aichatClear;
+  document.getElementById('aiChatToJournal').onclick = aichatToJournal;
   document.getElementById('aiChatInput').addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
       e.preventDefault();
@@ -3163,7 +3191,6 @@ updateMeters();
 renderSymptoms();
 renderLibrary();
 renderRecipes();
-renderAB();
 renderJournal();
 aichatInit();
 </script>
