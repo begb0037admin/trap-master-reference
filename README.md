@@ -1,8 +1,10 @@
 # Trap Master Reference
 
-A trap / hip-hop mixing and mastering workbench — live genre-aware plugin picks, meter targets, a troubleshooter, and a voice-chat mastering assistant powered by OpenAI's Realtime API.
+A trap / hip-hop mixing and mastering workbench — live genre-aware plugin picks, meter targets, a troubleshooter, and a voice-chat mastering assistant powered by OpenAI's Realtime API and (optionally) Claude with live web search for niche knowledge lookups.
 
-Built as a single-file HTML app. No build step, no backend. Your state (chains, notes, favorites, API key) lives in your browser's localStorage.
+🔗 **Live demo**: <https://begb0037admin.github.io/trap-master-reference/>
+
+Built as a single-file HTML app. No build step, no backend. Your state (chains, notes, favorites, API keys) lives in your browser's localStorage.
 
 ## Quick start (local)
 
@@ -23,7 +25,13 @@ Or use the hosted version on GitHub Pages — link at the top of this repo's des
 
 The key is stored only in your browser. It's never uploaded anywhere except directly to OpenAI when you start a call.
 
-Default model is `gpt-4o-mini-realtime-preview` (cheap but a bit dumb). Switch the Model dropdown to `gpt-4o-realtime-preview` for better accuracy — roughly 10× the cost per minute, still pennies for a short session.
+Default model is `gpt-4o-mini-realtime-preview` (cheap but a bit dumb). Switch the Voice model dropdown to `gpt-4o-realtime-preview` for better accuracy — roughly 10× the cost per minute, still pennies for a short session.
+
+### Optional: Anthropic key for the research tool
+
+The voice model is fast and conversational but its knowledge of niche producer techniques (specific engineers, plugin parameters, current 2024–2026 trends) is shaky and it tends to bluff. To fix that, paste a Claude API key (`sk-ant-…`) into the second key field. When the voice AI is about to bluff on something niche, it'll instead call Claude with live web search, get a grounded answer with citations, and read it back to you. Adds ~2–4s of "hold on, let me check…" but kills the hallucinations.
+
+Get a key at <https://console.anthropic.com> → Settings → API Keys → Create. ~$5 in credits is plenty to start. Pick the research model in the dropdown — Sonnet 4.6 is the balanced default; Opus 4.6 if you want maximum smart.
 
 ## What's in it
 
@@ -33,6 +41,7 @@ Default model is `gpt-4o-mini-realtime-preview` (cheap but a bit dumb). Switch t
 - **Platform loudness targets**: club-loud, Spotify, Apple Music, SoundCloud.
 - **Troubleshooter**: flag symptoms (harsh hats, muddy 808, pumping, etc.), get recipe chains.
 - **Voice AI** that can read your workbench state, add/remove plugins, switch genre, flag issues, and pin settings to plugins via function calling.
+- **Deep research** (with an Anthropic key): voice model delegates niche / knowledge-heavy questions to Claude with live web search instead of bluffing.
 
 ## Collaboration
 
