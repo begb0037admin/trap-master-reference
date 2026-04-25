@@ -200,6 +200,14 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-msg .body ul,.aichat-msg .body ol{margin:6px 0 8px 22px}
 .aichat-msg .body li{margin-bottom:3px}
 .aichat-msg .body h2,.aichat-msg .body h3,.aichat-msg .body h4{margin:10px 0 4px;color:#f3f4f6}
+.aichat-actions-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.aichat-tts-btn{background:transparent;border:1px solid #374151;color:#9ca3af;border-radius:14px;padding:3px 11px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:500;transition:all .12s;font-family:inherit}
+.aichat-tts-btn:hover{color:#34d399;border-color:#10a37f}
+.aichat-tts-btn.playing{background:#064e3b;color:#6ee7b7;border-color:#10a37f}
+.aichat-tts-btn.loading{color:#fbbf24;border-color:#b45309;cursor:wait}
+.aichat-tts-btn:disabled{opacity:.5;cursor:not-allowed}
+.aichat-tts-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:#9ca3af;flex-wrap:wrap}
+.aichat-tts-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:5px;padding:4px 7px;font-size:11px}
 
 /* VOICE */
 .voice-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -618,6 +626,24 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         <option value="claude-haiku-4-5-20251001">Haiku 4.5 — fastest / cheapest</option>
       </select>
       <label class="toggle"><input type="checkbox" id="aiChatWebSearch" checked> 🌐 Web search</label>
+      <span class="aichat-tts-bar" title="Voice + model used when you press Read aloud on a reply">
+        <span style="color:#6b7280;">🔊</span>
+        <select id="aiChatTtsVoice" title="TTS voice">
+          <option value="alloy">alloy</option>
+          <option value="ash">ash</option>
+          <option value="ballad">ballad</option>
+          <option value="coral">coral</option>
+          <option value="echo" selected>echo</option>
+          <option value="sage">sage</option>
+          <option value="shimmer">shimmer</option>
+          <option value="verse">verse</option>
+        </select>
+        <select id="aiChatTtsModel" title="TTS model — tts-1 is cheapest, gpt-4o-mini-tts is newer/expressive">
+          <option value="tts-1" selected>tts-1 (cheap)</option>
+          <option value="tts-1-hd">tts-1-hd (HQ)</option>
+          <option value="gpt-4o-mini-tts">4o-mini-tts (expressive)</option>
+        </select>
+      </span>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
     </div>
     <div class="aichat-transcript" id="aiChatTranscript">
@@ -635,9 +661,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <span>Last reply: <span id="aiChatLastCost">—</span></span>
       <span>Messages: <span id="aiChatMsgCount">0</span></span>
       <div style="flex:1"></div>
-      <span style="color:#6b7280;">Cost auto-tracks into the Anthropic spend counter on the Voice Chat tab.</span>
+      <span style="color:#6b7280;">Costs auto-track into the spend counters on the Voice Chat tab (Anthropic for chat, OpenAI for read-aloud).</span>
     </div>
   </div>
+  <audio id="aiChatTtsAudio" preload="none"></audio>
 </div>
 
 <div class="panel" id="eq">
@@ -2341,7 +2368,7 @@ function aichatRender(){
   if (!AICHAT.history.length){
     tEl.innerHTML = '<div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer\'s technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>';
   } else {
-    tEl.innerHTML = AICHAT.history.map(m => {
+    tEl.innerHTML = AICHAT.history.map((m, i) => {
       const cls = 'aichat-msg ' + (m.role === 'ai' ? 'ai' : (m.role === 'system' ? 'system' : 'user'));
       const who = m.role === 'user' ? 'You' : (m.role === 'system' ? 'System' : 'Claude');
       const body = m.role === 'ai' ? aichatFormatMd(m.content) : escapeHtml(m.content);
@@ -2354,7 +2381,16 @@ function aichatRender(){
         }).join(' · ');
         cites = `<div class="cites">Sources: ${links}</div>`;
       }
-      return `<div class="${cls}"><div class="who">${who}</div><div class="body">${body}${cites}</div></div>`;
+      // Read-aloud button on AI messages only — toggles play/stop, persists "playing" state across re-renders.
+      let actions = '';
+      if (m.role === 'ai' && m.content && !m.content.startsWith('⚠️')){
+        const isPlaying = TTS.playingIdx === i;
+        const isLoading = TTS.loadingIdx === i;
+        const btnCls = 'aichat-tts-btn' + (isPlaying ? ' playing' : '') + (isLoading ? ' loading' : '');
+        const label = isLoading ? '⏳ Loading…' : (isPlaying ? '⏹ Stop' : '🔊 Read aloud');
+        actions = `<div class="aichat-actions-row"><button class="${btnCls}" data-idx="${i}" onclick="aichatSpeak(${i})">${label}</button></div>`;
+      }
+      return `<div class="${cls}"><div class="who">${who}</div><div class="body">${body}${cites}${actions}</div></div>`;
     }).join('');
     tEl.scrollTop = tEl.scrollHeight;
   }
@@ -2363,6 +2399,151 @@ function aichatRender(){
   if (cntEl) cntEl.textContent = cnt;
   const sEl = document.getElementById('aiChatSessionCost');
   if (sEl) sEl.textContent = '$' + AICHAT.sessionCost.toFixed(3);
+}
+
+// ----- Read-aloud (OpenAI TTS) -----
+// Pricing reference: tts-1 = $15 / 1M chars, tts-1-hd = $30 / 1M chars,
+// gpt-4o-mini-tts = ~$0.60/1M input tokens + $12/1M output audio tokens.
+// We charge per character on the input side as a close-enough estimate.
+const TTS_RATES = {
+  'tts-1':       { perChar: 15  / 1e6 },
+  'tts-1-hd':    { perChar: 30  / 1e6 },
+  'gpt-4o-mini-tts': { perChar: 12 / 1e6 } // approximation: ~$12/1M chars on the audio-out side
+};
+const TTS_MAX_CHARS = 4000; // OpenAI cap is 4096 — leave a little headroom
+
+const TTS = {
+  audio: null,         // <audio> element, lazy-init
+  playingIdx: -1,      // which message index is currently playing
+  loadingIdx: -1,      // which message is being fetched (for spinner state)
+  abort: null
+};
+
+function aichatTtsAudioEl(){
+  if (!TTS.audio){
+    TTS.audio = document.getElementById('aiChatTtsAudio') || new Audio();
+    TTS.audio.onended = () => aichatStopTTS();
+    TTS.audio.onerror = () => aichatStopTTS();
+  }
+  return TTS.audio;
+}
+
+function aichatStripMd(text){
+  return String(text)
+    .replace(/```[\s\S]*?```/g, '. (code block omitted) .')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/(https?:\/\/\S+)/g, '') // skip raw URLs
+    .replace(/\n{2,}/g, '. ')
+    .replace(/\n/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+async function aichatSpeak(idx){
+  // Toggle off if user clicks the same message again
+  if (TTS.playingIdx === idx || TTS.loadingIdx === idx){
+    aichatStopTTS();
+    return;
+  }
+  // Stop anything else in flight
+  aichatStopTTS();
+
+  const msg = AICHAT.history[idx];
+  if (!msg || msg.role !== 'ai') return;
+
+  const oaKey = localStorage.getItem(RT_KEY_STORAGE);
+  if (!oaKey){
+    aichatStatus('No OpenAI key saved. Add one on the 🎙️ Voice Chat tab to enable Read aloud.', 'err');
+    return;
+  }
+
+  let text = aichatStripMd(msg.content);
+  if (!text){ aichatStatus('Nothing readable in that message.', 'err'); return; }
+  let truncated = false;
+  if (text.length > TTS_MAX_CHARS){
+    text = text.slice(0, TTS_MAX_CHARS) + '… The rest was cut off — open the message to read the remainder.';
+    truncated = true;
+  }
+
+  const voice = (document.getElementById('aiChatTtsVoice')||{}).value || 'echo';
+  const model = (document.getElementById('aiChatTtsModel')||{}).value || 'tts-1';
+
+  TTS.loadingIdx = idx;
+  aichatRender(); // reflect loading state on the button
+  aichatStatus(`Generating speech (${model}, ${voice})…`, 'busy');
+
+  try{
+    TTS.abort = new AbortController();
+    const resp = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + oaKey
+      },
+      body: JSON.stringify({ model, voice, input: text, response_format: 'mp3' }),
+      signal: TTS.abort.signal
+    });
+    TTS.abort = null;
+    if (!resp.ok){
+      const errTxt = await resp.text();
+      TTS.loadingIdx = -1;
+      aichatRender();
+      aichatStatus(`TTS error ${resp.status}: ${errTxt.slice(0,250)}`, 'err');
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = aichatTtsAudioEl();
+    // Clean up any previous blob URL
+    if (audio.dataset.blobUrl){
+      try{ URL.revokeObjectURL(audio.dataset.blobUrl); }catch(_){}
+    }
+    audio.dataset.blobUrl = url;
+    audio.src = url;
+
+    // Track cost — charge per character on the input
+    const rate = (TTS_RATES[model] || TTS_RATES['tts-1']).perChar;
+    const cost = text.length * rate;
+    if (cost > 0){
+      try{ addSpend('oai', cost); rtRenderCost(); }catch(_){}
+    }
+
+    TTS.loadingIdx = -1;
+    TTS.playingIdx = idx;
+    aichatRender();
+
+    await audio.play();
+    const note = truncated ? ' · message was truncated to fit TTS limit' : '';
+    aichatStatus(`Reading aloud · $${cost.toFixed(4)} · ${text.length} chars${note}`, 'ok');
+  } catch(e){
+    TTS.loadingIdx = -1;
+    TTS.playingIdx = -1;
+    aichatRender();
+    if (e.name !== 'AbortError'){
+      aichatStatus('TTS failed: ' + (e.message||String(e)), 'err');
+    } else {
+      aichatStatus('Read-aloud cancelled.', 'ok');
+    }
+  }
+}
+
+function aichatStopTTS(){
+  if (TTS.abort){ try{ TTS.abort.abort(); }catch(_){} TTS.abort = null; }
+  if (TTS.audio){
+    try{ TTS.audio.pause(); TTS.audio.currentTime = 0; }catch(_){}
+    if (TTS.audio.dataset && TTS.audio.dataset.blobUrl){
+      try{ URL.revokeObjectURL(TTS.audio.dataset.blobUrl); }catch(_){}
+      delete TTS.audio.dataset.blobUrl;
+    }
+  }
+  TTS.playingIdx = -1;
+  TTS.loadingIdx = -1;
+  aichatRender();
 }
 
 async function aichatSend(){
@@ -2495,6 +2676,7 @@ async function aichatSend(){
 function aichatClear(){
   if (!AICHAT.history.length){ aichatStatus('Nothing to clear.', 'ok'); return; }
   if (!confirm('Clear the chat with Claude? Conversation history will be erased.')) return;
+  aichatStopTTS();
   AICHAT.history = [];
   AICHAT.sessionCost = 0;
   aichatSave();
@@ -2504,19 +2686,32 @@ function aichatClear(){
   aichatStatus('Cleared.', 'ok');
 }
 
+const AICHAT_TTS_VOICE_KEY='trapMasterAiChatTtsVoice_v1';
+const AICHAT_TTS_MODEL_KEY='trapMasterAiChatTtsModel_v1';
+
 function aichatInit(){
-  // Restore preferred model + search toggle
+  // Restore preferred chat model + search toggle + TTS voice/model
   try{
     const m = localStorage.getItem(AICHAT_MODEL_KEY);
     if (m) document.getElementById('aiChatModel').value = m;
     const s = localStorage.getItem(AICHAT_SEARCH_KEY);
     if (s !== null) document.getElementById('aiChatWebSearch').checked = s === '1';
+    const tv = localStorage.getItem(AICHAT_TTS_VOICE_KEY);
+    if (tv) document.getElementById('aiChatTtsVoice').value = tv;
+    const tm = localStorage.getItem(AICHAT_TTS_MODEL_KEY);
+    if (tm) document.getElementById('aiChatTtsModel').value = tm;
   }catch(_){}
   document.getElementById('aiChatModel').onchange = e => {
     try{ localStorage.setItem(AICHAT_MODEL_KEY, e.target.value); }catch(_){}
   };
   document.getElementById('aiChatWebSearch').onchange = e => {
     try{ localStorage.setItem(AICHAT_SEARCH_KEY, e.target.checked ? '1' : '0'); }catch(_){}
+  };
+  document.getElementById('aiChatTtsVoice').onchange = e => {
+    try{ localStorage.setItem(AICHAT_TTS_VOICE_KEY, e.target.value); }catch(_){}
+  };
+  document.getElementById('aiChatTtsModel').onchange = e => {
+    try{ localStorage.setItem(AICHAT_TTS_MODEL_KEY, e.target.value); }catch(_){}
   };
   document.getElementById('aiChatSend').onclick = aichatSend;
   document.getElementById('aiChatClear').onclick = aichatClear;
@@ -2526,6 +2721,8 @@ function aichatInit(){
       aichatSend();
     }
   });
+  // Stop any audio if Kev navigates away from the page
+  window.addEventListener('beforeunload', () => aichatStopTTS());
   aichatRender();
 }
 
