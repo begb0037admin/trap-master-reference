@@ -67,10 +67,13 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .bus-col h4{font-size:12px;color:#d1d5db;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center}
 .bus-col h4 .count{color:#9ca3af;font-weight:500;font-size:11px;letter-spacing:.2px;text-transform:none}
 .chain-list{margin-bottom:10px}
-.chain-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 8px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px}
+.chain-item{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px}
 .chain-item.has-notes{border-color:#4c1d95}
-.chain-item .order{color:#9ca3af;font-family:"SF Mono",monospace;font-size:10px;min-width:14px}
-.chain-item .name{flex:1;color:#f3f4f6;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chain-head{display:flex;align-items:flex-start;gap:8px}
+.chain-head .order{color:#9ca3af;font-family:"SF Mono",monospace;font-size:10px;min-width:14px;padding-top:3px;flex-shrink:0}
+.chain-head .name{flex:1;color:#f3f4f6;font-weight:600;font-size:13px;line-height:1.3;word-break:break-word;overflow-wrap:anywhere}
+.chain-actions{display:flex;align-items:center;gap:4px}
+.chain-actions .chip{margin-right:auto}
 .chain-item button{background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:13px;padding:2px 5px;line-height:1}
 .chain-item button:hover{color:#e5e7eb}.chain-item button.del:hover{color:#ef4444}
 .chain-item button.notes-btn.has{color:#c4b5fd}.chain-item button.notes-btn.has:hover{color:#ddd6fe}
@@ -874,7 +877,7 @@ function renderChainItem(busId,p,idx,total){
   const notesRow=hasNotes
     ? `<div class="chain-notes-row"><div class="chain-notes" onclick="editChainNotes('${busId}',${idx})" title="Click to edit"><span class="nlabel">⚙ Settings</span>${escapeHtml(p.notes)}</div><button class="chain-notes-clear" title="Clear settings notes" onclick="clearChainNotes('${busId}',${idx})">×</button></div>`
     : '';
-  return `<div class="chain-item${hasNotes?' has-notes':''}" data-bus="${busId}" data-idx="${idx}"><span class="order">${idx+1}</span><span class="name">${escapeHtml(p.n)}</span><span class="chip ${pub[1]}">${pub[0]}</span><button class="notes-btn${hasNotes?' has':''}" title="${hasNotes?'Edit settings notes':'Add settings notes'}" onclick="editChainNotes('${busId}',${idx})">📝</button><button onclick="moveChain('${busId}',${idx},-1)" ${idx===0?'disabled style="opacity:.2"':''}>↑</button><button onclick="moveChain('${busId}',${idx},1)" ${idx===total-1?'disabled style="opacity:.2"':''}>↓</button><button class="del" onclick="removeChain('${busId}',${idx})">×</button>${notesRow}</div>`;
+  return `<div class="chain-item${hasNotes?' has-notes':''}" data-bus="${busId}" data-idx="${idx}"><div class="chain-head"><span class="order">${idx+1}</span><span class="name">${escapeHtml(p.n)}</span></div><div class="chain-actions"><span class="chip ${pub[1]}">${pub[0]}</span><button class="notes-btn${hasNotes?' has':''}" title="${hasNotes?'Edit settings notes':'Add settings notes'}" onclick="editChainNotes('${busId}',${idx})">📝</button><button onclick="moveChain('${busId}',${idx},-1)" ${idx===0?'disabled style="opacity:.2"':''}>↑</button><button onclick="moveChain('${busId}',${idx},1)" ${idx===total-1?'disabled style="opacity:.2"':''}>↓</button><button class="del" onclick="removeChain('${busId}',${idx})">×</button></div>${notesRow}</div>`;
 }
 function moveChain(busId,idx,dir){const arr=STATE.chain[busId];const j=idx+dir;if(j<0||j>=arr.length)return;[arr[idx],arr[j]]=[arr[j],arr[idx]];renderChain();saveState();}
 function removeChain(busId,idx){STATE.chain[busId].splice(idx,1);renderChain();saveState();}
@@ -1646,7 +1649,7 @@ const TOOL_DEFS=[
   {type:'function',name:'get_context',description:'Get the current workbench state: genre, loudness target, each bus\'s chain, meter readings, flagged symptoms, favorite count, custom plugin count. Call this before advising so you know what the producer is actually looking at.',parameters:{type:'object',properties:{},required:[]}},
   {type:'function',name:'set_genre',description:'Switch the active genre (changes which plugins are starred as top picks).',parameters:{type:'object',properties:{genre:{type:'string',enum:['hiphop','rnb','pop','afrobeats','trap','lofi']}},required:['genre']}},
   {type:'function',name:'set_platform',description:'Change the loudness target / platform (master bus reference).',parameters:{type:'object',properties:{platform:{type:'string',enum:['trap','spotify','apple','soundcloud']}},required:['platform']}},
-  {type:'function',name:'add_plugin_to_bus',description:'Add a plugin to a bus. Plugin is matched by name against the full library (built-in + custom). Position is 1-indexed; omit to append at end.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — e.g. "Ozone 12 Maximizer", "Maag EQ4", "Pro-L 2". Fuzzy match is fine.'},position:{type:'integer',description:'1-indexed insertion point; omit to append'}},required:['bus','plugin']}},
+  {type:'function',name:'add_plugin_to_bus',description:'Add a plugin to a bus. The plugin name MUST match something in Kev\'s library (see the library digest in your session instructions). If the name doesn\'t match, this fails — call add_custom_plugin first if it\'s a new plugin he\'s named. Position is 1-indexed; omit to append at end.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — must be one Kev owns. Fuzzy match is fine but pick a name from his library digest.'},position:{type:'integer',description:'1-indexed insertion point; omit to append'}},required:['bus','plugin']}},
   {type:'function',name:'remove_plugin_from_bus',description:'Remove a plugin from a bus by its 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},position:{type:'integer'}},required:['bus','position']}},
   {type:'function',name:'move_plugin',description:'Reorder a plugin within a bus. Positions are 1-indexed.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},from:{type:'integer'},to:{type:'integer'}},required:['bus','from','to']}},
   {type:'function',name:'clear_bus',description:'Remove all plugins from a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']}},required:['bus']}},
@@ -1656,6 +1659,7 @@ const TOOL_DEFS=[
   {type:'function',name:'record_meter',description:'Record a meter reading. meter is one of: iLufs, tp, lra, corr, crest.',parameters:{type:'object',properties:{meter:{type:'string',enum:['iLufs','tp','lra','corr','crest']},value:{type:'number'}},required:['meter','value']}},
   {type:'function',name:'add_custom_plugin',description:'Add a plugin to the library that isn\'t already built in. stage must be one of the known stage ids.',parameters:{type:'object',properties:{name:{type:'string'},publisher:{type:'string',description:'slate, ssl, ua, softube, sonnox, sonible, sndtoys, izotope, eiosis, weiss, oek, waves, ni, pa, ant, cele, liq, or other'},publisher_label:{type:'string',description:'If publisher is "other", supply a label like "FabFilter"'},stage:{type:'string'}},required:['name','publisher','stage']}},
   {type:'function',name:'list_plugins',description:'Search the plugin library. Pass stage_id or search text.',parameters:{type:'object',properties:{stage:{type:'string'},search:{type:'string'}},required:[]}},
+  {type:'function',name:'get_library',description:'Return the full current plugin library grouped by stage. The library was inlined in your session start instructions, but call this if Kev mentions he just added plugins or you want a fresh dump.',parameters:{type:'object',properties:{},required:[]}},
   {type:'function',name:'set_plugin_settings',description:'Pin concrete setting notes to a specific plugin on a bus so they appear directly under the plugin in the chain view. USE THIS EVERY TIME you give specific parameter values (drive/threshold/Q/freq/attack/release/mix%/etc.) — the notes persist in the UI so Kev doesn\'t have to scroll the transcript. Replaces existing notes for that plugin. Target by plugin name (fuzzy match) OR by 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — fuzzy match. Use this OR position.'},position:{type:'integer',description:'1-indexed position on the bus. Use this OR plugin.'},settings:{type:'string',description:'Terse, actionable notes. Prefer one parameter per line like "Drive: 3–4" or "HPF: 80 Hz, 12 dB/oct". Include mix% if parallel. Max ~6 lines.'}},required:['bus','settings']}},
   {type:'function',name:'clear_plugin_settings',description:'Remove settings notes from a plugin on a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string'},position:{type:'integer'}},required:['bus']}},
   {type:'function',name:'research',description:'Look up specific knowledge using Claude with live web search. USE THIS when you might bluff: specific producer/engineer techniques (Jaycen Joshua, Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, etc.), exact plugin parameters/control names, current 2024–2026 plugin releases or trends, signature chains documented online, gear interviews. Returns a grounded answer with citations. Brief Kev with "hold on, let me check…" before calling. Do NOT use for stuff you obviously know (basic mixing concepts, his workbench state, common plugin features).',parameters:{type:'object',properties:{question:{type:'string',description:'Focused, specific question. "What is Jaycen Joshua\'s vocal bus chain?" beats "How do I mix vocals?". Include specific names/plugins where relevant.'},context:{type:'string',description:'Optional: 1-2 sentences of conversation context that help narrow the answer (genre, what Kev is trying to achieve, plugins he has).'}},required:['question']}}
@@ -1715,8 +1719,31 @@ function buildContextSummary(){
     meters:verdicts,
     flagged_symptoms:[...STATE.symptoms].map(id=>{const s=SYMPTOMS.find(x=>x.id===id);return s?{id:s.id,label:s.label}:{id};}),
     favorites_count:STATE.favorites.size,
-    custom_plugins_count:STATE.customPlugins.length
+    custom_plugins_count:STATE.customPlugins.length,
+    library_size:allPlugins().length,
+    library_reminder:'The full plugin library is inlined in your session instructions. ALWAYS pick recommendations from there. If you need a fresh dump (e.g. after Kev added new plugins), call get_library.'
   };
+}
+
+// Compact, stage-grouped library listing — injected into session instructions at start
+// so the voice model knows exactly which plugins Kev owns and stops inventing things.
+function buildLibraryDigest(){
+  const all=allPlugins();
+  const byStage={};
+  all.forEach(p=>{if(!byStage[p.s])byStage[p.s]=[];byStage[p.s].push(p.n);});
+  const lines=[`=== KEV'S PLUGIN LIBRARY (${all.length} plugins — USE THESE) ===`];
+  lines.push('When recommending or adding plugins, pick ONLY from the names below. Do NOT suggest plugins he doesn\'t own (no inventing CLA-76, LA-2A, Pro-Q, FabFilter, etc. unless they appear here). If he names something not in this list, call add_custom_plugin to register it first.');
+  STAGES.forEach(s=>{
+    const plugs=byStage[s.id];if(!plugs||!plugs.length)return;
+    const cleanLabel=s.label.replace(/^[^A-Za-z]+/,'').trim();
+    lines.push(`${cleanLabel}: ${plugs.join(', ')}`);
+  });
+  const cust=STATE.customPlugins;
+  if(cust.length){
+    lines.push('');
+    lines.push(`Custom additions (${cust.length}): ${cust.map(p=>p.n).join(', ')}`);
+  }
+  return lines.join('\n');
 }
 
 // ========== RESEARCH (Claude API + web search) ==========
@@ -1803,7 +1830,14 @@ async function handleToolCall(name,args){
       }
       case 'add_plugin_to_bus':{
         const bus=args.bus;if(!STATE.chain[bus])throw new Error('Unknown bus: '+bus);
-        const pl=fuzzyFindPlugin(args.plugin);if(!pl)throw new Error('Plugin not in library: '+args.plugin+'. Call add_custom_plugin first if new.');
+        const pl=fuzzyFindPlugin(args.plugin);
+        if(!pl){
+          // Suggest the closest 6 names so the AI can pick a real one or call add_custom_plugin.
+          const q=(args.plugin||'').toLowerCase();
+          const qw=q.split(/\s+/).filter(Boolean);
+          const candidates=allPlugins().map(p=>{const hay=p.n.toLowerCase();return{n:p.n,score:qw.filter(w=>hay.includes(w)).length};}).sort((a,b)=>b.score-a.score).slice(0,6).map(x=>x.n);
+          throw new Error(`Plugin "${args.plugin}" is NOT in Kev's library. Closest matches he might own: ${candidates.join(', ')}. If none of those are right, call add_custom_plugin first.`);
+        }
         const entry={n:pl.n,p:pl.p,s:pl.s};
         if(args.position!=null){
           const idx=Math.max(0,Math.min(args.position-1,STATE.chain[bus].length));
@@ -1864,6 +1898,12 @@ async function handleToolCall(name,args){
         const res=allPlugins().filter(p=>{if(stage&&p.s!==stage)return false;if(q&&!p.n.toLowerCase().includes(q))return false;return true;}).slice(0,60).map(p=>({n:p.n,publisher:(PUBS[p.p]||PUBS.other)[0],stage:p.s,custom:!!p.custom}));
         return{count:res.length,plugins:res};
       }
+      case 'get_library':{
+        const all=allPlugins();
+        const byStage={};
+        all.forEach(p=>{if(!byStage[p.s])byStage[p.s]=[];byStage[p.s].push(p.n);});
+        return{count:all.length,custom_count:STATE.customPlugins.length,by_stage:byStage,digest:buildLibraryDigest()};
+      }
       case 'set_plugin_settings':{
         const bus=args.bus;const arr=STATE.chain[bus];if(!arr)throw new Error('Unknown bus: '+bus);
         const idx=resolveChainIdx(bus,args);
@@ -1906,9 +1946,18 @@ VOICE STYLE: since this is real-time speech, talk naturally — contractions, sh
 
 TOOLS: you have live tools to read and modify his workbench. USE THEM.
 - Call get_context BEFORE giving advice so you know his current genre, platform target, chains per bus, meter readings, flagged issues, and any pinned settings notes already on plugins.
-- When he asks you to change something ("add Pro-L 2 to the master", "flag muddy bass", "switch to lo-fi"), call the matching tool directly instead of telling him to click it.
+- When he asks you to change something ("add Maag EQ4 to the master", "flag muddy bass", "switch to lo-fi"), call the matching tool directly instead of telling him to click it.
 - When the chain changes, you can call get_context again to reconfirm.
 - If he names a plugin you don't recognize, try add_custom_plugin so his library grows.
+
+STAY IN HIS LIBRARY (CRITICAL):
+The full plugin library Kev owns is inlined at the bottom of these instructions. ALWAYS pick recommendations from that list. Do NOT default to common names you remember from training (Pro-Q 3, FabFilter Pro-L 2, CLA-2A, LA-2A) unless they actually appear in his library. He has a huge collection — Waves, Plugin Alliance, Soundtoys, oeksound, iZotope, Native Instruments, UA, Slate, Sonnox, Eiosis, LiquidSonics — so for almost any task there's already a great option in there. If you suggest something he doesn't own, you wasted his time.
+
+Workflow when recommending a plugin:
+1. Look at the library digest below — find what he actually owns at that stage (e.g. for de-essing he has soothe2, Lindell 902 De-esser, Eiosis E2Deesser, Sonnox Oxford SuprEsser, Waves Sibilance, etc.).
+2. Pick from those, pulling on what fits the genre / vibe.
+3. If he asks for a specific plugin not in the list (e.g. "add the new Pro-MB to the master"), call add_custom_plugin first to register it, then add_plugin_to_bus.
+4. If add_plugin_to_bus errors saying the plugin isn't in his library, the error includes closest matches — pick one of those instead of inventing.
 
 PIN YOUR SETTINGS (CRITICAL):
 Whenever you give concrete parameter values for a plugin ("drive around 3", "HPF at 80", "ratio 4:1, attack 30ms", "mix 60%"), you MUST call set_plugin_settings with those exact values, targeting that plugin on its bus. The notes appear directly under the plugin in the chain view so Kev doesn't have to scroll the transcript to remember what you said. Format: short key:value lines, one parameter per line, max ~6 lines. Examples:
@@ -1999,8 +2048,11 @@ async function rtStart(){
     RT.dc.addEventListener('message',onRtEvent);
     RT.dc.addEventListener('open',()=>{
       // Push session.update with our instructions + tools once the channel is open.
+      // Library digest is appended to instructions so the model knows exactly what
+      // plugins Kev owns and stops recommending things from generic training data.
+      const fullInstructions=RT_INSTRUCTIONS+'\n\n'+buildLibraryDigest();
       rtSend({type:'session.update',session:{
-        instructions:RT_INSTRUCTIONS,
+        instructions:fullInstructions,
         tools:TOOL_DEFS,
         tool_choice:'auto',
         turn_detection:{type:'server_vad',threshold:0.55,prefix_padding_ms:300,silence_duration_ms:650},
