@@ -210,6 +210,35 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-tts-btn.loading{color:#fbbf24;border-color:#b45309;cursor:wait}
 .aichat-tts-btn:disabled{opacity:.5;cursor:not-allowed}
 .aichat-tts-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:#9ca3af;flex-wrap:wrap}
+/* KNOWLEDGE BASE */
+.kb-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.kb-stats{color:#fbbf24;font-size:12px;font-family:'SF Mono',monospace;background:#1f2937;border:1px solid #374151;border-radius:14px;padding:5px 12px}
+.kb-list{display:flex;flex-direction:column;gap:10px}
+.kb-empty{color:#6b7280;font-style:italic;text-align:center;padding:36px 24px;border:1px dashed #374151;border-radius:10px;line-height:1.7;font-size:13px}
+.kb-empty strong{color:#fbbf24;font-style:normal}
+.kb-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
+.kb-card.active{border-color:#fbbf24}
+.kb-card.active::before{content:'';display:none}
+.kb-card .kb-row1{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.kb-card .kb-title{flex:1;font-weight:600;color:#f9fafb;font-size:14px;line-height:1.35}
+.kb-card .kb-meta{color:#9ca3af;font-size:11px;margin-bottom:6px;word-break:break-word}
+.kb-card .kb-meta a{color:#a5b4fc;text-decoration:underline}
+.kb-card .kb-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.kb-tag{background:#111827;color:#d1d5db;border:1px solid #374151;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:500}
+.kb-card .kb-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.kb-active-toggle{display:inline-flex;align-items:center;gap:5px;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer;background:#111827;border:1px solid #374151;border-radius:14px;padding:5px 12px;font-family:inherit;transition:all .12s}
+.kb-active-toggle:hover{color:#e5e7eb;border-color:#6b7280}
+.kb-active-toggle.on{color:#fde68a;border-color:#fbbf24;background:#3b1f01}
+.kb-mode-pill{display:inline-flex;align-items:center;gap:4px;background:#111827;border:1px solid #374151;border-radius:14px;padding:4px 10px;color:#9ca3af;font-size:11px;cursor:pointer;font-family:inherit}
+.kb-mode-pill:hover{color:#e5e7eb}
+.kb-mode-pill.on{color:#a5b4fc;border-color:#6366f1}
+.kb-mode-pill:disabled{cursor:not-allowed}
+.kb-card .kb-body{margin-top:8px;background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:12px;color:#d1d5db;line-height:1.55;max-height:280px;overflow:auto;white-space:pre-wrap;word-break:break-word;display:none;font-family:'SF Mono',monospace}
+.kb-card.expanded .kb-body{display:block}
+.kb-card .kb-counts{color:#6b7280;font-size:11px;font-family:'SF Mono',monospace;margin-left:auto}
+.kb-card .kb-summary-status{font-size:11px;color:#9ca3af;font-style:italic;margin-top:4px}
+.kb-card .kb-summary-status.busy{color:#fbbf24}
+.kb-card .kb-summary-status.err{color:#fca5a5}
 .aichat-msg .body::selection,.aichat-msg .body *::selection{background:#fde68a;color:#111827}
 .aichat-word{transition:background-color .08s,color .08s;border-radius:3px;padding:0 1px}
 .aichat-word.spoken{background:#fbbf24;color:#111827;font-weight:600;box-shadow:0 0 0 2px #fbbf24}
@@ -422,10 +451,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 
 <div class="tabs">
   <button class="tab active active-section" data-tab="chain">🎛️ Chain Builder</button>
-  <button class="tab active-section" data-tab="meter">📊 Meter Check</button>
-  <button class="tab active-section" data-tab="trouble">🔧 Troubleshooter</button>
+  <button class="tab active-section" data-tab="meter">🩺 Diagnose</button>
   <button class="tab voice-tab" data-tab="voice">🎙️ Voice Chat</button>
   <button class="tab" data-tab="aichat" style="color:#34d399;">💬 Chat with Claude</button>
+  <button class="tab" data-tab="knowledge" style="color:#fbbf24;">📚 Knowledge</button>
   <button class="tab" data-tab="eq">📐 Mastering Reference</button>
   <button class="tab" data-tab="library">🔌 Plugin Library</button>
   <button class="tab" data-tab="journal">📜 Journal</button>
@@ -442,12 +471,18 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 </div>
 
 <div class="panel" id="meter">
+  <div class="section-head">
+    <h2>📊 Meter Check</h2>
+    <span class="blurb">Type your live readings — get instant pass/warn/fail vs. the platform target.</span>
+  </div>
   <div class="meter-grid" id="meterGrid"></div>
   <div class="diagnosis-box" id="diagnosis"><h4>Diagnosis</h4><ul id="diagnosisList"><li class="ok">Enter your readings above.</li></ul></div>
-</div>
 
-<div class="panel" id="trouble">
-  <div class="subtitle" style="margin-bottom:12px;">Click any symptom to see a recipe. Pick multiple — they stack on the snapshot.</div>
+  <div class="section-head" style="margin-top:28px;">
+    <h2>🔧 Troubleshooter</h2>
+    <span class="blurb">Click any symptom for a recipe. Pick multiple — they stack on the snapshot.</span>
+  </div>
+  <div class="subtitle" style="margin-bottom:12px;">Symptoms below feed the same diagnosis Claude sees on the next snapshot.</div>
   <div class="symptom-grid" id="symptomGrid"></div>
   <div id="recipesOutput"></div>
 </div>
@@ -660,6 +695,23 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <audio id="aiChatTtsAudio" preload="none"></audio>
 </div>
 
+<!-- KNOWLEDGE BASE -->
+<div class="panel" id="knowledge">
+  <div class="section-head">
+    <h2>📚 Knowledge Base</h2>
+    <span class="blurb">Paste research from NotebookLM, YouTube transcripts, articles, or interview notes. Active notes are injected into Claude's prompt every chat & voice session.</span>
+  </div>
+  <div class="kb-toolbar">
+    <button class="btn amber sm" id="kbAdd">⊕ Add note</button>
+    <button class="btn ghost sm" id="kbExport" title="Download all notes as JSON">⬇ Export</button>
+    <button class="btn ghost sm" id="kbImport" title="Merge notes from a JSON export">⬆ Import</button>
+    <input type="file" id="kbImportFile" accept="application/json" style="display:none">
+    <div style="flex:1"></div>
+    <span class="kb-stats" id="kbStats">No notes yet.</span>
+  </div>
+  <div class="kb-list" id="kbList"></div>
+</div>
+
 <div class="panel" id="eq">
   <div class="section-head">
     <h2>🎚️ Frequency Map</h2>
@@ -819,6 +871,25 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;"><input type="checkbox" id="presetReplace" checked> Replace bus chain (uncheck to append)</label>
     </div>
     <div class="modal-body" id="presetList"></div>
+  </div>
+</div>
+
+<!-- KNOWLEDGE NOTE MODAL -->
+<div class="modal-backdrop" id="kbModal">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header"><h3 id="kbModalTitle">Add research note</h3><button class="close-btn" id="kbModalClose">×</button></div>
+    <div class="modal-form">
+      <div><label>Title</label><input type="text" id="kbTitle" placeholder="e.g. MWTM — Manny Marroquin on vocal compression"></div>
+      <div><label>Source (URL or citation)</label><input type="text" id="kbSource" placeholder="https://… or 'YouTube — channel — date'"></div>
+      <div><label>Tags (comma-separated)</label><input type="text" id="kbTags" placeholder="vocals, compression, mastering, trap"></div>
+      <div><label>Content (paste from NotebookLM, transcript, article)</label><textarea id="kbContent" rows="14" placeholder="Paste the research content here…" style="width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.55;resize:vertical;font-family:inherit;"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;color:#9ca3af;font-size:12px;cursor:pointer;"><input type="checkbox" id="kbAutoSummarise" checked> Auto-summarise with Claude Haiku — cheap to inject every session, raw is kept too. Costs ~$0.001 per typical paste.</label>
+      <div class="actions">
+        <button class="btn ghost sm" id="kbCancel">Cancel</button>
+        <button class="btn secondary" id="kbSave">Save inactive</button>
+        <button class="btn green" id="kbSaveActivate">Save & activate</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -994,7 +1065,9 @@ const STATE = {
   chain:{}, meters:{}, symptoms:new Set(),
   favorites: new Set(),
   customPlugins: [],
-  genre: 'trap'
+  genre: 'trap',
+  knowledge: [],   // research notes — see Knowledge Base tab
+  journal: []
 };
 BUSES.forEach(b => STATE.chain[b.id]=[]);
 
@@ -1026,7 +1099,8 @@ function saveState(){
         genre:STATE.genre,
         meters:STATE.meters,
         platform:ps?ps.value:null,
-        journal:(STATE.journal||[]).slice(0,50)
+        journal:(STATE.journal||[]).slice(0,50),
+        knowledge:(STATE.knowledge||[]).slice(0,200)
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     }catch(e){console.warn('saveState failed',e);}
@@ -1051,6 +1125,7 @@ function loadState(){
     const ps=document.getElementById('platformSelect');
     if(ps&&d.platform)ps.value=d.platform;
     if(Array.isArray(d.journal))STATE.journal=d.journal.slice(0,50);
+    if(Array.isArray(d.knowledge))STATE.knowledge=d.knowledge.slice(0,200);
   }catch(e){console.warn('loadState failed',e);}
 }
 
@@ -2141,6 +2216,325 @@ function buildLibraryDigest(){
   return lines.join('\n');
 }
 
+// ========== KNOWLEDGE BASE ==========
+// Persistent research-note library. Each note holds raw paste + optional Haiku summary.
+// Active notes are concatenated into a digest that's appended to:
+//   - aichatSend's system prompt (text Chat with Claude)
+//   - the Realtime instructions on session.update (Voice Chat)
+// so Claude has Kev's curated reference material in context every session.
+const KB_MAX_NOTES = 200;
+let kbEditingId = null;
+
+function kbEstimateTokens(s){ return Math.ceil(String(s||'').length / 4); }
+function kbActiveText(n){ return (n && n.useSummary && n.summary) ? n.summary : (n?n.raw||'':''); }
+
+// Build the research digest that gets appended to system prompts.
+// Returns '' when no active notes exist so callers can skip cleanly.
+function buildResearchDigest(){
+  const active = (STATE.knowledge||[]).filter(n => n && n.active && (n.raw||n.summary));
+  if (!active.length) return '';
+  const lines = [`=== KEV'S RESEARCH NOTES (${active.length} active) ===`];
+  lines.push("Reference these whenever they're relevant to a producer / technique / chain question. Cite the source title when you draw from one. Treat them as additional ground truth alongside the workbench state — they came from sources Kev hand-curated (NotebookLM, YouTube, articles, interviews).");
+  active.forEach((n, i) => {
+    lines.push('');
+    lines.push(`--- Note ${i+1}: ${n.title||'(untitled)'} ---`);
+    if (n.source) lines.push(`Source: ${n.source}`);
+    if (n.tags && n.tags.length) lines.push(`Tags: ${n.tags.join(', ')}`);
+    lines.push(kbActiveText(n));
+  });
+  return lines.join('\n');
+}
+
+function knowledgeRender(){
+  const host = document.getElementById('kbList');
+  const stats = document.getElementById('kbStats');
+  if (!host || !stats) return;
+  const notes = STATE.knowledge || [];
+  if (!notes.length){
+    host.innerHTML = `<div class="kb-empty">No notes yet — click <strong>⊕ Add note</strong> above to paste your first piece of research.<br><br>Workflow: in NotebookLM, ask it to summarise a YouTube video / article / interview about mastering trap → copy the answer → paste it here → tag it with the topic. From then on, Claude has it on every chat & voice session.<br><br>Tip: keep notes <strong>active</strong> only when relevant — inactive notes don't burn tokens.</div>`;
+  } else {
+    host.innerHTML = notes.map(n => kbRenderCard(n)).join('');
+  }
+  const active = notes.filter(n => n.active);
+  if (!notes.length){
+    stats.textContent = 'No notes yet.';
+  } else if (!active.length){
+    stats.textContent = `${notes.length} note${notes.length===1?'':'s'} stored · 0 active (nothing injected)`;
+  } else {
+    const totalChars = active.reduce((s,n)=>s + kbActiveText(n).length, 0);
+    const tok = Math.ceil(totalChars/4);
+    stats.textContent = `${active.length}/${notes.length} active · ~${tok.toLocaleString()} tokens / session`;
+  }
+}
+
+function kbRenderCard(n){
+  const cls = 'kb-card' + (n.active?' active':'') + (n.expanded?' expanded':'');
+  const tagHtml = (n.tags||[]).map(t=>`<span class="kb-tag">${escapeHtml(t)}</span>`).join('');
+  const sourceHtml = n.source
+    ? (/^https?:\/\//.test(n.source)
+        ? `<a href="${escapeHtml(n.source)}" target="_blank" rel="noopener">${escapeHtml(n.source)}</a>`
+        : escapeHtml(n.source))
+    : '<span style="color:#6b7280;">no source</span>';
+  const dt = new Date(n.ts||Date.now()).toLocaleDateString();
+  const rawChars = (n.raw||'').length;
+  const sumChars = (n.summary||'').length;
+  const activeChars = kbActiveText(n).length;
+  const activeTok = Math.ceil(activeChars/4);
+  const useSumOn = !!n.useSummary && !!n.summary;
+  const sumPillCls = 'kb-mode-pill' + (useSumOn?' on':'');
+  const sumPillTxt = n.summary ? (useSumOn?'📝 Inject summary':'📄 Inject raw') : '📄 Raw only (no summary yet)';
+  const sumDisabled = !n.summary;
+  const summStat = n.summarising ? '<div class="kb-summary-status busy">Summarising with Haiku…</div>'
+                  : (n.summaryError ? `<div class="kb-summary-status err">Summary error: ${escapeHtml(n.summaryError)}</div>` : '');
+  const idJs = escapeJs(n.id);
+  return `<div class="${cls}" data-id="${escapeHtml(n.id)}">
+    <div class="kb-row1">
+      <div class="kb-title">${escapeHtml(n.title||'(untitled)')}</div>
+      <button class="kb-active-toggle ${n.active?'on':''}" onclick="kbToggleActive('${idJs}')" title="Toggle whether this note is injected into Claude's prompt">${n.active?'⚡ Active':'○ Inactive'}</button>
+    </div>
+    <div class="kb-meta">${dt} · ${sourceHtml}</div>
+    ${tagHtml?`<div class="kb-tags">${tagHtml}</div>`:''}
+    ${summStat}
+    <div class="kb-actions">
+      <button class="${sumPillCls}" onclick="kbToggleSummary('${idJs}')"${sumDisabled?' disabled':''} title="Switch between injecting the summary vs. the raw paste">${sumPillTxt}</button>
+      <button class="btn ghost sm" onclick="kbToggleExpand('${idJs}')">${n.expanded?'⌃ Hide':'⌄ View'}</button>
+      <button class="btn ghost sm" onclick="kbEdit('${idJs}')">✎ Edit</button>
+      <button class="btn ghost sm" onclick="kbResummarise('${idJs}')" title="Re-run Haiku summary on the raw text">↻ Re-summarise</button>
+      <button class="btn ghost sm" onclick="kbDelete('${idJs}')" style="color:#fca5a5;">🗑</button>
+      <span class="kb-counts">~${activeTok} tok · raw ${rawChars}/sum ${sumChars}</span>
+    </div>
+    <div class="kb-body">${escapeHtml(kbActiveText(n))}</div>
+  </div>`;
+}
+
+function kbToggleActive(id){
+  const n = (STATE.knowledge||[]).find(x=>x.id===id); if(!n) return;
+  n.active = !n.active;
+  knowledgeRender(); saveState();
+}
+function kbToggleSummary(id){
+  const n = (STATE.knowledge||[]).find(x=>x.id===id); if(!n||!n.summary) return;
+  n.useSummary = !n.useSummary;
+  knowledgeRender(); saveState();
+}
+function kbToggleExpand(id){
+  const n = (STATE.knowledge||[]).find(x=>x.id===id); if(!n) return;
+  n.expanded = !n.expanded;
+  knowledgeRender();
+}
+function kbDelete(id){
+  if (!confirm('Delete this note? This can\'t be undone.')) return;
+  STATE.knowledge = (STATE.knowledge||[]).filter(x=>x.id!==id);
+  knowledgeRender(); saveState();
+  toast('Note deleted');
+}
+
+// Modal open/close
+function kbOpenAdd(){
+  kbEditingId = null;
+  document.getElementById('kbModalTitle').textContent = 'Add research note';
+  document.getElementById('kbTitle').value = '';
+  document.getElementById('kbSource').value = '';
+  document.getElementById('kbTags').value = '';
+  document.getElementById('kbContent').value = '';
+  document.getElementById('kbAutoSummarise').checked = true;
+  document.getElementById('kbModal').classList.add('open');
+  setTimeout(()=>document.getElementById('kbTitle').focus(), 30);
+}
+function kbEdit(id){
+  const n = (STATE.knowledge||[]).find(x=>x.id===id); if(!n) return;
+  kbEditingId = id;
+  document.getElementById('kbModalTitle').textContent = 'Edit research note';
+  document.getElementById('kbTitle').value = n.title||'';
+  document.getElementById('kbSource').value = n.source||'';
+  document.getElementById('kbTags').value = (n.tags||[]).join(', ');
+  document.getElementById('kbContent').value = n.raw||'';
+  document.getElementById('kbAutoSummarise').checked = false; // user explicitly opts in to re-summarise on edit
+  document.getElementById('kbModal').classList.add('open');
+}
+function kbCloseModal(){
+  document.getElementById('kbModal').classList.remove('open');
+}
+
+async function kbSaveFromModal(makeActive){
+  const title = document.getElementById('kbTitle').value.trim();
+  const source = document.getElementById('kbSource').value.trim();
+  const tagsRaw = document.getElementById('kbTags').value.trim();
+  const content = document.getElementById('kbContent').value.trim();
+  const autoSum = document.getElementById('kbAutoSummarise').checked;
+  if (!title){ toast('Add a title for this note', true); return; }
+  if (!content){ toast('Paste some content first', true); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
+
+  let note;
+  if (kbEditingId){
+    note = (STATE.knowledge||[]).find(x=>x.id===kbEditingId);
+  }
+  if (!note){
+    note = { id:'kb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), ts:Date.now(), active:false, useSummary:false };
+    STATE.knowledge = STATE.knowledge || [];
+    STATE.knowledge.unshift(note);
+    if (STATE.knowledge.length > KB_MAX_NOTES) STATE.knowledge = STATE.knowledge.slice(0, KB_MAX_NOTES);
+  }
+  const wasNew = !kbEditingId;
+  note.title = title;
+  note.source = source;
+  note.tags = tags;
+  note.raw = content;
+  if (makeActive) note.active = true;
+  delete note.summaryError;
+
+  // Re-summarise asynchronously if requested. We persist the note immediately
+  // so Kev's content is safe even if the summary call fails.
+  if (autoSum){
+    note.summarising = true;
+    kbCloseModal();
+    knowledgeRender();
+    saveState();
+    try{
+      const sum = await kbCallHaikuSummary(content);
+      note.summary = sum;
+      note.useSummary = true;
+      delete note.summarising;
+      saveState();
+      knowledgeRender();
+      toast('Note saved + summarised');
+    }catch(e){
+      note.summaryError = e.message||String(e);
+      delete note.summarising;
+      // Keep raw injection so the note isn't useless when the summary fails
+      note.useSummary = false;
+      saveState();
+      knowledgeRender();
+      toast('Saved — summary failed: '+(e.message||e), true);
+    }
+    kbEditingId = null;
+    return;
+  }
+
+  // Manual save: if it's a brand-new note with no summary requested, leave summary empty.
+  // If editing, keep any existing summary as-is (Kev can re-summarise from the card).
+  if (wasNew){
+    note.summary = note.summary || '';
+    note.useSummary = false;
+  }
+  kbEditingId = null;
+  kbCloseModal();
+  knowledgeRender();
+  saveState();
+  toast('Note saved'+(makeActive?' & activated':''));
+}
+
+async function kbResummarise(id){
+  const n = (STATE.knowledge||[]).find(x=>x.id===id); if(!n) return;
+  if (!n.raw){ toast('No raw content to summarise', true); return; }
+  n.summarising = true;
+  delete n.summaryError;
+  knowledgeRender();
+  try{
+    n.summary = await kbCallHaikuSummary(n.raw);
+    n.useSummary = true;
+    delete n.summarising;
+    saveState();
+    knowledgeRender();
+    toast('Re-summarised');
+  }catch(e){
+    n.summaryError = e.message||String(e);
+    delete n.summarising;
+    knowledgeRender();
+    toast('Summary failed: '+(e.message||e), true);
+  }
+}
+
+// One-shot Haiku call. Cheap (~$1/M input, $5/M output) so safe to run on each paste.
+async function kbCallHaikuSummary(rawText){
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey) throw new Error('No Anthropic key — add one on the 🎙️ Voice Chat tab');
+  const sys = "You are summarising research material for a trap/hip-hop producer's reference library. The summary will be injected into a music-AI's system prompt every session, so it must be tight and information-dense.\n\nRules:\n- Preserve all CONCRETE facts: plugin names, parameter values, frequencies in Hz, dB levels, ratios, attack/release in ms, producer/engineer names, song references.\n- Drop hedging, intros, conclusions, and generic mixing platitudes.\n- Keep the structure: bullets when the source was list-like, prose when prose.\n- Do NOT invent or extrapolate — only summarise what's actually in the source.\n- Aim for 30-50% of the original length; go shorter if the source is fluffy.\n- No preamble. No 'Here is a summary'. Start with the content.";
+  const body = {
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1500,
+    system: sys,
+    messages: [{role:'user', content: 'Summarise the following research material:\n\n'+rawText}]
+  };
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':antKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok){
+    const t = await resp.text();
+    throw new Error('Haiku '+resp.status+': '+t.slice(0,200));
+  }
+  const data = await resp.json();
+  // Track Anthropic spend (Haiku 4.5: ~$1/1M input, ~$5/1M output)
+  try{
+    const inT = data.usage?.input_tokens || 0;
+    const outT = data.usage?.output_tokens || 0;
+    const cost = inT/1e6 + (outT*5)/1e6;
+    if (cost > 0 && typeof addSpend === 'function'){ addSpend('ant', cost); rtRenderCost(); }
+  }catch(_){}
+  const out = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+  if (!out) throw new Error('Empty summary');
+  return out;
+}
+
+function kbExport(){
+  const data = JSON.stringify({version:1, notes:STATE.knowledge||[], exported:new Date().toISOString()}, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `trap-knowledge-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast(`Exported ${(STATE.knowledge||[]).length} notes`);
+}
+function kbImportFromFile(file){
+  const fr = new FileReader();
+  fr.onload = e => {
+    try{
+      const obj = JSON.parse(e.target.result);
+      const arr = Array.isArray(obj) ? obj : (obj.notes||[]);
+      if (!Array.isArray(arr)) throw new Error('Bad shape — expected an array of notes');
+      let merged = 0;
+      STATE.knowledge = STATE.knowledge || [];
+      arr.forEach(n => {
+        if (!n || !n.id || !n.raw || !n.title) return;
+        if (STATE.knowledge.find(x=>x.id===n.id)) return;
+        STATE.knowledge.push(n);
+        merged++;
+      });
+      if (STATE.knowledge.length > KB_MAX_NOTES) STATE.knowledge = STATE.knowledge.slice(0, KB_MAX_NOTES);
+      knowledgeRender(); saveState();
+      toast(`Imported ${merged} note${merged===1?'':'s'}`);
+    }catch(err){ toast('Import failed: '+(err.message||err), true); }
+  };
+  fr.readAsText(file);
+}
+
+function knowledgeInit(){
+  const wire = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+  wire('kbAdd','click', kbOpenAdd);
+  wire('kbModalClose','click', kbCloseModal);
+  wire('kbCancel','click', kbCloseModal);
+  wire('kbSave','click', ()=>kbSaveFromModal(false));
+  wire('kbSaveActivate','click', ()=>kbSaveFromModal(true));
+  wire('kbExport','click', kbExport);
+  wire('kbImport','click', ()=>document.getElementById('kbImportFile').click());
+  wire('kbImportFile','change', e => { if (e.target.files[0]) kbImportFromFile(e.target.files[0]); e.target.value=''; });
+  // Click outside the modal closes it (matches addModal behaviour)
+  const back = document.getElementById('kbModal');
+  if (back) back.addEventListener('click', e => { if (e.target.id === 'kbModal') kbCloseModal(); });
+  knowledgeRender();
+}
+
 // ========== RESEARCH (Claude API + web search) ==========
 // Called from the research tool. Hits Anthropic's Messages API directly from the browser
 // using the user's own key. Web search is enabled as a server-side tool — Claude runs the
@@ -2243,9 +2637,14 @@ LIBRARY DISCIPLINE
 - Recommend plugins ONLY from his library (listed below). Do not invent plugins he doesn't own.
 - If he asks about a plugin he doesn't own, say "you don't seem to own that — closest match in your library: X, Y, Z" and offer those.
 
+RESEARCH NOTES
+- Kev curates reference material in his Knowledge Base tab (NotebookLM exports, YouTube transcripts, articles, interviews). Active notes are appended to your context below the workbench state under "KEV'S RESEARCH NOTES".
+- When a research note is relevant to the question, draw from it FIRST — it's hand-picked for him. Cite the note's title or source when you do (e.g. "from your MWTM Manny Marroquin note…").
+- If a research note contradicts general training knowledge on a specific point, prefer the note — Kev chose it for a reason.
+
 WEB SEARCH
 - You have web_search available. Use it for: producer/engineer techniques, plugin manuals, chart positions, recent releases — anything where bluffing would be worse than searching.
-- Don't search for general mixing principles you already know.
+- Don't search for general mixing principles you already know, and don't search for information the research notes already cover.
 
 When citing web sources, the platform will surface them automatically — no need to repeat URLs in your prose.`;
 
@@ -2689,7 +3088,9 @@ async function aichatSend(){
   try{
     const ctx = buildContextSummary();
     const lib = buildLibraryDigest();
+    const research = buildResearchDigest();
     ctxBlock = '\n\n=== CURRENT WORKBENCH STATE ===\n' + JSON.stringify(ctx, null, 2) + '\n\n' + lib;
+    if (research) ctxBlock += '\n\n' + research;
   }catch(e){
     ctxBlock = '\n\n(workbench context unavailable: ' + (e.message||e) + ')';
   }
@@ -3152,8 +3553,15 @@ DO NOT call research for things you obviously know:
 - Common mixing concepts (parallel compression, sidechain, M/S, EQ basics)
 - Generic plugin features (a limiter has threshold/ceiling/release; a compressor has ratio/attack/release/threshold)
 - Things you already researched earlier in this same conversation
+- Anything covered by his curated research notes (see RESEARCH NOTES below) — those are pre-vetted
 
 Better to over-use research on niche knowledge than to bluff. Bluffing is the worst failure mode.
+
+KEV'S RESEARCH NOTES (CRITICAL):
+At the bottom of these instructions you may see a section titled "KEV'S RESEARCH NOTES" — these are notes he hand-curated from NotebookLM, YouTube transcripts, articles, and producer interviews. He activated them because they're relevant to his current work.
+- When a research note covers what he's asking, draw from it FIRST and cite the note's title (e.g. "from your MWTM Manny Marroquin note…").
+- Prefer the note over your training memory if they conflict on a specific point.
+- Don't waste a research() call on something already in the notes.
 
 WORKFLOW:
 - On start, deliver the EXACT greeting line passed in the response.create instructions, verbatim, then stop and wait. Do NOT call any tools at startup. Do NOT claim to know what genre, track, or session he's working on — you don't until he tells you.
@@ -3205,9 +3613,13 @@ async function rtStart(){
     RT.dc.addEventListener('message',onRtEvent);
     RT.dc.addEventListener('open',()=>{
       // Push session.update with our instructions + tools once the channel is open.
-      // Library digest is appended to instructions so the model knows exactly what
-      // plugins Kev owns and stops recommending things from generic training data.
-      const fullInstructions=RT_INSTRUCTIONS+'\n\n'+buildLibraryDigest();
+      // Library digest is appended so the model knows exactly what plugins Kev owns
+      // and stops recommending things from generic training data. Research notes
+      // (Knowledge Base tab) are appended on top of that so curated reference
+      // material is in scope for the whole voice session.
+      let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
+      const research = buildResearchDigest();
+      if (research) fullInstructions += '\n\n' + research;
       rtSend({type:'session.update',session:{
         instructions:fullInstructions,
         tools:TOOL_DEFS,
@@ -3407,6 +3819,7 @@ renderLibrary();
 renderRecipes();
 renderJournal();
 aichatInit();
+knowledgeInit();
 </script>
 </body>
 </html>
