@@ -277,6 +277,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .kb-card .kb-summary-status.err{color:#fca5a5}
 /* PLUGIN IMPORT (paste-many → Claude parses → preview → commit) */
 .imp-paste{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.55;resize:vertical;font-family:inherit;min-height:160px;max-height:360px}
+.imp-input-modes{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#0b1220;border:1px solid #a855f7;border-radius:10px;padding:14px 16px;margin-bottom:4px}
+.imp-input-modes .btn.purple{font-size:14px;padding:10px 16px;display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
+.imp-or{flex:1;color:#9ca3af;font-size:12px;line-height:1.5;min-width:200px}
 .imp-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
 .imp-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
 .imp-status{font-size:12px;color:#9ca3af;flex:1;min-height:16px}
@@ -971,23 +974,23 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <div class="modal" style="max-width:880px;">
     <div class="modal-header"><h3>✨ Bulk-import plugins via Claude</h3><button class="close-btn" id="importModalClose">×</button></div>
     <div class="modal-form" style="flex:1;min-height:0;overflow-y:auto">
-      <div style="font-size:12px;color:#9ca3af;line-height:1.55;">
-        Paste a list (Native Access / iLok / Plugin Alliance / chat snippet) <strong>or</strong> upload a screenshot of your plugin folder. Claude will normalise names (e.g. <em>"soothe 2"</em> → <em>soothe2</em>), guess publisher + stage, and flag duplicates against your existing library before anything is added.
+      <div class="imp-input-modes">
+        <button class="btn purple" id="importImageBtn" type="button" title="Upload a screenshot — Claude reads the plugin names from the image"><span style="font-size:18px;line-height:1">📷</span> Upload screenshot</button>
+        <div class="imp-or">or paste a list below — or drop a screenshot onto the box / paste an image with Cmd-V</div>
       </div>
-      <div><label>Paste plugin list</label><textarea id="importPaste" class="imp-paste" placeholder="e.g.\nFabFilter Pro-Q 4\nsoothe 2 by oeksound\nWaves CLA-76\nsmack attack\n..."></textarea></div>
-      <div id="importImagePreview" style="display:none"></div>
       <input type="file" id="importImageInput" accept="image/*" style="display:none">
+      <div id="importImagePreview" style="display:none"></div>
+      <div><label>Paste plugin list</label><textarea id="importPaste" class="imp-paste" placeholder="e.g.&#10;FabFilter Pro-Q 4&#10;soothe 2 by oeksound&#10;Waves CLA-76&#10;smack attack&#10;…or just one plugin if you want to add it solo."></textarea></div>
       <div class="imp-bar">
         <label style="font-size:11px;color:#9ca3af;">Parser:</label>
         <select id="importModel">
           <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 (cheap, fast)</option>
           <option value="claude-sonnet-4-6">Sonnet 4.6 (stronger, costlier)</option>
         </select>
-        <button class="btn ghost sm" id="importImageBtn" title="Upload a screenshot — Claude will read the plugin names from the image">📷 Upload screenshot</button>
         <button class="btn green sm" id="importParseBtn">🔍 Parse with Claude</button>
         <span class="imp-status" id="importStatus">&nbsp;</span>
       </div>
-      <div class="imp-preview" id="importPreview"><div class="imp-preview-empty">Paste a list above (or upload a screenshot) and click <strong>Parse with Claude</strong> — parsed plugins will appear here for review before they're added.</div></div>
+      <div class="imp-preview" id="importPreview"><div class="imp-preview-empty">Upload a screenshot or paste a list above, then click <strong>Parse with Claude</strong> — parsed plugins appear here for review before they're added.</div></div>
     </div>
     <div class="imp-foot">
       <span class="imp-summary" id="importSummary">&nbsp;</span>
