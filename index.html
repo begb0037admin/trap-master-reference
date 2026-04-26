@@ -256,6 +256,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 /* LIBRARY */
 .library-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;background:#1f2937;border:1px solid #374151;border-radius:10px}
 .library-toolbar .current-genre{font-weight:600;color:#fbbf24}
+.lib-count-badge{font-weight:700;color:#fff;background:#111827;border:1px solid #374151;border-radius:14px;padding:4px 12px;font-size:12px;font-family:'SF Mono',monospace;letter-spacing:.3px}
+.lib-count-badge .lib-count-num{color:#fbbf24}
+.lib-count-badge .lib-count-filter{color:#9ca3af;font-weight:500;margin-left:6px}
 .stage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .stage-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
 .stage-card h4{font-size:15px;color:#fff;margin-bottom:12px;font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid #1f2937}
@@ -1039,6 +1042,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <div class="panel" id="library">
   <div class="library-toolbar">
     <span>Current genre: <span class="current-genre" id="currentGenreLabel">Trap</span></span>
+    <span class="lib-count-badge" id="libCount">— plugins</span>
     <span style="color:#6b7280;">⭐ = top pick for this genre &nbsp;•&nbsp; ❤ = your favorite</span>
     <div style="flex:1"></div>
     <button class="btn purple sm" id="importPluginsBtn" title="Paste a list, drop a screenshot, or upload an image — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
@@ -1851,6 +1855,22 @@ function renderLibrary(){
   // Effective-key filtering — handles both real PUBS keys and 'other:<custom label>' synthetic keys.
   let filtered = isFiltered ? all.filter(p => filterSet.has(getEffectivePubKey(p))) : all;
   if (hasSearch) filtered = filtered.filter(p => p.n.toLowerCase().includes(search));
+  // Count badge — total when nothing is selected, filtered subset when filter / search is active.
+  const countEl = document.getElementById('libCount');
+  if (countEl){
+    const anyFilter = isFiltered || hasSearch;
+    if (!anyFilter){
+      countEl.innerHTML = `<span class="lib-count-num">${all.length}</span> plugins`;
+    } else {
+      const parts = [];
+      if (isFiltered){
+        const labels = Array.from(filterSet).map(k => getEffectivePubLabel(k));
+        parts.push(labels.join(', '));
+      }
+      if (hasSearch) parts.push(`"${search}"`);
+      countEl.innerHTML = `<span class="lib-count-num">${filtered.length}</span> of ${all.length} <span class="lib-count-filter">· ${escapeHtml(parts.join(' · '))}</span>`;
+    }
+  }
   const cards = STAGES.map(stage=>{
     const items = filtered.filter(p => p.s === stage.id);
     // Sort: top picks first, then favorites, then the rest
@@ -1879,9 +1899,9 @@ function renderLibrary(){
     grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — clear the filter or add some via ✨ Import via Claude.</div>`;
   }
   // Update the search counter + clear-button visibility
-  const countEl = document.getElementById('libSearchCount');
+  const searchCountEl = document.getElementById('libSearchCount');
   const clearBtn = document.getElementById('libSearchClear');
-  if (countEl) countEl.textContent = hasSearch ? `${filtered.length} match${filtered.length===1?'':'es'}` : '';
+  if (searchCountEl) searchCountEl.textContent = hasSearch ? `${filtered.length} match${filtered.length===1?'':'es'}` : '';
   if (clearBtn) clearBtn.classList.toggle('show', hasSearch);
   renderPubFilter();
 }
