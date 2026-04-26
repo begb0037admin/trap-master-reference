@@ -1814,11 +1814,12 @@ function renderPubFilter(){
   const counts = {};
   all.forEach(p => { const k = getEffectivePubKey(p); counts[k] = (counts[k]||0) + 1; });
   // Sort by count desc, then label A-Z
-  const pubs = Object.keys(counts).sort((a,b) => {
-    const d = counts[b] - counts[a];
-    if (d) return d;
-    return getEffectivePubLabel(a).localeCompare(getEffectivePubLabel(b));
-  });
+  // Pure alphabetical by label. (Previously sorted by count desc with alphabetical
+  // as a tiebreaker — Kev preferred a stable A-Z order so the pills don't shuffle
+  // around as the library grows.)
+  const pubs = Object.keys(counts).sort((a,b) =>
+    getEffectivePubLabel(a).localeCompare(getEffectivePubLabel(b))
+  );
   const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
   const isAll = filterSet.size === 0;
   const selectedCount = filterSet.size;
