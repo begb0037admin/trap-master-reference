@@ -296,8 +296,14 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .imp-badge.exists{background:#374151;color:#9ca3af}
 .imp-badge.low{background:#7c2d12;color:#fed7aa}
 .imp-row .imp-meta{grid-column:1 / -1;font-size:11px;color:#6b7280;font-style:italic;padding-left:24px;margin-top:-4px}
-.imp-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;align-items:center}
+.imp-foot{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;border-top:1px solid #374151;background:#1f2937;flex-shrink:0}
 .imp-foot .imp-summary{flex:1;font-size:12px;color:#9ca3af}
+#importImagePreview{display:flex;align-items:center;gap:10px;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px 10px}
+#importImagePreview img{max-width:140px;max-height:120px;border-radius:6px;border:1px solid #374151;object-fit:contain;background:#000}
+#importImagePreview .imp-img-meta{flex:1;font-size:11px;color:#9ca3af;line-height:1.45}
+#importImagePreview .imp-img-meta strong{color:#fbbf24;font-size:12px;display:block;margin-bottom:2px}
+#importImagePreview .imp-img-clear{background:transparent;border:1px solid #7f1d1d;color:#fca5a5;border-radius:14px;padding:3px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit}
+#importImagePreview .imp-img-clear:hover{background:#7f1d1d;color:#fee2e2}
 /* GENRE-CHANGE PRESET PICKER */
 .genre-pick-bus{background:#111827;border:1px solid #374151;border-radius:8px;padding:10px 12px;margin-top:10px}
 .genre-pick-bus-head{font-weight:600;color:#fbbf24;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1f2937;padding-bottom:6px}
@@ -856,8 +862,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span>Current genre: <span class="current-genre" id="currentGenreLabel">Trap</span></span>
     <span style="color:#6b7280;">⭐ = top pick for this genre &nbsp;•&nbsp; ❤ = your favorite</span>
     <div style="flex:1"></div>
-    <button class="btn amber sm" id="addPluginBtn">⊕ Add my plugin</button>
-    <button class="btn purple sm" id="importPluginsBtn" title="Paste a messy plugin list — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
+    <button class="btn purple sm" id="importPluginsBtn" title="Paste a list, drop a screenshot, or upload an image — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
     <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
     <div class="lib-pubs" id="libPubFilter"></div>
   </div>
@@ -897,25 +902,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <select id="pickerStage"><option value="">All stages</option></select>
     </div>
     <div class="modal-body" id="pickerList"></div>
-  </div>
-</div>
-
-<!-- ADD PLUGIN MODAL -->
-<div class="modal-backdrop" id="addModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header"><h3>Add a plugin to your library</h3><button class="close-btn" id="addClose">×</button></div>
-    <div class="modal-form">
-      <div><label>Plugin name</label><input type="text" id="addName" placeholder="e.g. FabFilter Pro-L 2"></div>
-      <div class="row">
-        <div><label>Publisher</label><select id="addPub"></select></div>
-        <div><label>Stage</label><select id="addStage"></select></div>
-      </div>
-      <div><label>Custom publisher label (if "Other" above)</label><input type="text" id="addPubCustom" placeholder="e.g. FabFilter"></div>
-      <div class="actions">
-        <button class="btn ghost sm" id="addCancel">Cancel</button>
-        <button class="btn green" id="addSave">Add to library</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -984,26 +970,29 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <div class="modal-backdrop" id="importModal">
   <div class="modal" style="max-width:880px;">
     <div class="modal-header"><h3>✨ Bulk-import plugins via Claude</h3><button class="close-btn" id="importModalClose">×</button></div>
-    <div class="modal-form">
+    <div class="modal-form" style="flex:1;min-height:0;overflow-y:auto">
       <div style="font-size:12px;color:#9ca3af;line-height:1.55;">
-        Paste anything — a list copied from Native Access / iLok / Plugin Alliance, an OCR'd screenshot of your plugin folder, a messy bullet list, or a chat snippet. Claude will normalise names (e.g. <em>"soothe 2"</em> → <em>soothe2</em>), guess the publisher and stage, and flag duplicates against your existing library before anything is added.
+        Paste a list (Native Access / iLok / Plugin Alliance / chat snippet) <strong>or</strong> upload a screenshot of your plugin folder. Claude will normalise names (e.g. <em>"soothe 2"</em> → <em>soothe2</em>), guess publisher + stage, and flag duplicates against your existing library before anything is added.
       </div>
       <div><label>Paste plugin list</label><textarea id="importPaste" class="imp-paste" placeholder="e.g.\nFabFilter Pro-Q 4\nsoothe 2 by oeksound\nWaves CLA-76\nsmack attack\n..."></textarea></div>
+      <div id="importImagePreview" style="display:none"></div>
+      <input type="file" id="importImageInput" accept="image/*" style="display:none">
       <div class="imp-bar">
         <label style="font-size:11px;color:#9ca3af;">Parser:</label>
         <select id="importModel">
           <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 (cheap, fast)</option>
           <option value="claude-sonnet-4-6">Sonnet 4.6 (stronger, costlier)</option>
         </select>
+        <button class="btn ghost sm" id="importImageBtn" title="Upload a screenshot — Claude will read the plugin names from the image">📷 Upload screenshot</button>
         <button class="btn green sm" id="importParseBtn">🔍 Parse with Claude</button>
         <span class="imp-status" id="importStatus">&nbsp;</span>
       </div>
-      <div class="imp-preview" id="importPreview"><div class="imp-preview-empty">Paste a list above and click <strong>Parse with Claude</strong> — parsed plugins will appear here for review before they're added.</div></div>
-      <div class="imp-foot">
-        <span class="imp-summary" id="importSummary">&nbsp;</span>
-        <button class="btn ghost sm" id="importCancel">Close</button>
-        <button class="btn green" id="importCommitBtn" disabled>⊕ Add selected to library</button>
-      </div>
+      <div class="imp-preview" id="importPreview"><div class="imp-preview-empty">Paste a list above (or upload a screenshot) and click <strong>Parse with Claude</strong> — parsed plugins will appear here for review before they're added.</div></div>
+    </div>
+    <div class="imp-foot">
+      <span class="imp-summary" id="importSummary">&nbsp;</span>
+      <button class="btn ghost sm" id="importCancel">Close</button>
+      <button class="btn green" id="importCommitBtn" disabled>⊕ Add selected to library</button>
     </div>
   </div>
 </div>
@@ -1368,39 +1357,6 @@ document.getElementById('pickerClose').onclick=closePicker;
 document.getElementById('pickerModal').onclick=e=>{if(e.target.id==='pickerModal')closePicker();};
 document.getElementById('pickerSearch').oninput=renderPickerList;
 document.getElementById('pickerStage').onchange=renderPickerList;
-
-// ========== ADD PLUGIN MODAL ==========
-// populate pubs + stages
-{
-  const pubSel=document.getElementById('addPub');
-  Object.entries(PUBS).forEach(([k,v])=>pubSel.innerHTML+=`<option value="${k}">${v[0]}</option>`);
-  const stSel=document.getElementById('addStage');
-  STAGES.forEach(s=>stSel.innerHTML+=`<option value="${s.id}">${s.label}</option>`);
-}
-function openAddModal(){document.getElementById('addModal').classList.add('open');document.getElementById('addName').value='';document.getElementById('addPub').value='other';document.getElementById('addStage').value='eq-clean';document.getElementById('addPubCustom').value='';setTimeout(()=>document.getElementById('addName').focus(),50);}
-function closeAddModal(){document.getElementById('addModal').classList.remove('open');}
-document.getElementById('addPluginBtn').onclick=openAddModal;
-document.getElementById('addClose').onclick=closeAddModal;
-document.getElementById('addCancel').onclick=closeAddModal;
-document.getElementById('addModal').onclick=e=>{if(e.target.id==='addModal')closeAddModal();};
-document.getElementById('addSave').onclick=()=>{
-  const n=document.getElementById('addName').value.trim();
-  if(!n){toast('Name required',true);return;}
-  let p=document.getElementById('addPub').value;
-  const pCustom=document.getElementById('addPubCustom').value.trim();
-  const s=document.getElementById('addStage').value;
-  // For 'other' with custom label, stash label on plugin.pLabel
-  const entry={n,p,s,custom:true};
-  if(p==='other' && pCustom) entry.pLabel=pCustom;
-  if(allPlugins().some(x=>x.n.toLowerCase()===n.toLowerCase())){toast('Already in library',true);return;}
-  STATE.customPlugins.push(entry);
-  STATE.favorites.add(n); // added plugins auto-fav
-  closeAddModal();
-  renderLibrary();
-  renderPickerList();
-  saveState();
-  toast('Added & favorited — send for star review when ready');
-};
 
 // ========== LIBRARY RENDER ==========
 // Multi-select publisher filter — comma-separated list of publisher keys in localStorage.
@@ -3067,8 +3023,13 @@ function knowledgeInit(){
 // STATE.customPlugins.
 const IMPORT = {
   parsed: [],   // [{name, publisher_key, publisher_label, stage_id, already_exists, confidence, notes, _check}]
-  busy: false
+  busy: false,
+  image: null   // {dataUrl, mediaType, fileName, sizeKb} when the user has attached a screenshot
 };
+// Anthropic vision caps base64 images at 5MB and ~8000px on either side. We
+// downscale anything larger before sending to keep payload small + the API happy.
+const IMPORT_IMG_MAX_SIDE = 1600;
+const IMPORT_IMG_MAX_BYTES = 4_500_000;
 
 function importStatus(msg, kind){
   const el = document.getElementById('importStatus');
@@ -3080,6 +3041,8 @@ function importStatus(msg, kind){
 function openImportModal(){
   document.getElementById('importPaste').value = '';
   IMPORT.parsed = [];
+  IMPORT.image = null;
+  renderImportImagePreview();
   renderImportPreview();
   importStatus('');
   document.getElementById('importSummary').textContent = '';
@@ -3088,6 +3051,66 @@ function openImportModal(){
   setTimeout(()=>document.getElementById('importPaste').focus(), 30);
 }
 function closeImportModal(){ document.getElementById('importModal').classList.remove('open'); }
+
+// Convert + downscale an uploaded image, store it on IMPORT.image as a base64
+// data URL. Anything wider/taller than IMPORT_IMG_MAX_SIDE gets resized via canvas.
+async function importHandleImage(file){
+  if (!file) return;
+  if (!/^image\//.test(file.type)){
+    importStatus('That doesn\'t look like an image.', 'err');
+    return;
+  }
+  importStatus('Reading screenshot…', 'busy');
+  try{
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(new Error('Could not read image'));
+      fr.readAsDataURL(file);
+    });
+    // Decode → maybe downscale → re-encode as JPEG (smaller than PNG screenshots usually)
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Could not decode image'));
+      i.src = dataUrl;
+    });
+    const maxSide = Math.max(img.width, img.height);
+    let outDataUrl = dataUrl;
+    let outMediaType = file.type;
+    if (maxSide > IMPORT_IMG_MAX_SIDE || dataUrl.length > IMPORT_IMG_MAX_BYTES){
+      const scale = Math.min(1, IMPORT_IMG_MAX_SIDE / maxSide);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      outDataUrl = cv.toDataURL('image/jpeg', 0.85);
+      outMediaType = 'image/jpeg';
+    }
+    const sizeKb = Math.round(outDataUrl.length * 0.75 / 1024); // base64 → bytes ≈ *0.75
+    IMPORT.image = { dataUrl: outDataUrl, mediaType: outMediaType, fileName: file.name, sizeKb };
+    renderImportImagePreview();
+    importStatus(`Screenshot ready — ${sizeKb} KB. Click Parse to send it to Claude.`, 'ok');
+  }catch(e){
+    IMPORT.image = null;
+    renderImportImagePreview();
+    importStatus('Image error: '+(e.message||String(e)), 'err');
+  }
+}
+
+function renderImportImagePreview(){
+  const host = document.getElementById('importImagePreview');
+  if (!host) return;
+  if (!IMPORT.image){ host.style.display = 'none'; host.innerHTML = ''; return; }
+  host.style.display = 'flex';
+  host.innerHTML = `<img src="${IMPORT.image.dataUrl}" alt="screenshot"><div class="imp-img-meta"><strong>${escapeHtml(IMPORT.image.fileName||'screenshot')}</strong>${IMPORT.image.sizeKb} KB · ${escapeHtml(IMPORT.image.mediaType)} · will be sent to Claude with the parse request</div><button class="imp-img-clear" type="button" id="importImageClear">Remove</button>`;
+  const clr = document.getElementById('importImageClear');
+  if (clr) clr.onclick = () => { IMPORT.image = null; renderImportImagePreview(); importStatus(''); };
+}
 
 // Build the system prompt that ships PUBS, STAGES, and existing plugin names so
 // Claude can map the parse to keys we actually use.
@@ -3141,7 +3164,8 @@ Output JSON only. No prose.`;
 async function parseImportWithClaude(){
   if (IMPORT.busy) return;
   const text = document.getElementById('importPaste').value.trim();
-  if (!text){ importStatus('Paste something first.', 'err'); return; }
+  const hasImage = !!(IMPORT.image && IMPORT.image.dataUrl);
+  if (!text && !hasImage){ importStatus('Paste a list or upload a screenshot first.', 'err'); return; }
   const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
   if (!antKey){ importStatus('No Anthropic key saved. Add one on the 🎙️ Voice Chat tab.', 'err'); return; }
 
@@ -3149,14 +3173,30 @@ async function parseImportWithClaude(){
   IMPORT.busy = true;
   document.getElementById('importParseBtn').disabled = true;
   document.getElementById('importCommitBtn').disabled = true;
-  importStatus(`Parsing with ${model.includes('haiku')?'Haiku':'Sonnet'}…`, 'busy');
+  const inputDesc = hasImage ? (text ? 'screenshot + paste' : 'screenshot') : 'paste';
+  importStatus(`Parsing ${inputDesc} with ${model.includes('haiku')?'Haiku':'Sonnet'}…`, 'busy');
 
   const sys = buildImportSystemPrompt();
+  // Build the user message — multipart when an image is attached so Claude
+  // vision OCRs the screenshot. Strip the data URL prefix so we send raw base64.
+  let userContent;
+  if (hasImage){
+    const b64 = String(IMPORT.image.dataUrl||'').replace(/^data:[^;]+;base64,/, '');
+    const promptText = text
+      ? `Parse the plugins from BOTH the screenshot and this pasted list:\n\n${text}`
+      : 'Parse every plugin name visible in this screenshot. Read carefully — preserve exact spelling and version numbers.';
+    userContent = [
+      { type:'image', source:{ type:'base64', media_type: IMPORT.image.mediaType||'image/png', data: b64 } },
+      { type:'text', text: promptText }
+    ];
+  } else {
+    userContent = 'Parse this plugin list:\n\n'+text;
+  }
   const body = {
     model,
     max_tokens: 4000,
     system: sys,
-    messages: [{role:'user', content:'Parse this plugin list:\n\n'+text}]
+    messages: [{role:'user', content: userContent}]
   };
 
   try{
@@ -3363,6 +3403,36 @@ function importInit(){
   wire('importCancel','click', closeImportModal);
   wire('importParseBtn','click', parseImportWithClaude);
   wire('importCommitBtn','click', commitImports);
+  // Screenshot upload: button → hidden file input → handler downscales + stores data URL
+  wire('importImageBtn','click', () => document.getElementById('importImageInput').click());
+  wire('importImageInput','change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importHandleImage(f);
+    e.target.value = '';
+  });
+  // Drag-and-drop a screenshot onto the textarea or preview area
+  const dropZones = ['importPaste','importPreview'].map(id => document.getElementById(id)).filter(Boolean);
+  dropZones.forEach(z => {
+    z.addEventListener('dragover', e => { e.preventDefault(); });
+    z.addEventListener('drop', e => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f && /^image\//.test(f.type)){ e.preventDefault(); importHandleImage(f); }
+    });
+  });
+  // Paste a screenshot directly (Cmd-V) into the textarea
+  const ta = document.getElementById('importPaste');
+  if (ta){
+    ta.addEventListener('paste', e => {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (const it of items){
+        if (it.type && it.type.startsWith('image/')){
+          const f = it.getAsFile();
+          if (f){ e.preventDefault(); importHandleImage(f); return; }
+        }
+      }
+    });
+  }
   // Click outside modal closes
   const back = document.getElementById('importModal');
   if (back) back.addEventListener('click', e => { if (e.target.id === 'importModal') closeImportModal(); });
