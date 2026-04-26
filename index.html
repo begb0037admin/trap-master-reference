@@ -444,7 +444,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-dot.researching{background:#f59e0b;animation:blink .7s infinite}
 .rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
 .rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:center;width:100%}
-.rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0;max-width:260px;width:100%}
+.rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0;max-width:380px;width:100%}
+/* Cards stay anchored to the OUTER edges of the row. Bumping max-width above
+   stretches each card's INNER edge toward the centre mic while keeping the
+   outer edges flush — gives the Start-Call button visible breathing room
+   without leaving large empty wells on the sides. */
 .rt-call-row > .rt-cost-card.openai{justify-self:start}
 .rt-call-row > .rt-cost-card.anthropic{justify-self:end}
 .rt-cost-card.openai{border-left:3px solid #10a37f}
