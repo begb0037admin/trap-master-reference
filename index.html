@@ -229,8 +229,15 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-compose{display:flex;gap:8px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:stretch}
 .aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:14px 16px;font-size:15px;line-height:1.55;resize:vertical;min-height:200px;max-height:520px;font-family:inherit}
 .aichat-compose textarea:focus{outline:none;border-color:#7c3aed}
-.aichat-compose .send-col{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:120px}
+.aichat-compose .send-col{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:140px}
 .aichat-compose button{width:100%}
+#aiChatImagePreview{display:flex;align-items:center;gap:10px;background:#111827;border:1px solid #a855f7;border-radius:10px;padding:8px 10px;margin-bottom:8px}
+#aiChatImagePreview img{max-width:140px;max-height:120px;border-radius:6px;border:1px solid #374151;object-fit:contain;background:#000}
+#aiChatImagePreview .ai-img-meta{flex:1;font-size:11px;color:#9ca3af;line-height:1.45}
+#aiChatImagePreview .ai-img-meta strong{color:#fbbf24;font-size:12px;display:block;margin-bottom:2px}
+#aiChatImagePreview .ai-img-clear{background:transparent;border:1px solid #7f1d1d;color:#fca5a5;border-radius:14px;padding:3px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit}
+#aiChatImagePreview .ai-img-clear:hover{background:#7f1d1d;color:#fee2e2}
+.aichat-msg .body img.aichat-attach{max-width:280px;max-height:240px;border-radius:6px;border:1px solid #374151;display:block;margin-top:8px;background:#000;cursor:zoom-in}
 .aichat-foot{display:flex;gap:14px;font-size:11px;color:#9ca3af;padding:0 8px;flex-wrap:wrap}
 .aichat-cost{font-family:'SF Mono',monospace;font-size:11px;color:#fbbf24}
 .aichat-status{font-size:11px;color:#9ca3af;text-align:center;min-height:14px}
@@ -773,10 +780,13 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div class="aichat-transcript" id="aiChatTranscript">
       <div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer's technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>
     </div>
+    <div id="aiChatImagePreview" style="display:none"></div>
+    <input type="file" id="aiChatImageInput" accept="image/*" style="display:none">
     <div class="aichat-compose">
-      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste snapshots straight in." rows="9"></textarea>
+      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click 📷 below." rows="9"></textarea>
       <div class="send-col">
         <button class="btn" id="aiChatSend">Send ↵</button>
+        <button class="btn purple sm" id="aiChatImageBtn" type="button" title="Attach a screenshot — Claude can read meters, plugin settings, transcripts, anything visible">📷 Attach screenshot</button>
         <span class="aichat-status" id="aiChatStatus">&nbsp;</span>
       </div>
     </div>
@@ -3557,8 +3567,68 @@ When citing web sources, the platform will surface them automatically — no nee
 let AICHAT = {
   history: (function(){try{return JSON.parse(localStorage.getItem(AICHAT_HISTORY_KEY)||'[]');}catch(_){return [];}})(),
   sessionCost: 0,
-  busy: false
+  busy: false,
+  pendingImage: null   // {dataUrl, mediaType, fileName, sizeKb} — attached to next user message
 };
+
+// Reuse the same downscale/encode pipeline as the import flow but tuned a touch
+// smaller (chat history persists in localStorage so we want each image lean).
+const AICHAT_IMG_MAX_SIDE = 1280;
+const AICHAT_IMG_MAX_BYTES = 3_500_000;
+
+async function aichatHandleImage(file){
+  if (!file) return;
+  if (!/^image\//.test(file.type)){ aichatStatus("That doesn't look like an image.", 'err'); return; }
+  aichatStatus('Reading screenshot…', 'busy');
+  try{
+    const dataUrl = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => rej(new Error('Could not read image'));
+      fr.readAsDataURL(file);
+    });
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('Could not decode image'));
+      i.src = dataUrl;
+    });
+    const maxSide = Math.max(img.width, img.height);
+    let outDataUrl = dataUrl;
+    let outMediaType = file.type;
+    if (maxSide > AICHAT_IMG_MAX_SIDE || dataUrl.length > AICHAT_IMG_MAX_BYTES){
+      const scale = Math.min(1, AICHAT_IMG_MAX_SIDE / maxSide);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      outDataUrl = cv.toDataURL('image/jpeg', 0.8);
+      outMediaType = 'image/jpeg';
+    }
+    const sizeKb = Math.round(outDataUrl.length * 0.75 / 1024);
+    AICHAT.pendingImage = { dataUrl: outDataUrl, mediaType: outMediaType, fileName: file.name, sizeKb };
+    renderAiChatImagePreview();
+    aichatStatus(`Screenshot attached — ${sizeKb} KB. It'll go with your next message.`, 'ok');
+  }catch(e){
+    AICHAT.pendingImage = null;
+    renderAiChatImagePreview();
+    aichatStatus('Image error: '+(e.message||String(e)), 'err');
+  }
+}
+
+function renderAiChatImagePreview(){
+  const host = document.getElementById('aiChatImagePreview');
+  if (!host) return;
+  if (!AICHAT.pendingImage){ host.style.display = 'none'; host.innerHTML = ''; return; }
+  const im = AICHAT.pendingImage;
+  host.style.display = 'flex';
+  host.innerHTML = `<img src="${im.dataUrl}" alt="attachment"><div class="ai-img-meta"><strong>📎 ${escapeHtml(im.fileName||'screenshot')}</strong>${im.sizeKb} KB · ${escapeHtml(im.mediaType)} · sent with your next message to Claude</div><button type="button" class="ai-img-clear" id="aiChatImageClear">Remove</button>`;
+  const clr = document.getElementById('aiChatImageClear');
+  if (clr) clr.onclick = () => { AICHAT.pendingImage = null; renderAiChatImagePreview(); aichatStatus(''); };
+}
 
 function aichatSave(){
   try{ localStorage.setItem(AICHAT_HISTORY_KEY, JSON.stringify(AICHAT.history.slice(-50))); }catch(_){}
@@ -3615,7 +3685,12 @@ function aichatRender(){
     tEl.innerHTML = AICHAT.history.map((m, i) => {
       const cls = 'aichat-msg ' + (m.role === 'ai' ? 'ai' : (m.role === 'system' ? 'system' : 'user'));
       const who = m.role === 'user' ? 'You' : (m.role === 'system' ? 'System' : 'Claude');
-      const body = m.role === 'ai' ? aichatFormatMd(m.content) : escapeHtml(m.content);
+      let body = m.role === 'ai' ? aichatFormatMd(m.content) : escapeHtml(m.content);
+      // Inline the user's attached screenshot (if any) under their text so the
+      // conversation visually matches what was sent to Claude.
+      if (m.role === 'user' && m.image && m.image.dataUrl){
+        body += `<img class="aichat-attach" src="${escapeHtml(m.image.dataUrl)}" alt="${escapeHtml(m.image.fileName||'attached screenshot')}" onclick="window.open(this.src,'_blank')">`;
+      }
       let cites = '';
       if (m.citations && m.citations.length){
         const links = m.citations.map(c => {
@@ -3952,7 +4027,9 @@ async function aichatSend(){
   if (AICHAT.busy) return;
   const input = document.getElementById('aiChatInput');
   const txt = input.value.trim();
-  if (!txt) return;
+  const hasImage = !!(AICHAT.pendingImage && AICHAT.pendingImage.dataUrl);
+  // Allow image-only sends (Kev attaches a screenshot, hits Send with no typed text).
+  if (!txt && !hasImage) return;
 
   const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
   if (!antKey){
@@ -3960,8 +4037,15 @@ async function aichatSend(){
     return;
   }
 
-  // Push user msg + clear input
-  AICHAT.history.push({role:'user', content:txt});
+  // Push user msg + clear input. Image (if any) is stamped onto the message so
+  // it persists in history and renders inline below the user's text.
+  const userMsg = { role:'user', content: txt || '(see attached image)' };
+  if (hasImage){
+    userMsg.image = { ...AICHAT.pendingImage };
+  }
+  AICHAT.history.push(userMsg);
+  AICHAT.pendingImage = null;
+  renderAiChatImagePreview();
   input.value = '';
   aichatRender();
   aichatSave();
@@ -3981,13 +4065,25 @@ async function aichatSend(){
   const model = document.getElementById('aiChatModel').value || 'claude-sonnet-4-6';
   const useSearch = document.getElementById('aiChatWebSearch').checked;
 
-  // Convert internal history to Anthropic API format
+  // Convert internal history to Anthropic API format. User messages with an
+  // attached image become multimodal content blocks so Claude vision sees the
+  // screenshot alongside the text.
   const apiMessages = AICHAT.history
     .filter(m => m.role === 'user' || m.role === 'ai')
-    .map(m => ({
-      role: m.role === 'ai' ? 'assistant' : 'user',
-      content: m.content
-    }));
+    .map(m => {
+      const role = m.role === 'ai' ? 'assistant' : 'user';
+      if (m.role === 'user' && m.image && m.image.dataUrl){
+        const b64 = String(m.image.dataUrl).replace(/^data:[^;]+;base64,/, '');
+        return {
+          role,
+          content: [
+            { type:'image', source:{ type:'base64', media_type: m.image.mediaType||'image/jpeg', data: b64 } },
+            { type:'text', text: m.content || 'See the attached screenshot.' }
+          ]
+        };
+      }
+      return { role, content: m.content };
+    });
 
   // Build full system prompt with current workbench context
   let ctxBlock = '';
@@ -4219,11 +4315,13 @@ Be concise. Pull only what's actually in the transcript — don't invent recomme
 }
 
 function aichatClear(){
-  if (!AICHAT.history.length){ aichatStatus('Nothing to clear.', 'ok'); return; }
+  if (!AICHAT.history.length && !AICHAT.pendingImage){ aichatStatus('Nothing to clear.', 'ok'); return; }
   if (!confirm('Clear the chat with Claude? Conversation history will be erased.')) return;
   aichatStopTTS();
   AICHAT.history = [];
   AICHAT.sessionCost = 0;
+  AICHAT.pendingImage = null;
+  renderAiChatImagePreview();
   aichatSave();
   aichatRender();
   const lastEl = document.getElementById('aiChatLastCost');
@@ -4261,6 +4359,33 @@ function aichatInit(){
   document.getElementById('aiChatSend').onclick = aichatSend;
   document.getElementById('aiChatClear').onclick = aichatClear;
   document.getElementById('aiChatToJournal').onclick = aichatToJournal;
+  // Screenshot attach — file picker, drag-drop on textarea, paste-image with Cmd-V
+  const aiChatImgBtn = document.getElementById('aiChatImageBtn');
+  if (aiChatImgBtn) aiChatImgBtn.onclick = () => document.getElementById('aiChatImageInput').click();
+  const aiChatImgInput = document.getElementById('aiChatImageInput');
+  if (aiChatImgInput) aiChatImgInput.addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) aichatHandleImage(f);
+    e.target.value = '';
+  });
+  const aiInput = document.getElementById('aiChatInput');
+  if (aiInput){
+    aiInput.addEventListener('dragover', e => { if (e.dataTransfer && Array.from(e.dataTransfer.items||[]).some(i => i.type && i.type.startsWith('image/'))) e.preventDefault(); });
+    aiInput.addEventListener('drop', e => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f && /^image\//.test(f.type)){ e.preventDefault(); aichatHandleImage(f); }
+    });
+    aiInput.addEventListener('paste', e => {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (const it of items){
+        if (it.type && it.type.startsWith('image/')){
+          const f = it.getAsFile();
+          if (f){ e.preventDefault(); aichatHandleImage(f); return; }
+        }
+      }
+    });
+  }
   document.getElementById('aiChatInput').addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
       e.preventDefault();
