@@ -78,6 +78,25 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 @media (max-width:520px){.cs-pop{min-width:240px}.cs.open .cs-pop{grid-template-columns:repeat(2,1fr)}}
 .panel{display:none}.panel.active{display:block}
 .row-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+/* MASTERING REFERENCE GRID — drag/resize/reorder pilot.
+   When a .row-grid in the #eq panel becomes a .grid-stack at runtime, the
+   CSS grid layout is dropped (the class is swapped). The rules below tame
+   GridStack's own item styling so our existing .card visuals carry through. */
+.grid-stack-item-content{padding:0!important;background:transparent!important;border:none!important;inset:0}
+.grid-stack-item-content > .card{width:100%;height:100%;overflow:auto}
+.eq-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:18px;padding:10px 14px;background:#1f2937;border:1px solid #374151;border-radius:10px;flex-wrap:wrap}
+.eq-toolbar-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:700;margin-right:auto;display:flex;align-items:center;gap:6px}
+.eq-toolbar-label svg{width:14px;height:14px}
+.eq-tool-btn{background:#111827;color:#d1d5db;border:1px solid #374151;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .12s;font-family:inherit}
+.eq-tool-btn:hover{background:#374151;color:#f9fafb;border-color:#6b7280}
+.eq-tool-btn.active{background:#3b1764;border-color:#a78bfa;color:#e9d5ff}
+.eq-tool-btn.active:hover{background:#5b21b6}
+.eq-tool-btn svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eq-edit-hint{font-size:11px;color:#a78bfa;font-style:italic}
+/* Edit-mode visual: dashed outlines on each item so handles are obvious. */
+.grid-stack:not(.grid-stack-static){background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.25);border-radius:10px;padding:4px}
+.grid-stack:not(.grid-stack-static) .grid-stack-item-content{outline:1px dashed rgba(167,139,250,.45);outline-offset:-2px;cursor:move}
+.grid-stack:not(.grid-stack-static) .grid-stack-item:hover .grid-stack-item-content{outline-color:#a78bfa}
 .section-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #374151}
 .section-head:first-child{margin-top:0}
 .section-head h2{font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin:0}
@@ -547,6 +566,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-tool .res{color:#6ee7b7;font-size:10px}
 .rt-tool.err .res{color:#fca5a5}
 </style>
+<!-- GridStack — drag/resize/reorder cards on the Mastering Reference tab.
+     Pinned to v11 (latest 11.x). If we want exact reproducibility later, swap
+     `@11` for a specific version like `@11.3.0` after a stable rev is chosen. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@11/dist/gridstack.min.css">
 </head>
 <body>
 <div class="container">
@@ -862,11 +885,31 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 </div>
 
 <div class="panel" id="eq">
+  <!-- GRID PILOT TOOLBAR — wired up by EQGRID in the main script.
+       Toggle puts every card in this tab into drag/resize mode. Reset wipes
+       the saved layout and rebuilds the defaults. Layout persists per-section
+       in localStorage under trapMaster_eqLayouts_v1. -->
+  <div class="eq-toolbar">
+    <span class="eq-toolbar-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Layout
+    </span>
+    <span class="eq-edit-hint" id="eqEditHint" style="display:none">Drag corners to resize · drag a card to move it</span>
+    <button class="eq-tool-btn" id="eqCustomiseBtn" type="button">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span id="eqCustomiseLabel">Customise layout</span>
+    </button>
+    <button class="eq-tool-btn" id="eqResetLayoutBtn" type="button" title="Restore default card sizes and order">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Reset layouts
+    </button>
+  </div>
+
   <div class="section-head">
     <h2>🎚️ Frequency Map</h2>
     <span class="blurb">Where each band lives and what to listen for.</span>
   </div>
-  <div class="row-grid">
+  <div class="row-grid" data-section="freqMap">
     <div class="card"><h3>Sub-bass</h3><div class="freq">20-60 Hz</div><ul><li>808 fundamental</li><li>HP below 30Hz if muddy</li></ul></div>
     <div class="card"><h3>Bass/Body</h3><div class="freq">60-200 Hz</div><ul><li>808 punch, kick weight</li><li>Watch masking</li></ul></div>
     <div class="card"><h3>Low-Mid (mud)</h3><div class="freq">200-500 Hz</div><ul><li>Vocal warmth @ 250Hz</li><li>Cut if boxy</li></ul></div>
@@ -880,7 +923,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <h2>🔊 Loudness Targets</h2>
     <span class="blurb">Integrated LUFS by destination.</span>
   </div>
-  <div class="row-grid">
+  <div class="row-grid" data-section="loudness">
     <div class="card"><h3>Competitive Trap</h3><div class="big" style="color:#a78bfa;">-8 LUFS</div><div class="sub">Club-loud.</div></div>
     <div class="card"><h3>Spotify/YouTube/Tidal</h3><div class="big">-14 LUFS</div><div class="sub">Platform normalization.</div></div>
     <div class="card"><h3>Apple Music</h3><div class="big">-16 LUFS</div><div class="sub">Sound Check.</div></div>
@@ -892,7 +935,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <h2>🚧 True Peak Ceilings</h2>
     <span class="blurb">Inter-sample peak limits before encoder distortion.</span>
   </div>
-  <div class="row-grid">
+  <div class="row-grid" data-section="truePeak">
     <div class="card"><h3>Streaming</h3><div class="big">-1.0 dBTP</div><div class="sub">Safe for MP3/AAC.</div></div>
     <div class="card"><h3>SoundCloud</h3><div class="big">-0.5 dBTP</div><div class="sub">Stricter encoder.</div></div>
     <div class="card"><h3>Safe headroom</h3><div class="big">-2.0 dBTP</div><div class="sub">Stems / print masters.</div></div>
@@ -903,7 +946,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <h2>↔️ Stereo Width by Band</h2>
     <span class="blurb">How wide each frequency range should image.</span>
   </div>
-  <div class="row-grid">
+  <div class="row-grid" data-section="stereoWidth">
     <div class="card"><h3>Sub-bass</h3><div class="big">Mono</div><div class="sub">Below 100Hz mono.</div></div>
     <div class="card"><h3>Bass</h3><div class="big">10-30%</div><div class="sub">M/S not Haas.</div></div>
     <div class="card"><h3>Mids</h3><div class="big">30-60%</div></div>
@@ -1080,6 +1123,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 
 <button class="floating-mic" id="floatMic" title="Push to talk">🎤</button>
 <div class="toast" id="toast">Copied</div>
+
+<!-- GridStack — bundled with HTML5 drag/drop. Loads before the main script
+     so the GridStack global is ready when EQGRID.init() fires. -->
+<script src="https://cdn.jsdelivr.net/npm/gridstack@11/dist/gridstack-all.js"></script>
 
 <script>
 // ========== PUBLISHERS ==========
@@ -5017,6 +5064,199 @@ setInterval(()=>{
 // Initial render of cost panels + history
 renderCostPanels();
 renderHistoryBars();
+
+// ========== MASTERING REFERENCE GRID (drag / resize / reorder pilot) ==========
+// Wraps every card in the #eq panel in a GridStack widget so Kev can rearrange
+// + resize them. Each section (.row-grid[data-section]) is its own GridStack
+// instance — sections themselves don't reorder, only the cards inside.
+//
+// Layout persists per-section to localStorage under EQGRID.STORAGE_KEY.
+// The "Customise layout" toolbar button toggles edit mode (gs setStatic).
+// "Reset layouts" clears the saved layout and rebuilds the defaults.
+//
+// Init is LAZY — fires the first time the user lands on the Mastering
+// Reference tab (because GridStack needs a non-zero container width to size
+// the grid, and #eq is display:none until activated).
+//
+// Per-section default sizing (12-column grid):
+//   freqMap     — 7 cards, 3w × 3h (4 per row, 2 rows)
+//   loudness    — 4 cards, 3w × 2h (4 in a row)
+//   truePeak    — 4 cards, 3w × 2h (4 in a row)
+//   stereoWidth — 5 cards, 3w × 2h (4 then 1)
+const EQGRID = {
+  initialized: false,
+  editing: false,
+  grids: {},   // section key → GridStack instance
+  STORAGE_KEY: 'trapMaster_eqLayouts_v1',
+  COLUMNS: 12,
+  SECTION_DEFAULTS: {
+    freqMap:     {w: 3, h: 3},
+    loudness:    {w: 3, h: 2},
+    truePeak:    {w: 3, h: 2},
+    stereoWidth: {w: 3, h: 2}
+  }
+};
+
+function eqGridLoadLayouts(){
+  try {
+    const raw = localStorage.getItem(EQGRID.STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return (data && typeof data === 'object') ? data : null;
+  } catch (_) { return null; }
+}
+
+function eqGridSaveLayouts(){
+  if (!EQGRID.initialized) return;
+  const out = {};
+  Object.entries(EQGRID.grids).forEach(([key, grid]) => {
+    out[key] = grid.save(false).map(({id, x, y, w, h}) => ({id, x, y, w, h}));
+  });
+  try { localStorage.setItem(EQGRID.STORAGE_KEY, JSON.stringify(out)); } catch (_) {}
+}
+
+// Slugify the h3 text → stable per-card id ("Sub-bass" → "sub-bass").
+function eqGridCardId(card){
+  const h3 = card.querySelector('h3');
+  return (h3 ? h3.textContent : 'unknown').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Wrap each .card in a row-grid into the grid-stack-item / -content shell that
+// GridStack expects. Reads positions from savedLayout if provided; otherwise
+// auto-packs in original order with the section's default w/h.
+function eqGridWrapSection(rowGridEl, savedLayout, defaultW, defaultH){
+  const cards = Array.from(rowGridEl.querySelectorAll(':scope > .card'));
+  const layoutById = {};
+  if (Array.isArray(savedLayout)) savedLayout.forEach(it => { if (it && it.id) layoutById[it.id] = it; });
+
+  cards.forEach((card, i) => {
+    const id = eqGridCardId(card);
+    const saved = layoutById[id];
+    const item = document.createElement('div');
+    item.className = 'grid-stack-item';
+    item.setAttribute('gs-id', id);
+    if (saved){
+      item.setAttribute('gs-x', String(saved.x));
+      item.setAttribute('gs-y', String(saved.y));
+      item.setAttribute('gs-w', String(saved.w));
+      item.setAttribute('gs-h', String(saved.h));
+    } else {
+      // Auto-pack: defaultW columns wide, in original order, wrapping at COLUMNS.
+      const col = (i * defaultW) % EQGRID.COLUMNS;
+      const row = Math.floor((i * defaultW) / EQGRID.COLUMNS) * defaultH;
+      item.setAttribute('gs-x', String(col));
+      item.setAttribute('gs-y', String(row));
+      item.setAttribute('gs-w', String(defaultW));
+      item.setAttribute('gs-h', String(defaultH));
+    }
+    const content = document.createElement('div');
+    content.className = 'grid-stack-item-content';
+    item.appendChild(content);
+    card.parentNode.insertBefore(item, card);
+    content.appendChild(card);
+  });
+
+  // Drop the CSS-grid layout, hand control to GridStack.
+  rowGridEl.classList.remove('row-grid');
+  rowGridEl.classList.add('grid-stack');
+}
+
+// Reverse of eqGridWrapSection — used by Reset to restore plain HTML before re-init.
+function eqGridUnwrapSection(rowGridEl){
+  const items = Array.from(rowGridEl.querySelectorAll(':scope > .grid-stack-item'));
+  items.forEach(item => {
+    const card = item.querySelector(':scope > .grid-stack-item-content > .card');
+    if (card){
+      // Strip GridStack inline styles so the CSS-grid fallback renders cleanly.
+      card.style.cssText = '';
+      rowGridEl.appendChild(card);
+    }
+    item.remove();
+  });
+  rowGridEl.classList.remove('grid-stack', 'grid-stack-static');
+  rowGridEl.classList.add('row-grid');
+  rowGridEl.style.height = '';
+  rowGridEl.style.minHeight = '';
+}
+
+function eqGridInit(){
+  if (EQGRID.initialized) return;
+  if (typeof GridStack === 'undefined'){
+    // CDN hasn't responded yet — try again in a tick. Bails after a few attempts.
+    EQGRID._initRetries = (EQGRID._initRetries || 0) + 1;
+    if (EQGRID._initRetries < 20) setTimeout(eqGridInit, 250);
+    else console.warn('[EQGRID] GridStack failed to load — Mastering Reference tab falls back to static cards.');
+    return;
+  }
+  // GridStack needs a non-zero container width. The #eq panel is display:none
+  // until the tab is activated, so bail and wait for the tab click.
+  const eqPanel = document.getElementById('eq');
+  if (!eqPanel || !eqPanel.classList.contains('active')) return;
+
+  const saved = eqGridLoadLayouts() || {};
+
+  Object.entries(EQGRID.SECTION_DEFAULTS).forEach(([key, def]) => {
+    const rowGrid = eqPanel.querySelector(`.row-grid[data-section="${key}"], .grid-stack[data-section="${key}"]`);
+    if (!rowGrid) return;
+    eqGridWrapSection(rowGrid, saved[key] || null, def.w, def.h);
+    const grid = GridStack.init({
+      column: EQGRID.COLUMNS,
+      cellHeight: 50,
+      margin: 6,
+      animate: true,
+      float: false,
+      handle: '.grid-stack-item-content'
+    }, rowGrid);
+    grid.on('change', () => eqGridSaveLayouts());
+    grid.setStatic(!EQGRID.editing); // start locked unless user has already toggled into edit mode
+    EQGRID.grids[key] = grid;
+  });
+
+  // Wire toolbar buttons exactly once.
+  const customiseBtn = document.getElementById('eqCustomiseBtn');
+  const resetBtn = document.getElementById('eqResetLayoutBtn');
+  const customiseLabel = document.getElementById('eqCustomiseLabel');
+  const editHint = document.getElementById('eqEditHint');
+  if (customiseBtn && !customiseBtn._eqWired){
+    customiseBtn.addEventListener('click', () => {
+      EQGRID.editing = !EQGRID.editing;
+      Object.values(EQGRID.grids).forEach(g => g.setStatic(!EQGRID.editing));
+      customiseBtn.classList.toggle('active', EQGRID.editing);
+      if (customiseLabel) customiseLabel.textContent = EQGRID.editing ? 'Done' : 'Customise layout';
+      if (editHint) editHint.style.display = EQGRID.editing ? 'inline' : 'none';
+    });
+    customiseBtn._eqWired = true;
+  }
+  if (resetBtn && !resetBtn._eqWired){
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Reset all Mastering Reference layouts to their defaults?')) return;
+      try { localStorage.removeItem(EQGRID.STORAGE_KEY); } catch (_) {}
+      // Tear each grid down, unwrap cards, re-init from defaults.
+      Object.values(EQGRID.grids).forEach(grid => {
+        const rowGrid = grid.el;
+        grid.destroy(false); // false = don't remove the DOM
+        eqGridUnwrapSection(rowGrid);
+      });
+      EQGRID.grids = {};
+      EQGRID.initialized = false;
+      EQGRID.editing = false;
+      if (customiseBtn) customiseBtn.classList.remove('active');
+      if (customiseLabel) customiseLabel.textContent = 'Customise layout';
+      if (editHint) editHint.style.display = 'none';
+      setTimeout(eqGridInit, 0);
+      toast('Layouts reset');
+    });
+    resetBtn._eqWired = true;
+  }
+
+  EQGRID.initialized = true;
+}
+
+// Lazy-init: fires when the user clicks the Mastering Reference tab. Idempotent.
+(function wireEqLazyInit(){
+  const eqTabBtn = document.querySelector('.tab[data-tab="eq"]');
+  if (eqTabBtn) eqTabBtn.addEventListener('click', () => setTimeout(eqGridInit, 0));
+})();
 
 // ========== INIT ==========
 loadState();            // Restore persisted chain/favorites/custom plugins/symptoms/genre/meters/platform

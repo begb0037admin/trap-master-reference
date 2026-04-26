@@ -73,6 +73,7 @@ All user state lives in `localStorage` on the user's machine — nothing is sent
 - `RT_ANT_KEY_STORAGE` — Anthropic API key (optional research/chat).
 - `RT_PREFS_STORAGE` — voice tab prefs (model, voice, budget cap, etc.).
 - `AICHAT_HISTORY_KEY` — text chat history (last 50 messages).
+- `trapMaster_eqLayouts_v1` — Mastering Reference grid layouts (per-section, see GridStack section below).
 - Spend-tracker keys for OpenAI / Anthropic session + balance.
 
 **Never** introduce server-side persistence without flagging it — the privacy promise in `README.md` is "browser only."
@@ -118,9 +119,32 @@ The Realtime model can read and mutate the workbench through these tools (define
 
 If you add UI state that should be voice-controllable, add a tool here and wire its handler in the WEBRTC + SESSION block.
 
+## Mastering Reference grid (GridStack pilot)
+
+The cards on the **Mastering Reference** tab (`#eq` panel) are draggable + resizable + reorderable via [GridStack v11](https://gridstackjs.com), loaded from jsdelivr's CDN at the top of the file. This is a *pilot* — no other tabs use GridStack yet. If we like how it feels here, the same pattern can extend to other dashboards (Voice Chat session tools, Plugin Library stage columns, etc.).
+
+How it's wired:
+
+- Each `<div class="row-grid">` in `#eq` carries a `data-section` attribute (`freqMap`, `loudness`, `truePeak`, `stereoWidth`). One GridStack instance per section.
+- The `EQGRID` namespace in the main script handles init, save/load, toggle, and reset.
+- Init is *lazy* — fires on the first click of the Mastering Reference tab, because GridStack needs a non-zero container width and `#eq` is `display:none` until the tab is activated.
+- Per-card IDs are slugs of the `<h3>` text inside each `.card`. Stable enough for layout persistence but **renaming an h3 will orphan the saved layout for that card** (it'll fall back to the default position).
+- `EQGRID.SECTION_DEFAULTS` controls the initial w/h for new layouts. Tweak there if a section's defaults look off.
+- The `.eq-toolbar` at the top of `#eq` exposes "Customise layout" (toggles edit mode via `grid.setStatic(false)`) and "Reset layouts" (clears `localStorage`, unwraps cards, re-inits).
+
+Fallbacks:
+
+- If the GridStack CDN fails to load, `eqGridInit()` retries up to 20 times with 250ms backoff and then bails with a console warning. The Mastering Reference tab still renders — cards just stay static in their CSS-grid layout.
+- The `.row-grid` class is *removed* and `.grid-stack` is *added* at runtime. The original CSS-grid styling is the fallback if init never runs.
+
+When changing the Mastering Reference HTML:
+
+- New section → add `data-section="<key>"` to the new `.row-grid` and an entry in `EQGRID.SECTION_DEFAULTS`.
+- Renaming an existing card's `<h3>` → either update the saved layout key in `localStorage` or accept that user layouts for that card will reset.
+
 ## Conventions / gotchas
 
-- **Single-file rule.** No splitting into separate JS/CSS files unless we're explicitly doing that refactor — it would change the deploy story.
+- **Single-file rule.** No splitting into separate JS/CSS files unless we're explicitly doing that refactor — it would change the deploy story. (The GridStack CDN is the one external dependency, intentional.)
 - **Inline event handlers** (`onclick="..."`) are used heavily. Match the existing style; don't introduce a framework.
 - **`escapeHtml` / `escapeJs`** helpers exist (~line 1287). Use them when injecting any string into HTML or `onclick` attributes.
 - **`STATE.favorites` is a `Set`** — serialization to `localStorage` converts to/from an array; check `saveState`/`loadState` if you add new state fields.
