@@ -1061,12 +1061,12 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <script>
 // ========== PUBLISHERS ==========
 const PUBS = {
-  slate:['Slate','chip-slate'],ssl:['SSL','chip-ssl'],ua:['UA','chip-ua'],
+  slate:['Slate Digital','chip-slate'],ssl:['Solid State Logic','chip-ssl'],ua:['Universal Audio','chip-ua'],
   softube:['Softube','chip-softube'],sonnox:['Sonnox','chip-sonnox'],
   sonible:['sonible','chip-sonible'],sndtoys:['Soundtoys','chip-sndtoys'],
   izotope:['iZotope','chip-izotope'],eiosis:['Eiosis','chip-eiosis'],
   weiss:['Weiss','chip-weiss'],oek:['oeksound','chip-oek'],
-  waves:['Waves','chip-waves'],ni:['NI','chip-ni'],pa:['PA','chip-pa'],
+  waves:['Waves','chip-waves'],ni:['Native Instruments','chip-ni'],pa:['Plugin Alliance','chip-pa'],
   ant:['Antares','chip-ant'],cele:['Celemony','chip-cele'],liq:['LiquidSonics','chip-liq'],
   other:['Other','chip-other']
 };
@@ -1587,9 +1587,10 @@ function renderLibraryRow(p){
   const top = isTop(p.n), fav = isFav(p.n);
   const cls = 'plugin-row' + (top?' top':'') + (fav?' fav':'');
   const star = top ? '<span class="star">⭐</span>' : '';
-  const custom = p.custom ? '<span class="custom-badge">mine</span>' : '';
+  // Custom-imported plugins still get a × delete button, but we don't badge them
+  // as "mine" — every plugin in the library belongs to Kev, so the label was redundant.
   const delBtn = p.custom ? `<button class="del-custom" title="Remove" onclick="removeCustom('${escapeJs(p.n)}')">×</button>` : '';
-  return `<div class="${cls}">${star}<span class="name">${escapeHtml(p.n)} ${custom}</span><span class="chip ${pub[1]}">${escapeHtml(pubLabel)}</span><button class="fav-btn ${fav?'on':''}" title="Favorite" onclick="toggleFav('${escapeJs(p.n)}')">${fav?'❤':'♡'}</button>${delBtn}</div>`;
+  return `<div class="${cls}">${star}<span class="name">${escapeHtml(p.n)}</span><span class="chip ${pub[1]}">${escapeHtml(pubLabel)}</span><button class="fav-btn ${fav?'on':''}" title="Favorite" onclick="toggleFav('${escapeJs(p.n)}')">${fav?'❤':'♡'}</button>${delBtn}</div>`;
 }
 function toggleFav(name){if(STATE.favorites.has(name))STATE.favorites.delete(name);else STATE.favorites.add(name);renderLibrary();saveState();}
 function removeCustom(name){
