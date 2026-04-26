@@ -226,11 +226,26 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-msg .cites a{color:#9ca3af;margin-right:8px;display:inline-block;text-decoration:underline}
 .aichat-msg.thinking .body{font-style:italic;color:#9ca3af;opacity:.7}
 .aichat-empty{color:#6b7280;font-style:italic;text-align:center;padding:60px 20px}
-.aichat-compose{display:flex;gap:8px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:stretch}
-.aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:14px 16px;font-size:15px;line-height:1.55;resize:vertical;min-height:200px;max-height:520px;font-family:inherit}
+.aichat-compose{display:flex;gap:10px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:stretch}
+.aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:14px 16px;font-size:15px;line-height:1.55;resize:vertical;min-height:380px;max-height:640px;font-family:inherit}
 .aichat-compose textarea:focus{outline:none;border-color:#7c3aed}
-.aichat-compose .send-col{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:140px}
+.aichat-compose .send-col{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:210px}
 .aichat-compose button{width:100%}
+/* Send is the primary action — teal-green, chunkier than Attach so the eye lands on it first. */
+.aichat-compose #aiChatSend{background:#10a37f;color:#fff;font-weight:700;font-size:17px;padding:18px 16px;border-radius:10px;letter-spacing:.3px;border:none}
+.aichat-compose #aiChatSend:hover:not(:disabled){background:#0d8a6a}
+.aichat-compose #aiChatSend:disabled{opacity:.4;cursor:not-allowed;background:#374151}
+/* Attach screenshot — purple secondary, full-width pill. */
+.aichat-compose #aiChatImageBtn{background:#a855f7;color:#fff;border:none;font-weight:600;font-size:14px;padding:12px 12px;border-radius:8px}
+.aichat-compose #aiChatImageBtn:hover{background:#9333ea}
+/* Quick prompts — 5 starter buttons in a bordered card that absorbs spare height. */
+.aichat-quick-prompts{background:#111827;border:1px solid #374151;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;flex:1;min-height:0}
+.aichat-quick-prompts-label{font-size:10px;color:#fbbf24;text-transform:uppercase;letter-spacing:.6px;padding:2px 4px;font-weight:600}
+.aichat-quick-prompt{background:transparent;color:#d1d5db;border:1px solid #1f2937;font-size:11px;cursor:pointer;padding:7px 9px;text-align:left;border-radius:5px;font-family:inherit;line-height:1.3;transition:background .12s,color .12s,border-color .12s}
+.aichat-quick-prompt:hover{background:#1f2937;color:#fff;border-color:#374151}
+/* Clear input — small ghost pill at the bottom. */
+.aichat-compose #aiChatClearInput{background:transparent;color:#9ca3af;border:1px solid #374151;font-size:11px;font-weight:500;padding:7px 8px;border-radius:6px}
+.aichat-compose #aiChatClearInput:hover{color:#fca5a5;border-color:#7f1d1d}
 #aiChatImagePreview{display:flex;align-items:center;gap:10px;background:#111827;border:1px solid #a855f7;border-radius:10px;padding:8px 10px;margin-bottom:8px}
 #aiChatImagePreview img{max-width:140px;max-height:120px;border-radius:6px;border:1px solid #374151;object-fit:contain;background:#000}
 #aiChatImagePreview .ai-img-meta{flex:1;font-size:11px;color:#9ca3af;line-height:1.45}
@@ -291,7 +306,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .imp-bar select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:6px 10px;font-size:12px}
 .imp-status{font-size:12px;color:#9ca3af;flex:1;min-height:16px}
 .imp-status.busy{color:#fbbf24}.imp-status.err{color:#fca5a5}.imp-status.ok{color:#6ee7b7}
-.imp-preview{margin-top:10px;border:1px solid #374151;border-radius:8px;background:#111827;max-height:380px;overflow-y:auto}
+.imp-preview{margin-top:10px;border:1px solid #374151;border-radius:8px;background:#111827;min-height:220px}
 .imp-preview-empty{color:#6b7280;font-style:italic;padding:32px 16px;text-align:center;font-size:13px}
 .imp-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #374151;font-size:12px;color:#9ca3af;background:#0b1220;position:sticky;top:0;z-index:1}
 .imp-preview-head .imp-actions{margin-left:auto;display:flex;gap:6px}
@@ -428,7 +443,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-opts select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:12px}
 .rt-dot.researching{background:#f59e0b;animation:blink .7s infinite}
 .rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
-.rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;width:100%}
+.rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:center;width:100%}
 .rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0}
 .rt-cost-card.openai{border-left:3px solid #10a37f}
 .rt-cost-card.anthropic{border-left:3px solid #d97757}
@@ -444,7 +459,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-cost-card .row.balance .v{color:#a5b4fc;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
 .rt-cost-card .row.balance .v:hover{color:#c7d2fe}
 .rt-cost-card .actions{display:flex;gap:5px;margin-top:6px}
-.rt-cost-card .actions button{flex:1;padding:5px 6px;font-size:10px;background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.2px}
+.rt-cost-card .actions button{flex:1;padding:4px 5px;font-size:9px;background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.2px}
 .rt-cost-card .actions button:hover{background:#374151;color:#f3f4f6}
 .rt-cost-card .actions button.topup{border-color:#fbbf24;color:#fbbf24}
 .rt-cost-card .actions button.topup:hover{background:#451a03;color:#fcd34d}
@@ -477,7 +492,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   .rt-call-row{grid-template-columns:1fr;gap:10px}
   .rt-tool-card.history{grid-column:auto}
 }
-.rt-call-btn{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#7c3aed,#4c1d95);border:4px solid #a78bfa;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all .15s;box-shadow:0 6px 28px rgba(124,58,237,.35);padding:16px;font-family:inherit}
+.rt-call-btn{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#7c3aed,#4c1d95);border:3px solid #a78bfa;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s;box-shadow:0 6px 24px rgba(124,58,237,.35);padding:12px;font-family:inherit}
 .rt-call-btn:hover:not(:disabled){transform:scale(1.02);box-shadow:0 10px 36px rgba(124,58,237,.55)}
 .rt-call-btn:disabled{opacity:.35;cursor:not-allowed;background:radial-gradient(circle,#374151,#1f2937);border-color:#4b5563;box-shadow:none}
 .rt-call-btn.connecting{background:radial-gradient(circle,#b45309,#78350f);border-color:#fbbf24;animation:pulse-amber 1.2s infinite}
@@ -485,8 +500,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-call-btn.speaking{background:radial-gradient(circle,#2563eb,#1e3a8a);border-color:#60a5fa}
 @keyframes pulse-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0)}}
 @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 22px rgba(52,211,153,0)}}
-.rt-call-icon{font-size:56px;line-height:1}
-.rt-call-label{font-size:13px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.rt-call-icon{font-size:40px;line-height:1}
+.rt-call-label{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
 .rt-status-row{display:flex;align-items:center;gap:10px;font-size:12px;color:#9ca3af;flex-wrap:wrap;justify-content:center}
 .rt-dot{width:8px;height:8px;border-radius:50%;background:#4b5563}
 .rt-dot.connecting{background:#fbbf24;animation:blink 1s infinite}
@@ -785,8 +800,17 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div class="aichat-compose">
       <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click 📷 below." rows="9"></textarea>
       <div class="send-col">
-        <button class="btn" id="aiChatSend">Send ↵</button>
-        <button class="btn purple sm" id="aiChatImageBtn" type="button" title="Attach a screenshot — Claude can read meters, plugin settings, transcripts, anything visible">📷 Attach screenshot</button>
+        <button id="aiChatSend" type="button">Send ↵</button>
+        <button id="aiChatImageBtn" type="button" title="Attach a screenshot — Claude can read meters, plugin settings, transcripts, anything visible">📷 Attach screenshot</button>
+        <div class="aichat-quick-prompts">
+          <div class="aichat-quick-prompts-label">Quick prompts</div>
+          <button type="button" class="aichat-quick-prompt" data-prompt="What's wrong with my current chain? Diagnose it from the workbench state.">▶ What's wrong with this chain?</button>
+          <button type="button" class="aichat-quick-prompt" data-prompt="Suggest 3 specific improvements to my current chain — name plugins from my library and exact starting settings.">▶ Suggest 3 improvements</button>
+          <button type="button" class="aichat-quick-prompt" data-prompt="Reference track sounds like ">▶ Reference track sounds like…</button>
+          <button type="button" class="aichat-quick-prompt" data-prompt="Translate this for the voice tab — give me a short prompt I can read aloud to the voice assistant.">▶ Translate this for the voice tab</button>
+          <button type="button" class="aichat-quick-prompt" data-prompt="Explain the controls on ">▶ Explain this plugin's controls</button>
+        </div>
+        <button id="aiChatClearInput" type="button" title="Clear just the typing box — does not erase chat history">🧹 Clear input</button>
         <span class="aichat-status" id="aiChatStatus">&nbsp;</span>
       </div>
     </div>
@@ -4359,6 +4383,26 @@ function aichatInit(){
   document.getElementById('aiChatSend').onclick = aichatSend;
   document.getElementById('aiChatClear').onclick = aichatClear;
   document.getElementById('aiChatToJournal').onclick = aichatToJournal;
+  // Clear-input button: wipe just the typing box (separate from Clear chat which wipes history)
+  const clearInputBtn = document.getElementById('aiChatClearInput');
+  if (clearInputBtn) clearInputBtn.onclick = () => {
+    const ta = document.getElementById('aiChatInput');
+    if (ta){ ta.value = ''; ta.focus(); }
+  };
+  // Quick prompts: paste the data-prompt into the textarea and focus the cursor
+  // at the end so Kev can keep typing where the prompt left off (e.g. after "…").
+  document.querySelectorAll('.aichat-quick-prompt').forEach(btn => {
+    btn.onclick = () => {
+      const ta = document.getElementById('aiChatInput');
+      if (!ta) return;
+      const prompt = btn.dataset.prompt || '';
+      const sep = ta.value && !ta.value.endsWith('\n') ? '\n\n' : '';
+      ta.value = ta.value + sep + prompt;
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      ta.scrollTop = ta.scrollHeight;
+    };
+  });
   // Screenshot attach — file picker, drag-drop on textarea, paste-image with Cmd-V
   const aiChatImgBtn = document.getElementById('aiChatImageBtn');
   if (aiChatImgBtn) aiChatImgBtn.onclick = () => document.getElementById('aiChatImageInput').click();
