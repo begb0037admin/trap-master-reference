@@ -264,7 +264,13 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .stage-card h4{font-size:15px;color:#fff;margin-bottom:12px;font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid #1f2937}
 .stage-card h4 svg{flex-shrink:0;width:20px;height:20px}
 .stage-card .empty{color:#4b5563;font-size:12px;font-style:italic;padding:4px}
-.plugin-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#111827;border:1px solid #374151;font-size:12px}
+.plugin-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#111827;border:1px solid #374151;font-size:12px;cursor:grab;transition:background .12s,border-color .12s}
+.plugin-row:active{cursor:grabbing}
+.plugin-row.sortable-ghost{opacity:.35;background:#3b1764;border-color:#a78bfa}
+.plugin-row.sortable-drag{box-shadow:0 8px 24px rgba(0,0,0,.6);background:#374151;cursor:grabbing}
+.stage-card-rows{min-height:32px}
+.stage-card.libdrop-active{border-color:#a78bfa;background:#1f1438;transition:background .12s,border-color .12s}
+.lib-empty-stage{font-size:11px;color:#6b7280;font-style:italic;padding:14px 10px;text-align:center;border:1px dashed #374151;border-radius:6px}
 .plugin-row.top{background:#2e1065;border-left:3px solid #a78bfa}
 .plugin-row.fav{border-left:3px solid #f472b6}
 .plugin-row.fav.top{border-left:3px solid #fbbf24}
@@ -1046,6 +1052,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span style="color:#6b7280;">⭐ = top pick for this genre &nbsp;•&nbsp; ❤ = your favorite</span>
     <div style="flex:1"></div>
     <button class="btn purple sm" id="importPluginsBtn" title="Paste a list, drop a screenshot, or upload an image — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
+    <button class="btn ghost sm" id="libResetStages" title="Revert any plugins you've drag-moved back to their default stage" style="display:none">↺ Reset stages</button>
     <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
     <div class="lib-search-wrap">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16" y2="16"/></svg>
@@ -1633,8 +1640,18 @@ const STATE = {
   libSearch: '',   // ephemeral — cleared on reload, not persisted
   knowledge: [],   // research notes — see Knowledge Base tab
   journal: [],
-  userPresets: [] // user-saved chain presets (per-bus). Same shape as built-in PRESETS plus user:true marker.
+  userPresets: [], // user-saved chain presets (per-bus). Same shape as built-in PRESETS plus user:true marker.
+  pluginStageOverrides: {} // {pluginName: stageId} — set by drag-drop in Plugin Library
 };
+
+// Resolve a plugin's display stage — applies any user override from drag-drop,
+// otherwise falls back to the built-in stage.
+function getEffectiveStage(p){
+  if (!p) return null;
+  const ov = STATE.pluginStageOverrides;
+  if (ov && ov[p.n]) return ov[p.n];
+  return p.s;
+}
 BUSES.forEach(b => STATE.chain[b.id]=[]);
 
 // ========== HELPERS ==========
@@ -1667,7 +1684,8 @@ function saveState(){
         platform:ps?ps.value:null,
         journal:(STATE.journal||[]).slice(0,50),
         knowledge:(STATE.knowledge||[]).slice(0,200),
-        userPresets:(STATE.userPresets||[]).slice(0,100)
+        userPresets:(STATE.userPresets||[]).slice(0,100),
+        pluginStageOverrides:STATE.pluginStageOverrides||{}
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     }catch(e){console.warn('saveState failed',e);}
@@ -1694,6 +1712,7 @@ function loadState(){
     if(Array.isArray(d.journal))STATE.journal=d.journal.slice(0,50);
     if(Array.isArray(d.knowledge))STATE.knowledge=d.knowledge.slice(0,200);
     if(Array.isArray(d.userPresets))STATE.userPresets=d.userPresets.slice(0,100);
+    if(d.pluginStageOverrides && typeof d.pluginStageOverrides==='object') STATE.pluginStageOverrides=d.pluginStageOverrides;
   }catch(e){console.warn('loadState failed',e);}
   // One-time migration: any custom plugin saved with p:'other' + a pLabel that
   // matches a known publisher alias (Plugin Alliance, NI, UA, etc.) gets
@@ -1884,7 +1903,8 @@ function renderLibrary(){
     }
   }
   const cards = STAGES.map(stage=>{
-    const items = filtered.filter(p => p.s === stage.id);
+    // Use effective stage (overrides applied) so dragged plugins live in their new home.
+    const items = filtered.filter(p => getEffectiveStage(p) === stage.id);
     // Sort: top picks first, then favorites, then the rest
     items.sort((a,b) => {
       const aT = isTop(a.n)?0:1, bT=isTop(b.n)?0:1;
@@ -1897,8 +1917,8 @@ function renderLibrary(){
     if ((isFiltered || hasSearch) && !items.length) return '';
     const rows = items.length
       ? items.map(p=>renderLibraryRow(p)).join('')
-      : '<div class="empty">nothing here yet — add via ✨ Import via Claude</div>';
-    return `<div class="stage-card"><h4>${stage.icon||''}<span>${escapeHtml(stage.label)}</span></h4>${rows}</div>`;
+      : '<div class="lib-empty-stage">drop a plugin here</div>';
+    return `<div class="stage-card" data-stage="${escapeHtml(stage.id)}"><h4>${stage.icon||''}<span>${escapeHtml(stage.label)}</span></h4><div class="stage-card-rows" data-stage="${escapeHtml(stage.id)}">${rows}</div></div>`;
   }).filter(Boolean).join('');
   const grid = document.getElementById('libraryGrid');
   if (cards){
@@ -1916,6 +1936,77 @@ function renderLibrary(){
   if (searchCountEl) searchCountEl.textContent = hasSearch ? `${filtered.length} match${filtered.length===1?'':'es'}` : '';
   if (clearBtn) clearBtn.classList.toggle('show', hasSearch);
   renderPubFilter();
+  // Reset-stages button: only visible when at least one override exists.
+  const rsBtn = document.getElementById('libResetStages');
+  if (rsBtn){
+    const overrides = STATE.pluginStageOverrides || {};
+    rsBtn.style.display = Object.keys(overrides).length ? '' : 'none';
+  }
+  // Wire drag-drop on every stage container so plugins can be moved between
+  // categories. Re-runs every render because the DOM is replaced wholesale.
+  initLibraryDragDrop();
+}
+
+// Initialise Sortable on each stage's row container so the user can drag plugin
+// rows from one stage to another. Saves an override per plugin → stage in
+// localStorage; getEffectiveStage applies it at render time.
+function initLibraryDragDrop(){
+  if (typeof Sortable === 'undefined') return;
+  document.querySelectorAll('#libraryGrid .stage-card-rows').forEach(host => {
+    if (host.dataset.sortableReady === '1') return;
+    host.dataset.sortableReady = '1';
+    Sortable.create(host, {
+      group: 'libStages',
+      animation: 180,
+      // Skip drag when the user clicks the heart, the × delete-custom button, or any other button.
+      filter: '.fav-btn, .del-custom, button',
+      preventOnFilter: false,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onMove: (evt) => {
+        document.querySelectorAll('.stage-card.libdrop-active').forEach(c => c.classList.remove('libdrop-active'));
+        const dest = evt.to.closest('.stage-card');
+        if (dest) dest.classList.add('libdrop-active');
+      },
+      onEnd: () => {
+        document.querySelectorAll('.stage-card.libdrop-active').forEach(c => c.classList.remove('libdrop-active'));
+      },
+      onAdd: handleStageDrop
+    });
+  });
+}
+
+function handleStageDrop(evt){
+  const dest = evt.to;
+  const item = evt.item;
+  const newStage = dest && dest.dataset && dest.dataset.stage;
+  const pluginName = item && item.dataset && item.dataset.pluginName;
+  if (!newStage || !pluginName) return;
+  STATE.pluginStageOverrides = STATE.pluginStageOverrides || {};
+  // Find the plugin's original stage. If user drags it back to default, clear the override.
+  const orig = (PLUGINS.concat(STATE.customPlugins||[])).find(p => p.n === pluginName);
+  if (orig && orig.s === newStage){
+    delete STATE.pluginStageOverrides[pluginName];
+  } else {
+    STATE.pluginStageOverrides[pluginName] = newStage;
+  }
+  saveState();
+  renderLibrary();
+  const stageLabel = (STAGES.find(s => s.id === newStage) || {}).label || newStage;
+  // Strip emoji prefix on the toast for clarity
+  toast(`${pluginName} → ${String(stageLabel).replace(/^[^A-Za-z]+/,'').trim()}`);
+}
+
+// Wipe all stage overrides — wired to the Reset stages button.
+function resetPluginStages(){
+  const overrides = STATE.pluginStageOverrides || {};
+  const count = Object.keys(overrides).length;
+  if (!count){ toast('No stage moves to reset'); return; }
+  if (!confirm(`Reset ${count} plugin stage move${count===1?'':'s'} to defaults?`)) return;
+  STATE.pluginStageOverrides = {};
+  saveState();
+  renderLibrary();
+  toast(`Reset ${count} stage override${count===1?'':'s'}`);
 }
 
 // Build publisher filter pills from plugins actually in the library.
@@ -1986,7 +2077,8 @@ function renderLibraryRow(p){
   // Custom-imported plugins still get a × delete button, but we don't badge them
   // as "mine" — every plugin in the library belongs to Kev, so the label was redundant.
   const delBtn = p.custom ? `<button class="del-custom" title="Remove" onclick="removeCustom('${escapeJs(p.n)}')">×</button>` : '';
-  return `<div class="${cls}">${star}<span class="name">${escapeHtml(p.n)}</span><span class="chip ${pub[1]}">${escapeHtml(pubLabel)}</span><button class="fav-btn ${fav?'on':''}" title="Favorite" onclick="toggleFav('${escapeJs(p.n)}')">${fav?'❤':'♡'}</button>${delBtn}</div>`;
+  // data-plugin-name lets the Sortable cross-stage drop handler know which plugin moved.
+  return `<div class="${cls}" data-plugin-name="${escapeHtml(p.n)}">${star}<span class="name">${escapeHtml(p.n)}</span><span class="chip ${pub[1]}">${escapeHtml(pubLabel)}</span><button class="fav-btn ${fav?'on':''}" title="Favorite" onclick="toggleFav('${escapeJs(p.n)}')">${fav?'❤':'♡'}</button>${delBtn}</div>`;
 }
 function toggleFav(name){if(STATE.favorites.has(name))STATE.favorites.delete(name);else STATE.favorites.add(name);renderLibrary();saveState();}
 function removeCustom(name){
@@ -2966,6 +3058,7 @@ document.getElementById('snapshotBtn').onclick=()=>{
 };
 
 // ========== STAR REVIEW EXPORT ==========
+document.getElementById('libResetStages').onclick=resetPluginStages;
 document.getElementById('reviewStarsBtn').onclick=()=>{
   const lines=[];
   lines.push('# Genre Star Review Request');
