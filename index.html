@@ -444,7 +444,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-dot.researching{background:#f59e0b;animation:blink .7s infinite}
 .rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
 .rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:center;width:100%}
-.rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0}
+.rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0;max-width:260px;width:100%}
+.rt-call-row > .rt-cost-card.openai{justify-self:start}
+.rt-call-row > .rt-cost-card.anthropic{justify-self:end}
 .rt-cost-card.openai{border-left:3px solid #10a37f}
 .rt-cost-card.anthropic{border-left:3px solid #d97757}
 .rt-cost-card h5{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#e5e7eb;margin-bottom:4px;display:flex;align-items:center;gap:6px}
@@ -459,7 +461,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-cost-card .row.balance .v{color:#a5b4fc;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
 .rt-cost-card .row.balance .v:hover{color:#c7d2fe}
 .rt-cost-card .actions{display:flex;gap:5px;margin-top:6px}
-.rt-cost-card .actions button{flex:1;padding:4px 5px;font-size:9px;background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.2px}
+.rt-cost-card .actions button{flex:1;padding:3px 4px;font-size:8.5px;background:#1f2937;border:1px solid #374151;color:#d1d5db;border-radius:3px;cursor:pointer;font-weight:600;letter-spacing:.2px}
 .rt-cost-card .actions button:hover{background:#374151;color:#f3f4f6}
 .rt-cost-card .actions button.topup{border-color:#fbbf24;color:#fbbf24}
 .rt-cost-card .actions button.topup:hover{background:#451a03;color:#fcd34d}
@@ -1069,6 +1071,56 @@ const PUBS = {
   other:['Other','chip-other']
 };
 
+// Common publisher names → existing PUBS keys. Used to (a) auto-correct what
+// Claude returns from Import via Claude, (b) one-time migrate already-saved
+// custom plugins, (c) inform Claude's parser prompt so the first parse pass
+// uses the right key. Keys are lowercased + trimmed for the lookup.
+const PUB_ALIASES = {
+  'plugin alliance':'pa', 'pa':'pa', 'brainworx':'pa', 'bx':'pa', 'three-body technology':'pa', 'three body technology':'pa', 'lindell audio':'pa', 'unfiltered audio':'pa', 'spl':'pa', 'shadow hills':'pa',
+  'native instruments':'ni', 'ni':'ni',
+  'universal audio':'ua', 'ua':'ua',
+  'soundtoys':'sndtoys', 'sound toys':'sndtoys',
+  'slate digital':'slate', 'slate':'slate',
+  'sonnox':'sonnox', 'sonnox oxford':'sonnox',
+  'sonible':'sonible',
+  'softube':'softube',
+  'antares':'ant', 'antares audio':'ant', 'antares audio technology':'ant',
+  'celemony':'cele', 'celemony software':'cele',
+  'eiosis':'eiosis',
+  'liquidsonics':'liq', 'liquid sonics':'liq',
+  'solid state logic':'ssl', 'ssl':'ssl', 'ssl native':'ssl',
+  'oeksound':'oek', 'oek sound':'oek',
+  'waves':'waves', 'waves audio':'waves',
+  'weiss':'weiss', 'weiss engineering':'weiss',
+  'izotope':'izotope', 'i zotope':'izotope'
+};
+
+// Resolve a (rawKey, label) pair to the best PUBS key.
+//   - If rawKey is a known PUBS key (and not 'other'), trust it.
+//   - Otherwise try the label against PUB_ALIASES.
+//   - Fall back to 'other'.
+function resolvePubKey(rawKey, label){
+  if (rawKey && PUBS[rawKey] && rawKey !== 'other') return rawKey;
+  const lookup = String(label||'').toLowerCase().trim();
+  if (lookup && PUB_ALIASES[lookup]) return PUB_ALIASES[lookup];
+  return rawKey === 'other' ? 'other' : (PUBS[rawKey] ? rawKey : 'other');
+}
+
+// "Effective" publisher key for a plugin — used for filter pills + matching.
+// Custom plugins saved as p:'other' with a pLabel get a synthetic key
+// (e.g. 'other:Antelope Audio') so each unique label gets its own pill,
+// rather than all being lumped into a single generic "Other" bucket.
+function getEffectivePubKey(plugin){
+  if (PUBS[plugin.p] && plugin.p !== 'other') return plugin.p;
+  if (plugin.p === 'other' && plugin.pLabel) return 'other:' + plugin.pLabel;
+  return 'other';
+}
+function getEffectivePubLabel(key){
+  if (PUBS[key]) return PUBS[key][0];
+  if (typeof key === 'string' && key.startsWith('other:')) return key.slice(6);
+  return PUBS.other[0];
+}
+
 // ========== STAGES ==========
 const STAGES = [
   {id:'metering', label:'📊 Metering'},
@@ -1287,6 +1339,27 @@ function loadState(){
     if(Array.isArray(d.journal))STATE.journal=d.journal.slice(0,50);
     if(Array.isArray(d.knowledge))STATE.knowledge=d.knowledge.slice(0,200);
   }catch(e){console.warn('loadState failed',e);}
+  // One-time migration: any custom plugin saved with p:'other' + a pLabel that
+  // matches a known publisher alias (Plugin Alliance, NI, UA, etc.) gets
+  // promoted to the canonical PUBS key so it shows up under the right pill
+  // instead of in a duplicate "Other" bucket. Persists the cleanup back to
+  // localStorage so the next reload starts clean.
+  try{
+    if (Array.isArray(STATE.customPlugins) && STATE.customPlugins.length){
+      let migrated = 0;
+      STATE.customPlugins.forEach(p => {
+        if (p && p.p === 'other' && p.pLabel){
+          const k = resolvePubKey('other', p.pLabel);
+          if (k && k !== 'other'){
+            p.p = k;
+            delete p.pLabel; // redundant once it maps to a real key
+            migrated++;
+          }
+        }
+      });
+      if (migrated > 0){ saveState(); console.log(`Migrated ${migrated} custom plugin label(s) to canonical publisher keys.`); }
+    }
+  }catch(e){ console.warn('publisher migration failed', e); }
 }
 
 // ========== CLIPBOARD (with fallback chain) ==========
@@ -1420,7 +1493,8 @@ function renderLibrary(){
   const all = allPlugins();
   const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
   const isFiltered = filterSet.size > 0;
-  const filtered = isFiltered ? all.filter(p => filterSet.has(PUBS[p.p] ? p.p : 'other')) : all;
+  // Effective-key filtering — handles both real PUBS keys and 'other:<custom label>' synthetic keys.
+  const filtered = isFiltered ? all.filter(p => filterSet.has(getEffectivePubKey(p))) : all;
   const cards = STAGES.map(stage=>{
     const items = filtered.filter(p => p.s === stage.id);
     // Sort: top picks first, then favorites, then the rest
@@ -1435,35 +1509,36 @@ function renderLibrary(){
     if (isFiltered && !items.length) return '';
     const rows = items.length
       ? items.map(p=>renderLibraryRow(p)).join('')
-      : '<div class="empty">nothing here yet — add with ⊕ Add my plugin</div>';
+      : '<div class="empty">nothing here yet — add via ✨ Import via Claude</div>';
     return `<div class="stage-card"><h4>${stage.label}</h4>${rows}</div>`;
   }).filter(Boolean).join('');
   const grid = document.getElementById('libraryGrid');
   if (cards){
     grid.innerHTML = cards;
   } else {
-    const labels = Array.from(filterSet).map(k => (PUBS[k]||PUBS.other)[0]);
+    const labels = Array.from(filterSet).map(k => getEffectivePubLabel(k));
     const pubLabel = labels.length ? labels.join(', ') : 'any publisher';
-    grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — clear the filter or add some with ⊕ Add my plugin.</div>`;
+    grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — clear the filter or add some via ✨ Import via Claude.</div>`;
   }
   renderPubFilter();
 }
 
 // Build publisher filter pills from plugins actually in the library.
 // Multi-select: clicking a pill toggles it in/out of the filter set.
-// "All" clears the set (shows everything). The Clear button does the same — kept as
-// an explicit affordance because Kev asked for one.
+// "All" clears the set (shows everything). Custom-labelled "other" plugins
+// (e.g. Antelope Audio MG4+) get their own pill via getEffectivePubKey, so
+// you can filter to just one custom maker even though it isn't in PUBS.
 function renderPubFilter(){
   const host = document.getElementById('libPubFilter');
   if (!host) return;
   const all = allPlugins();
   const counts = {};
-  all.forEach(p => { const k = PUBS[p.p] ? p.p : 'other'; counts[k] = (counts[k]||0) + 1; });
+  all.forEach(p => { const k = getEffectivePubKey(p); counts[k] = (counts[k]||0) + 1; });
   // Sort by count desc, then label A-Z
   const pubs = Object.keys(counts).sort((a,b) => {
     const d = counts[b] - counts[a];
     if (d) return d;
-    return ((PUBS[a]||PUBS.other)[0]).localeCompare((PUBS[b]||PUBS.other)[0]);
+    return getEffectivePubLabel(a).localeCompare(getEffectivePubLabel(b));
   });
   const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
   const isAll = filterSet.size === 0;
@@ -1476,9 +1551,9 @@ function renderPubFilter(){
     `<button class="lib-pub-pill all ${isAll?'on':''}" data-pub="__all">All <span class="ct">${all.length}</span></button>`
   ];
   pubs.forEach(p => {
-    const meta = PUBS[p] || PUBS.other;
+    const label = getEffectivePubLabel(p);
     const on = filterSet.has(p) ? 'on' : '';
-    pillsHTML.push(`<button class="lib-pub-pill ${on}" data-pub="${escapeHtml(p)}">${escapeHtml(meta[0])} <span class="ct">${counts[p]}</span></button>`);
+    pillsHTML.push(`<button class="lib-pub-pill ${on}" data-pub="${escapeHtml(p)}">${escapeHtml(label)} <span class="ct">${counts[p]}</span></button>`);
   });
   // Clear button — only meaningful when something is selected, but keep visible for discoverability.
   pillsHTML.push(`<button class="lib-pub-pill clear" id="libPubClear" title="Clear all selected publishers"${isAll?' disabled':''}>✕ Clear</button>`);
@@ -3178,13 +3253,32 @@ Shape:
 PUBLISHER KEYS (use these exactly):
 ${pubsLines}
 
+PUBLISHER ALIASES — these full names map to existing keys above. ALWAYS use the listed key, never "other":
+- "Plugin Alliance" / "PA" / "Brainworx" / "bx" / "Three-Body Technology" / "Lindell Audio" / "Unfiltered Audio" / "SPL" / "Shadow Hills" → pa
+- "Native Instruments" / "NI" → ni
+- "Universal Audio" / "UA" → ua
+- "Soundtoys" → sndtoys
+- "Slate Digital" → slate
+- "Sonnox" / "Sonnox Oxford" → sonnox
+- "iZotope" → izotope
+- "Antares" / "Antares Audio Technology" → ant
+- "Celemony" → cele
+- "Eiosis" → eiosis
+- "LiquidSonics" → liq
+- "Solid State Logic" / "SSL" / "SSL Native" → ssl
+- "oeksound" → oek
+- "Waves" / "Waves Audio" → waves
+- "Weiss" / "Weiss Engineering" → weiss
+- "Softube" → softube
+- "sonible" → sonible
+
 STAGE IDS (use these exactly):
 ${stageLines}
 
 RULES
 - Normalise plugin names to the publisher's official spelling (e.g. "soothe 2" → "soothe2", "Pro Q 4" → "Pro-Q 4", "tube tech cl1b" → "Softube Tube-Tech CL 1B" if you can tell it's the Softube one).
 - For each plugin, pick the best 'stage_id' — what category it primarily lives in (e.g. a clipper goes to 'clipper' not 'limiter'; a vocal channel strip goes to 'vocal'; a transient shaper goes to 'transient'; a pitch correction goes to 'tuner').
-- For 'publisher_key': only use a key from the list above. If unsure or the publisher isn't listed, use "other" and put the actual publisher name in 'publisher_label'.
+- For 'publisher_key': only use a key from the list above. If a plugin is distributed by Plugin Alliance / brainworx / or bundled by any aliased company in the list above, use the canonical key (e.g. PA), NOT "other". Only fall back to "other" when the publisher really isn't covered (rare custom dev like Antelope Audio, FabFilter, Black Rooster, etc.) — in that case put the actual publisher name in 'publisher_label'.
 - 'already_exists': true if the canonical name (case-insensitive) appears in the existing library list below. False otherwise.
 - 'confidence' reflects how sure you are about the canonical name + publisher + stage. Below 0.6 means the user should double-check.
 - 'notes' is for corrections / inferences only. Don't moralise. Empty string if the parse was obvious.
@@ -3280,9 +3374,15 @@ async function parseImportWithClaude(){
     plugins = plugins.map(p => {
       const name = String(p.name||'').trim();
       if (!name) return null;
-      const pubKey = (PUBS[p.publisher_key] ? p.publisher_key : 'other');
+      const rawLabel = String(p.publisher_label||'').trim();
+      // Promote any 'other'-with-label into the canonical key when the label
+      // matches a known publisher alias (Plugin Alliance → pa, etc.).
+      let pubKey = resolvePubKey(p.publisher_key, rawLabel);
+      // If the resolved key is a real PUBS key, drop the custom label —
+      // it's now redundant. If still 'other', keep the label so the row
+      // can show "(pub: ...)" + later get its own filter pill.
+      const pubLabel = pubKey === 'other' ? rawLabel : '';
       const stageId = STAGES.find(s => s.id === p.stage_id) ? p.stage_id : 'eq-clean';
-      const pubLabel = String(p.publisher_label||'').trim();
       const conf = (typeof p.confidence === 'number') ? Math.max(0, Math.min(1, p.confidence)) : 0.7;
       return {
         name,
@@ -3413,7 +3513,9 @@ function commitImports(){
     const name = String(p.name||'').trim();
     if (!name){ skipped++; return; }
     if (existing.has(name.toLowerCase())){ skipped++; return; }
-    const pubKey = PUBS[p.publisher_key] ? p.publisher_key : 'other';
+    // Final alias safety net — even if the user manually picked 'other' in the
+    // preview, if their label matches a known publisher we promote it.
+    const pubKey = resolvePubKey(p.publisher_key, p.publisher_label);
     const stageId = STAGES.find(s => s.id === p.stage_id) ? p.stage_id : 'eq-clean';
     const entry = { n:name, p:pubKey, s:stageId, custom:true };
     if (pubKey === 'other' && p.publisher_label) entry.pLabel = p.publisher_label;
