@@ -178,7 +178,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .library-toolbar .current-genre{font-weight:600;color:#fbbf24}
 .stage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .stage-card{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px}
-.stage-card h4{font-size:13px;color:#f9fafb;margin-bottom:10px;font-weight:600}
+.stage-card h4{font-size:13px;color:#f9fafb;margin-bottom:10px;font-weight:600;display:flex;align-items:center;gap:8px}
+.stage-card h4 svg{flex-shrink:0;width:18px;height:18px}
 .stage-card .empty{color:#4b5563;font-size:12px;font-style:italic;padding:4px}
 .plugin-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#111827;border:1px solid #374151;font-size:12px}
 .plugin-row.top{background:#2e1065;border-left:3px solid #a78bfa}
@@ -204,6 +205,18 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .lib-pub-pill.clear{margin-left:auto;color:#fca5a5;border-color:#7f1d1d;font-weight:600}
 .lib-pub-pill.clear:hover:not(:disabled){background:#7f1d1d;color:#fee2e2;border-color:#b91c1c}
 .lib-pub-pill.clear:disabled{opacity:.35;cursor:not-allowed}
+/* Live search input on the library toolbar — sits on its own row above the maker pills. */
+.lib-search-wrap{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;padding:8px 12px;background:#111827;border:1px solid #374151;border-radius:8px;transition:border-color .12s}
+.lib-search-wrap:focus-within{border-color:#a78bfa}
+.lib-search-wrap svg{flex-shrink:0;color:#6b7280}
+.lib-search-wrap:focus-within svg{color:#a78bfa}
+.lib-search{flex:1;background:transparent;border:none;color:#e5e7eb;font-size:13px;font-family:inherit;outline:none;padding:2px 0;min-width:0}
+.lib-search::placeholder{color:#6b7280}
+.lib-search::-webkit-search-cancel-button{display:none}
+.lib-search-clear{background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:3px;display:none}
+.lib-search-clear.show{display:inline-flex;align-items:center}
+.lib-search-clear:hover{color:#fca5a5;background:#374151}
+.lib-search-count{flex-shrink:0;font-size:10px;color:#6b7280;font-family:'SF Mono',monospace;padding-right:4px}
 .lib-empty{padding:30px 20px;text-align:center;color:#6b7280;font-size:13px;background:#111827;border:1px dashed #374151;border-radius:8px;grid-column:1/-1}
 
 /* AI CHAT TAB */
@@ -907,6 +920,12 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div style="flex:1"></div>
     <button class="btn purple sm" id="importPluginsBtn" title="Paste a list, drop a screenshot, or upload an image — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
     <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
+    <div class="lib-search-wrap">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16" y2="16"/></svg>
+      <input type="search" class="lib-search" id="libSearch" placeholder="Search plugins by name…" autocomplete="off" spellcheck="false">
+      <span class="lib-search-count" id="libSearchCount"></span>
+      <button class="lib-search-clear" id="libSearchClear" type="button" title="Clear search">×</button>
+    </div>
     <div class="lib-pubs" id="libPubFilter"></div>
   </div>
   <div class="stage-grid" id="libraryGrid"></div>
@@ -1126,26 +1145,30 @@ function getEffectivePubLabel(key){
 }
 
 // ========== STAGES ==========
+// Each stage has a clean text label and a 24x24 white-stroke SVG icon — same
+// vocabulary (stroke 1.6, rounded caps) as the tab + genre icons. Emoji prefixes
+// were dropped from labels; downstream code that previously stripped them via
+// /^[^A-Za-z]+/ still works (just has nothing to strip now).
 const STAGES = [
-  {id:'metering', label:'📊 Metering'},
-  {id:'eq-clean', label:'🧹 Clean EQ'},
-  {id:'eq-colour', label:'🎨 Colour EQ'},
-  {id:'bus-comp', label:'🚌 Bus Comp'},
-  {id:'char-comp', label:'💪 Character Comp'},
-  {id:'saturation', label:'🔥 Saturation'},
-  {id:'transient', label:'🎯 Transient'},
-  {id:'limiter', label:'🧱 Limiter'},
-  {id:'clipper', label:'✂️ Clipper'},
-  {id:'de-ess', label:'🫢 De-esser'},
-  {id:'bass', label:'🔊 808 / Bass'},
-  {id:'tuner', label:'🎵 Pitch / Tuner'},
-  {id:'vocal', label:'🎤 Vocal Chain'},
-  {id:'imager', label:'🌐 Imager / Stereo'},
-  {id:'reverb', label:'🌊 Reverb'},
-  {id:'delay', label:'⏱️ Delay'},
-  {id:'modulation', label:'🌀 Modulation'},
-  {id:'repair', label:'🩹 Audio Repair'},
-  {id:'creative-fx', label:'✨ Creative FX'}
+  {id:'metering',    label:'Metering',        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16a9 9 0 0 1 18 0"/><line x1="12" y1="16" x2="16" y2="9"/><circle cx="12" cy="16" r="1.2" fill="#fff" stroke="none"/></svg>`},
+  {id:'eq-clean',    label:'Clean EQ',        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="21"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="18" y1="3" x2="18" y2="21"/><rect x="4" y="7" width="4" height="3" rx="1" fill="#fff" stroke="none"/><rect x="10" y="13" width="4" height="3" rx="1" fill="#fff" stroke="none"/><rect x="16" y="9" width="4" height="3" rx="1" fill="#fff" stroke="none"/></svg>`},
+  {id:'eq-colour',   label:'Colour EQ',       icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c4-8 6-8 10 0s6 8 10 0"/></svg>`},
+  {id:'bus-comp',    label:'Bus Comp',        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="6,8 3,12 6,16"/><polyline points="18,8 21,12 18,16"/></svg>`},
+  {id:'char-comp',   label:'Character Comp',  icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l3-1 2-7 2 5 2-3 2 7 2-1 2-5 2 4 3 1"/></svg>`},
+  {id:'saturation',  label:'Saturation',      icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c0 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-1-5 2 1 3 3 3 6a6 6 0 0 1-12 0c0-5 6-7 6-10z"/></svg>`},
+  {id:'transient',   label:'Transient',       icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,17 8,17 11,5 13,21 16,17 22,17"/></svg>`},
+  {id:'limiter',     label:'Limiter',         icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="9" y1="5" x2="9" y2="10"/><line x1="15" y1="5" x2="15" y2="10"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="13" y1="10" x2="13" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/><line x1="9" y1="14" x2="9" y2="19"/><line x1="16" y1="14" x2="16" y2="19"/></svg>`},
+  {id:'clipper',     label:'Clipper',         icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.5" y2="13.5"/><line x1="20" y1="20" x2="8.5" y2="10.5"/><line x1="8.5" y1="8.5" x2="11" y2="11"/></svg>`},
+  {id:'de-ess',      label:'De-esser',        icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 1 0-4 4 4 4 0 1 1-4 4"/><line x1="4.5" y1="20" x2="19.5" y2="4"/></svg>`},
+  {id:'bass',        label:'808 / Bass',      icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5l-5 4H3v6h3l5 4z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6a8 8 0 0 1 0 12"/></svg>`},
+  {id:'tuner',       label:'Pitch / Tuner',   icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>`},
+  {id:'vocal',       label:'Vocal Chain',     icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="17.5" x2="12" y2="21"/><line x1="9" y1="21" x2="15" y2="21"/></svg>`},
+  {id:'imager',      label:'Imager / Stereo', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="9" ry="4"/><line x1="3" y1="12" x2="21" y2="12"/><polyline points="5,9 3,12 5,15"/><polyline points="19,9 21,12 19,15"/></svg>`},
+  {id:'reverb',      label:'Reverb',          icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.4" fill="#fff" stroke="none"/><path d="M8 12a4 4 0 0 1 8 0"/><path d="M5 12a7 7 0 0 1 14 0"/><path d="M2 12a10 10 0 0 1 20 0"/></svg>`},
+  {id:'delay',       label:'Delay',           icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12,7 12,12 16,14"/></svg>`},
+  {id:'modulation',  label:'Modulation',      icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>`},
+  {id:'repair',      label:'Audio Repair',    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`},
+  {id:'creative-fx', label:'Creative FX',     icon:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 5.4L19 11l-5.2 1.6L12 18l-1.8-5.4L5 11l5.2-1.6z"/><path d="M19 16l.8 1.6L21.5 18l-1.7.4L19 20l-.8-1.6L16.5 18l1.7-.4z" stroke-width="1.2"/></svg>`}
 ];
 
 // ========== BUILT-IN PLUGINS ==========
@@ -1282,6 +1305,7 @@ const STATE = {
   favorites: new Set(),
   customPlugins: [],
   genre: 'trap',
+  libSearch: '',   // ephemeral — cleared on reload, not persisted
   knowledge: [],   // research notes — see Knowledge Base tab
   journal: []
 };
@@ -1497,8 +1521,11 @@ function renderLibrary(){
   const all = allPlugins();
   const filterSet = STATE.libPubFilter instanceof Set ? STATE.libPubFilter : new Set();
   const isFiltered = filterSet.size > 0;
+  const search = (STATE.libSearch || '').toLowerCase().trim();
+  const hasSearch = search.length > 0;
   // Effective-key filtering — handles both real PUBS keys and 'other:<custom label>' synthetic keys.
-  const filtered = isFiltered ? all.filter(p => filterSet.has(getEffectivePubKey(p))) : all;
+  let filtered = isFiltered ? all.filter(p => filterSet.has(getEffectivePubKey(p))) : all;
+  if (hasSearch) filtered = filtered.filter(p => p.n.toLowerCase().includes(search));
   const cards = STAGES.map(stage=>{
     const items = filtered.filter(p => p.s === stage.id);
     // Sort: top picks first, then favorites, then the rest
@@ -1509,21 +1536,28 @@ function renderLibrary(){
       if (aF !== bF) return aF - bF;
       return a.n.localeCompare(b.n);
     });
-    // When filtering by publisher, hide stages that have no plugins from those publishers.
-    if (isFiltered && !items.length) return '';
+    // When filtering (by maker or search), hide stages that have no matching plugins.
+    if ((isFiltered || hasSearch) && !items.length) return '';
     const rows = items.length
       ? items.map(p=>renderLibraryRow(p)).join('')
       : '<div class="empty">nothing here yet — add via ✨ Import via Claude</div>';
-    return `<div class="stage-card"><h4>${stage.label}</h4>${rows}</div>`;
+    return `<div class="stage-card"><h4>${stage.icon||''}<span>${escapeHtml(stage.label)}</span></h4>${rows}</div>`;
   }).filter(Boolean).join('');
   const grid = document.getElementById('libraryGrid');
   if (cards){
     grid.innerHTML = cards;
+  } else if (hasSearch) {
+    grid.innerHTML = `<div class="lib-empty">No plugins matching <strong>"${escapeHtml(search)}"</strong>${isFiltered ? ' with the current maker filter' : ''} — try a different name${isFiltered ? ' or clear the filter' : ''}.</div>`;
   } else {
     const labels = Array.from(filterSet).map(k => getEffectivePubLabel(k));
     const pubLabel = labels.length ? labels.join(', ') : 'any publisher';
     grid.innerHTML = `<div class="lib-empty">No plugins from <strong>${escapeHtml(pubLabel)}</strong> in your library yet — clear the filter or add some via ✨ Import via Claude.</div>`;
   }
+  // Update the search counter + clear-button visibility
+  const countEl = document.getElementById('libSearchCount');
+  const clearBtn = document.getElementById('libSearchClear');
+  if (countEl) countEl.textContent = hasSearch ? `${filtered.length} match${filtered.length===1?'':'es'}` : '';
+  if (clearBtn) clearBtn.classList.toggle('show', hasSearch);
   renderPubFilter();
 }
 
@@ -4998,6 +5032,13 @@ METERS.forEach(m=>{
 updateMeters();
 renderSymptoms();
 renderLibrary();
+// Wire up the library search input — re-renders on every keystroke.
+(function wireLibSearch(){
+  const inp = document.getElementById('libSearch');
+  const clr = document.getElementById('libSearchClear');
+  if (inp) inp.addEventListener('input', e => { STATE.libSearch = e.target.value; renderLibrary(); });
+  if (clr) clr.addEventListener('click', () => { STATE.libSearch = ''; if (inp){ inp.value = ''; inp.focus(); } renderLibrary(); });
+})();
 renderRecipes();
 renderJournal();
 aichatInit();
