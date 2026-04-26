@@ -167,8 +167,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .chip-liq{background:#134e4a;color:#ccfbf1}.chip-other{background:#374151;color:#d1d5db}
 .bus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .bus-col{background:#1f2937;border:1px solid #374151;border-radius:10px;padding:12px;min-height:200px}
-.bus-col h4{font-size:12px;color:#d1d5db;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center}
-.bus-col h4 .count{color:#9ca3af;font-weight:500;font-size:11px;letter-spacing:.2px;text-transform:none}
+.bus-col h4{font-size:12px;color:#d1d5db;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.bus-col h4 .count{color:#9ca3af;font-weight:500;font-size:11px;letter-spacing:.2px;text-transform:none;margin-left:auto}
+.bus-col h4 .clear-bus-btn{background:transparent;border:1px solid #7f1d1d;color:#fca5a5;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .12s}
+.bus-col h4 .clear-bus-btn:hover{background:#7f1d1d;color:#fee2e2;border-color:#b91c1c}
 .chain-list{margin-bottom:10px}
 .chain-item{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px}
 .chain-item.has-notes{border-color:#4c1d95}
@@ -199,6 +201,21 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .modal-filters input[type="text"]{flex:1;min-width:180px;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:7px 10px;font-size:13px}
 .modal-filters select{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:7px 10px;font-size:13px}
 .modal-body{overflow-y:auto;padding:8px}
+/* Save-your-own-preset section, sits between the filters and the list. */
+.user-preset-save{padding:12px 16px;background:#0f172a;border-bottom:1px solid #374151}
+.user-preset-save .ups-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#a78bfa;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.user-preset-save .ups-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.user-preset-save select,.user-preset-save input{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:7px 10px;font-size:12px;font-family:inherit}
+.user-preset-save input{flex:1;min-width:180px}
+.user-preset-save .ups-hint{font-size:10px;color:#6b7280;margin-top:6px}
+/* User-preset markers on the rendered cards. */
+.preset-card.is-user{border-color:#a78bfa;border-style:dashed}
+.preset-card .preset-card-mine{background:#3b1764;color:#e9d5ff;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:4px}
+.preset-card-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+.preset-card-rename{background:transparent;border:1px solid #a78bfa;color:#c4b5fd;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:8px;font-family:inherit;transition:all .12s}
+.preset-card-rename:hover{background:#3b1764;color:#e9d5ff}
+.preset-card-delete{background:transparent;border:none;color:#f87171;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:3px}
+.preset-card-delete:hover{background:#7f1d1d;color:#fee2e2}
 .modal-form{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .modal-form label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;font-weight:600;margin-bottom:4px}
 .modal-form input[type="text"],.modal-form select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:13px}
@@ -663,7 +680,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 </div>
 
 <div class="tabs">
-  <button class="tab active active-section" data-tab="chain"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="3" height="18" rx="0.6"/><rect x="10.5" y="3" width="3" height="18" rx="0.6"/><rect x="17" y="3" width="3" height="18" rx="0.6"/><circle cx="5.5" cy="9" r="1.4" fill="#fff" stroke="none"/><circle cx="12" cy="14" r="1.4" fill="#fff" stroke="none"/><circle cx="18.5" cy="7" r="1.4" fill="#fff" stroke="none"/></svg></span> Chain Builder</button>
+  <button class="tab active active-section" data-tab="chain"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="3" rx="0.6"/><rect x="3" y="8" width="18" height="3" rx="0.6"/><rect x="3" y="13" width="18" height="3" rx="0.6"/><rect x="3" y="18" width="18" height="3" rx="0.6"/><circle cx="9" cy="4.5" r="1" fill="#fff" stroke="none"/><circle cx="14" cy="9.5" r="1" fill="#fff" stroke="none"/><circle cx="7" cy="14.5" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="19.5" r="1" fill="#fff" stroke="none"/></svg></span> Chain Builder</button>
   <button class="tab active-section" data-tab="meter"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><line x1="15" y1="15" x2="20" y2="20"/><polyline points="7,10.5 9,8.5 11,12.5 13,9.5 14,10.5"/></svg></span> Diagnose</button>
   <button class="tab voice-tab" data-tab="voice"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span> Voice Chat</button>
   <button class="tab" data-tab="aichat" style="color:#34d399;"><span class="tab-ico pop"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H10l-4.5 3.5V16.5h-0a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="12" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="15.5" cy="10" r="0.7" fill="#fff" stroke="none"/></svg></span> Chat with Claude</button>
@@ -1112,6 +1129,24 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       </select>
       <label style="display:flex;align-items:center;gap:6px;color:#9ca3af;font-size:12px;"><input type="checkbox" id="presetReplace" checked> Replace bus chain (uncheck to append)</label>
     </div>
+    <!-- Save your own preset. Picks one bus from the current chain, names it,
+         saves it. Appears in the list below alongside the built-ins. -->
+    <div class="user-preset-save">
+      <div class="ups-label"><span style="font-size:14px">💾</span> Save current chain as a preset</div>
+      <div class="ups-row">
+        <select id="userPresetBus">
+          <option value="all">All buses (full chain)</option>
+          <option value="master">Master</option>
+          <option value="vocal">Vocal</option>
+          <option value="808">808 / Bass</option>
+          <option value="drums">Drums</option>
+          <option value="fx">FX Returns</option>
+        </select>
+        <input id="userPresetName" type="text" placeholder="Preset name (e.g. My trap master)" maxlength="60" />
+        <button class="btn green sm" id="userPresetSaveBtn" type="button">Save preset</button>
+      </div>
+      <div class="ups-hint" id="userPresetHint">Saves whatever's currently in that bus, with all plugin settings intact.</div>
+    </div>
     <div class="modal-body" id="presetList"></div>
   </div>
 </div>
@@ -1387,7 +1422,87 @@ const PLUGINS = [
   {n:'Crystallizer',p:'sndtoys',s:'creative-fx'},{n:'Freak',p:'ni',s:'creative-fx'},
   {n:'Morphoder',p:'waves',s:'creative-fx'},{n:'Enigma',p:'waves',s:'creative-fx'},
   {n:'Ultrapitch',p:'waves',s:'creative-fx'},{n:'Berzerk',p:'waves',s:'creative-fx'},
-  {n:'CLA Effects',p:'waves',s:'creative-fx'}
+  {n:'CLA Effects',p:'waves',s:'creative-fx'},
+  // ===== Waves Diamond Bundle additions (April 2026) =====
+  // 51 plugins from Kev's Diamond Bundle (waves.com/bundles/diamond) that
+  // weren't already listed under their alias above (RBass = Renaissance Bass,
+  // R-Vox = Renaissance Vox, R-Comp = Renaissance Compressor, etc.). Stage
+  // assignments are best-guess by primary use — flag any that feel wrong.
+  // Electric 88 Piano (instrument) intentionally skipped — library is FX-only.
+  {n:'AudioTrack',p:'waves',s:'vocal'},
+  {n:'CLA Unplugged',p:'waves',s:'vocal'},
+  {n:'Cobalt Saphira',p:'waves',s:'saturation'},
+  {n:'DeBreath',p:'waves',s:'vocal'},
+  {n:'Doppler',p:'waves',s:'creative-fx'},
+  {n:'Eddie Kramer Drum Channel',p:'waves',s:'char-comp'},
+  {n:'eMo F2 Filter',p:'waves',s:'creative-fx'},
+  {n:'eMo Generator',p:'waves',s:'repair'},
+  {n:'eMo Q4 Equalizer',p:'waves',s:'eq-clean'},
+  {n:'Greg Wells PianoCentric',p:'waves',s:'vocal'},
+  {n:'Greg Wells ToneCentric',p:'waves',s:'char-comp'},
+  {n:'GTR3 Amps',p:'waves',s:'saturation'},
+  {n:'GTR3 Stomps',p:'waves',s:'creative-fx'},
+  {n:'GTR3 Tool Rack',p:'waves',s:'creative-fx'},
+  {n:'GTR3 Tuner',p:'waves',s:'tuner'},
+  {n:'IR-L Convolution Reverb',p:'waves',s:'reverb'},
+  {n:'Key Detector',p:'waves',s:'metering'},
+  {n:'L3 Multimaximizer',p:'waves',s:'limiter'},
+  {n:'L3 Ultramaximizer',p:'waves',s:'limiter'},
+  {n:'L3-LL Multimaximizer',p:'waves',s:'limiter'},
+  {n:'Linear Phase EQ',p:'waves',s:'eq-clean'},
+  {n:'Linear Phase Multiband Compressor',p:'waves',s:'char-comp'},
+  {n:'LoAir',p:'waves',s:'bass'},
+  {n:'Lofi Space',p:'waves',s:'creative-fx'},
+  {n:'Magma Springs',p:'waves',s:'reverb'},
+  {n:'Manny Marroquin Triple D',p:'waves',s:'de-ess'},
+  {n:'MaxxVolume',p:'waves',s:'char-comp'},
+  {n:'MetaFilter',p:'waves',s:'creative-fx'},
+  {n:'MV2',p:'waves',s:'char-comp'},
+  {n:'Nx Virtual Mix Room',p:'waves',s:'metering'},
+  {n:'OneKnob Driver',p:'waves',s:'saturation'},
+  {n:'OneKnob Filter',p:'waves',s:'creative-fx'},
+  {n:'OneKnob Pumper',p:'waves',s:'char-comp'},
+  {n:'Q-Clone',p:'waves',s:'eq-clean'},
+  {n:'Renaissance Axx',p:'waves',s:'char-comp'},
+  {n:'Renaissance Channel',p:'waves',s:'vocal'},
+  {n:'Renaissance Equalizer',p:'waves',s:'eq-clean'},
+  {n:'Retro Fi',p:'waves',s:'creative-fx'},
+  {n:'SoundShifter',p:'waves',s:'creative-fx'},
+  {n:'Sphere Immersive Compressor',p:'waves',s:'bus-comp'},
+  {n:'Submarine',p:'waves',s:'bass'},
+  {n:'SuperTap',p:'waves',s:'delay'},
+  {n:'Trans-X',p:'waves',s:'transient'},
+  {n:'V-Comp',p:'waves',s:'bus-comp'},
+  {n:'V-EQ3',p:'waves',s:'eq-colour'},
+  {n:'V-EQ4',p:'waves',s:'eq-colour'},
+  {n:'Vintage Amps',p:'waves',s:'saturation'},
+  {n:'VU Meter',p:'waves',s:'metering'},
+  {n:'Waves Tune LT',p:'waves',s:'tuner'},
+  {n:'X-Crackle',p:'waves',s:'repair'},
+  {n:'X-Hum',p:'waves',s:'repair'},
+  // ===== Plugin Alliance additions (April 2026) =====
+  // Pulled from Kev's PA account (waves.com/pluginalliance.com 'My Products').
+  // Skipped duplicates (BiG, OptoMax, 902 De-Esser, Vocal Enhancer, EQ4 = Maag,
+  // PQ = SPL PQ, niveau filter = elysia, Free Ranger = SPL Free Ranger,
+  // Mastering Compressor = Shadow Hills, plus all bx_ entries already listed).
+  // Focusrite Bundle is already covered by 'bx_console Focusrite SC' above.
+  {n:'Shadow Hills Mastering Comp Class A',p:'pa',s:'bus-comp'},
+  {n:'Kirchhoff-EQ',p:'pa',s:'eq-clean'},
+  {n:'Acon Digital De-Verb Plus',p:'pa',s:'repair'},
+  {n:'bx_masterdesk True Peak',p:'pa',s:'limiter'},
+  {n:'bx_masterdesk PRO',p:'pa',s:'limiter'},
+  {n:'bx_masterdesk Classic',p:'pa',s:'limiter'},
+  {n:'Lindell IRON',p:'pa',s:'bus-comp'},
+  {n:'HG-Q',p:'pa',s:'eq-colour'},
+  {n:'bx_cleansweep V2',p:'pa',s:'eq-clean'},
+  {n:'bx_shredspread',p:'pa',s:'imager'},
+  {n:'bx_meter',p:'pa',s:'metering'},
+  {n:'bx_megasingle',p:'pa',s:'saturation'},
+  {n:'bx_bluechorus2',p:'pa',s:'modulation'},
+  {n:'bx_metal2',p:'pa',s:'saturation'},
+  {n:'bx_blackdist2',p:'pa',s:'saturation'},
+  {n:'bx_rockrack V3 Player',p:'pa',s:'saturation'},
+  {n:'Double MS',p:'pa',s:'imager'}
 ];
 
 // ========== GENRE TOP PICKS ==========
@@ -1417,7 +1532,8 @@ const STATE = {
   genre: 'trap',
   libSearch: '',   // ephemeral — cleared on reload, not persisted
   knowledge: [],   // research notes — see Knowledge Base tab
-  journal: []
+  journal: [],
+  userPresets: [] // user-saved chain presets (per-bus). Same shape as built-in PRESETS plus user:true marker.
 };
 BUSES.forEach(b => STATE.chain[b.id]=[]);
 
@@ -1450,7 +1566,8 @@ function saveState(){
         meters:STATE.meters,
         platform:ps?ps.value:null,
         journal:(STATE.journal||[]).slice(0,50),
-        knowledge:(STATE.knowledge||[]).slice(0,200)
+        knowledge:(STATE.knowledge||[]).slice(0,200),
+        userPresets:(STATE.userPresets||[]).slice(0,100)
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     }catch(e){console.warn('saveState failed',e);}
@@ -1476,6 +1593,7 @@ function loadState(){
     if(ps&&d.platform)ps.value=d.platform;
     if(Array.isArray(d.journal))STATE.journal=d.journal.slice(0,50);
     if(Array.isArray(d.knowledge))STATE.knowledge=d.knowledge.slice(0,200);
+    if(Array.isArray(d.userPresets))STATE.userPresets=d.userPresets.slice(0,100);
   }catch(e){console.warn('loadState failed',e);}
   // One-time migration: any custom plugin saved with p:'other' + a pLabel that
   // matches a known publisher alias (Plugin Alliance, NI, UA, etc.) gets
@@ -1540,8 +1658,21 @@ function renderChain(){
   document.getElementById('busGrid').innerHTML=BUSES.map(b=>{
     const items=STATE.chain[b.id];
     const rows=items.length?items.map((p,i)=>renderChainItem(b.id,p,i,items.length)).join(''):'<div class="chain-empty">empty — add plugins below</div>';
-    return `<div class="bus-col"><h4>${b.label} <span class="count">${items.length}</span></h4><div class="chain-list">${rows}</div><button class="btn ghost sm" onclick="openPicker('${b.id}')">+ Add plugin</button></div>`;
+    // Clear button only renders when the bus has at least one plugin — no point if it's already empty.
+    const clearBtn = items.length ? `<button class="clear-bus-btn" type="button" title="Clear all plugins from this bus" onclick="clearBusFromUI('${escapeJs(b.id)}')">Clear</button>` : '';
+    return `<div class="bus-col"><h4>${escapeHtml(b.label)} <span class="count">${items.length}</span>${clearBtn}</h4><div class="chain-list">${rows}</div><button class="btn ghost sm" onclick="openPicker('${b.id}')">+ Add plugin</button></div>`;
   }).join('');
+}
+// UI handler for the per-bus Clear button. Confirms before wiping so a misclick can't nuke a chain.
+function clearBusFromUI(busId){
+  const arr = STATE.chain[busId];
+  if (!arr || !arr.length) return;
+  const busLabel = BUSES.find(b => b.id === busId)?.label || busId;
+  if (!confirm(`Clear all ${arr.length} plugin${arr.length===1?'':'s'} from ${busLabel}?`)) return;
+  STATE.chain[busId] = [];
+  renderChain();
+  saveState();
+  toast(`${busLabel} cleared`);
 }
 function renderChainItem(busId,p,idx,total){
   const pub=PUBS[p.p]||PUBS.other;
@@ -2228,19 +2359,33 @@ const GENRE_DEFAULTS = {
 // ========== PRESET MODAL ==========
 function openPresetModal(){
   document.getElementById('presetGenreFilter').value=STATE.genre;
+  // Default the save bus picker to whichever bus has plugins right now (or master if all empty).
+  const sel = document.getElementById('userPresetBus');
+  if (sel){
+    const firstBusWithPlugins = BUSES.find(b => (STATE.chain[b.id]||[]).length > 0);
+    sel.value = (firstBusWithPlugins ? firstBusWithPlugins.id : 'master');
+  }
+  const nameInp = document.getElementById('userPresetName');
+  if (nameInp) nameInp.value = '';
   document.getElementById('presetModal').classList.add('open');
   renderPresetList();
 }
 function closePresetModal(){ document.getElementById('presetModal').classList.remove('open'); }
 
-// Single source of truth for the modal's filter — used by the rendered list AND
-// by the in-modal "Load all presets shown" button so they always agree.
+// Combined preset finder — searches built-ins first, then user presets.
+function findPreset(id){
+  return PRESETS.find(x=>x.id===id) || (STATE.userPresets||[]).find(x=>x.id===id);
+}
+
+// Single source of truth for the modal's filter — applies bus+genre filter to
+// both built-in PRESETS and STATE.userPresets. User presets sort first.
 function getFilteredPresets(){
   const busF=document.getElementById('presetBusFilter').value;
   const genreF=document.getElementById('presetGenreFilter').value;
-  return PRESETS.filter(p=>{
+  const all = (STATE.userPresets||[]).concat(PRESETS);
+  return all.filter(p=>{
     if(busF && p.bus!==busF) return false;
-    if(genreF && !p.genres.includes(genreF)) return false;
+    if(genreF && (!Array.isArray(p.genres) || !p.genres.includes(genreF))) return false;
     return true;
   });
 }
@@ -2253,30 +2398,159 @@ function renderPresetList(){
     return;
   }
   list.innerHTML=filtered.map(p=>{
-    const busLabel=BUSES.find(b=>b.id===p.bus)?.label||p.bus;
-    const pills=p.chain.map(c=>`<span class="preset-card-pill">${escapeHtml(c.n)}</span>`).join('');
-    const genres=p.genres.map(g=>`<span class="${g===STATE.genre?'match':''}">${escapeHtml(genreLabel(g).replace(/^[^A-Za-z]+/,''))}</span>`).join('');
-    return `<div class="preset-card" onclick="applyPreset('${p.id}')"><div class="preset-card-head"><span class="preset-card-name">${escapeHtml(p.label)}</span><span class="preset-card-bus">${escapeHtml(busLabel)}</span></div><div class="preset-card-desc">${escapeHtml(p.desc)}</div><div class="preset-card-chain">${pills}</div><div class="preset-card-genres">${genres}</div></div>`;
+    const isMulti = p.bus === 'all' && p.chains;
+    const busLabel = isMulti
+      ? `All buses (${Object.keys(p.chains).length})`
+      : (BUSES.find(b=>b.id===p.bus)?.label || p.bus);
+    let pills;
+    if (isMulti){
+      // Show each bus as a header pill followed by its plugins.
+      const parts = [];
+      BUSES.forEach(b => {
+        const ch = p.chains[b.id];
+        if (Array.isArray(ch) && ch.length){
+          parts.push(`<span class="preset-card-pill" style="background:#3b1764;color:#e9d5ff;">${escapeHtml(b.label)}:</span>`);
+          ch.forEach(c => parts.push(`<span class="preset-card-pill">${escapeHtml(c.n)}</span>`));
+        }
+      });
+      pills = parts.join('');
+    } else {
+      pills = (p.chain||[]).map(c=>`<span class="preset-card-pill">${escapeHtml(c.n)}</span>`).join('');
+    }
+    const genres=(p.genres||[]).map(g=>`<span class="${g===STATE.genre?'match':''}">${escapeHtml(genreLabel(g).replace(/^[^A-Za-z]+/,''))}</span>`).join('');
+    const isUser = !!p.user;
+    const mineChip = isUser ? '<span class="preset-card-mine">👤 Mine</span>' : '';
+    // Rename + delete actions only on user-created presets — built-ins are immutable.
+    const userActions = isUser ? `<div class="preset-card-actions"><button class="preset-card-rename" type="button" title="Rename this preset" onclick="event.stopPropagation();renameUserPreset('${escapeJs(p.id)}')">Rename</button><button class="preset-card-delete" type="button" title="Delete this preset" onclick="event.stopPropagation();deleteUserPreset('${escapeJs(p.id)}')">×</button></div>` : '';
+    const desc = p.desc || (isUser ? 'Saved by you.' : '');
+    return `<div class="preset-card ${isUser?'is-user':''}" onclick="applyPreset('${escapeJs(p.id)}')"><div class="preset-card-head"><span class="preset-card-name">${mineChip}${escapeHtml(p.label)}</span><span class="preset-card-bus">${escapeHtml(busLabel)}</span>${userActions}</div><div class="preset-card-desc">${escapeHtml(desc)}</div><div class="preset-card-chain">${pills}</div><div class="preset-card-genres">${genres}</div></div>`;
   }).join('');
 }
 
 function applyPreset(id){
-  const p=PRESETS.find(x=>x.id===id); if(!p) return;
+  const p=findPreset(id); if(!p) return;
   const replace=document.getElementById('presetReplace').checked;
-  if(replace) STATE.chain[p.bus]=p.chain.map(c=>({...c}));
-  else STATE.chain[p.bus]=STATE.chain[p.bus].concat(p.chain.map(c=>({...c})));
+  let scopeLabel;
+  if (p.bus === 'all' && p.chains){
+    // Multi-bus preset — apply every saved bus. Buses missing from preset.chains
+    // are LEFT ALONE (not cleared) so loading a "vocal-only" multi-bus doesn't
+    // wipe a master Kev wanted to keep.
+    const busesTouched = [];
+    BUSES.forEach(b => {
+      const presetChain = p.chains[b.id];
+      if (Array.isArray(presetChain) && presetChain.length){
+        if (replace) STATE.chain[b.id] = presetChain.map(c => ({...c}));
+        else STATE.chain[b.id] = STATE.chain[b.id].concat(presetChain.map(c => ({...c})));
+        busesTouched.push(BUSES.find(x => x.id === b.id)?.label || b.id);
+      }
+    });
+    scopeLabel = busesTouched.length === BUSES.length ? 'all buses' : busesTouched.join(' + ');
+  } else {
+    // Single-bus — existing logic
+    if(replace) STATE.chain[p.bus]=(p.chain||[]).map(c=>({...c}));
+    else STATE.chain[p.bus]=STATE.chain[p.bus].concat((p.chain||[]).map(c=>({...c})));
+    scopeLabel = BUSES.find(b=>b.id===p.bus)?.label || p.bus;
+  }
   renderChain(); saveState(); closePresetModal();
-  toast(`Loaded "${p.label}" → ${BUSES.find(b=>b.id===p.bus)?.label}`);
+  toast(`Loaded "${p.label}" → ${scopeLabel}`);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
   document.querySelector('.tab[data-tab="chain"]').classList.add('active');
   document.getElementById('chain').classList.add('active');
 }
+
+// Pure save action — also called by the voice AI's `save_preset` tool.
+// Validates inputs, builds the preset, persists. Throws on bad input.
+// Pass bus='all' to save every non-empty bus as a single multi-bus preset.
+function saveUserPresetAction(bus, name){
+  bus = String(bus || '').trim() || 'all';
+  name = String(name || '').trim();
+  if (!name) throw new Error('Name your preset first');
+  const valid = ['master','vocal','808','drums','fx','all'];
+  if (!valid.includes(bus)) throw new Error('Unknown bus: ' + bus);
+  const id = 'user-' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  const dateStr = new Date().toISOString().slice(0,10);
+  const genreSuffix = STATE.genre ? ' from ' + genreLabel(STATE.genre).replace(/^[^A-Za-z]+/,'').trim() : '';
+  let preset;
+  if (bus === 'all'){
+    // Multi-bus: collect every non-empty bus into preset.chains
+    const chains = {};
+    let total = 0;
+    BUSES.forEach(b => {
+      const arr = (STATE.chain[b.id]||[]).map(c => ({...c}));
+      if (arr.length){ chains[b.id] = arr; total += arr.length; }
+    });
+    if (!total) throw new Error('Every bus is empty — nothing to save');
+    preset = {
+      id, label: name, bus: 'all', chains,
+      genres: STATE.genre ? [STATE.genre] : [],
+      desc: `Saved ${dateStr}${genreSuffix} (full chain across ${Object.keys(chains).length} bus${Object.keys(chains).length===1?'':'es'}).`,
+      user: true
+    };
+  } else {
+    // Single-bus: existing shape
+    const chain = (STATE.chain[bus]||[]).map(c => ({...c}));
+    if (!chain.length) throw new Error(`The ${BUSES.find(b=>b.id===bus)?.label} chain is empty — nothing to save`);
+    preset = {
+      id, label: name, bus, chain,
+      genres: STATE.genre ? [STATE.genre] : [],
+      desc: `Saved ${dateStr}${genreSuffix}.`,
+      user: true
+    };
+  }
+  STATE.userPresets = (STATE.userPresets||[]).concat([preset]);
+  saveState();
+  return preset;
+}
+
+// UI handler — reads the form, calls the pure action, updates the modal.
+function saveUserPreset(){
+  const bus = document.getElementById('userPresetBus').value;
+  const name = document.getElementById('userPresetName').value.trim();
+  if (!name){ document.getElementById('userPresetName').focus(); toast('Name your preset first', true); return; }
+  try {
+    const preset = saveUserPresetAction(bus, name);
+    document.getElementById('userPresetName').value = '';
+    renderPresetList();
+    const scope = preset.bus === 'all' ? `full chain (${Object.keys(preset.chains).length} bus${Object.keys(preset.chains).length===1?'':'es'})` : (BUSES.find(b=>b.id===preset.bus)?.label || preset.bus);
+    toast(`Saved "${preset.label}" — ${scope}`);
+  } catch (e) {
+    toast(e.message || String(e), true);
+  }
+}
+
+function deleteUserPreset(id){
+  if (!confirm('Delete this saved preset?')) return;
+  STATE.userPresets = (STATE.userPresets||[]).filter(p => p.id !== id);
+  saveState();
+  renderPresetList();
+  toast('Preset deleted');
+}
+
+// Rename a user preset in place — uses prompt() to keep the implementation
+// trivial and consistent with the delete-confirm UX pattern.
+function renameUserPreset(id){
+  const p = (STATE.userPresets||[]).find(x => x.id === id);
+  if (!p) return;
+  const next = prompt('Rename this preset:', p.label);
+  if (next == null) return; // user cancelled
+  const trimmed = String(next).trim();
+  if (!trimmed){ toast('Name cannot be empty', true); return; }
+  if (trimmed === p.label) return; // no change
+  p.label = trimmed.slice(0, 60);
+  saveState();
+  renderPresetList();
+  toast(`Renamed to "${p.label}"`);
+}
+
 document.getElementById('presetsBtn').onclick=openPresetModal;
 document.getElementById('presetClose').onclick=closePresetModal;
 document.getElementById('presetModal').onclick=e=>{if(e.target.id==='presetModal')closePresetModal();};
 document.getElementById('presetBusFilter').onchange=renderPresetList;
 document.getElementById('presetGenreFilter').onchange=renderPresetList;
+document.getElementById('userPresetSaveBtn').onclick=saveUserPreset;
+// Allow Enter in the name input to trigger Save.
+document.getElementById('userPresetName').addEventListener('keydown', e => { if (e.key === 'Enter') saveUserPreset(); });
 
 // applyCapturedSnap — restores a journal snapshot back into the workbench.
 function applyCapturedSnap(s){
@@ -2960,7 +3234,12 @@ const TOOL_DEFS=[
   {type:'function',name:'get_library',description:'Return the full current plugin library grouped by stage. The library was inlined in your session start instructions, but call this if Kev mentions he just added plugins or you want a fresh dump.',parameters:{type:'object',properties:{},required:[]}},
   {type:'function',name:'set_plugin_settings',description:'Pin concrete setting notes to a specific plugin on a bus so they appear directly under the plugin in the chain view. USE THIS EVERY TIME you give specific parameter values (drive/threshold/Q/freq/attack/release/mix%/etc.) — the notes persist in the UI so Kev doesn\'t have to scroll the transcript. Replaces existing notes for that plugin. Target by plugin name (fuzzy match) OR by 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — fuzzy match. Use this OR position.'},position:{type:'integer',description:'1-indexed position on the bus. Use this OR plugin.'},settings:{type:'string',description:'Terse, actionable notes. Prefer one parameter per line like "Drive: 3–4" or "HPF: 80 Hz, 12 dB/oct". Include mix% if parallel. Max ~6 lines.'}},required:['bus','settings']}},
   {type:'function',name:'clear_plugin_settings',description:'Remove settings notes from a plugin on a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string'},position:{type:'integer'}},required:['bus']}},
-  {type:'function',name:'research',description:'Look up specific knowledge using Claude with live web search. USE THIS when you might bluff: specific producer/engineer techniques (Jaycen Joshua, Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, etc.), exact plugin parameters/control names, current 2024–2026 plugin releases or trends, signature chains documented online, gear interviews. Returns a grounded answer with citations. Brief Kev with "hold on, let me check…" before calling. Do NOT use for stuff you obviously know (basic mixing concepts, his workbench state, common plugin features).',parameters:{type:'object',properties:{question:{type:'string',description:'Focused, specific question. "What is Jaycen Joshua\'s vocal bus chain?" beats "How do I mix vocals?". Include specific names/plugins where relevant.'},context:{type:'string',description:'Optional: 1-2 sentences of conversation context that help narrow the answer (genre, what Kev is trying to achieve, plugins he has).'}},required:['question']}}
+  {type:'function',name:'research',description:'Look up specific knowledge using Claude with live web search. USE THIS when you might bluff: specific producer/engineer techniques (Jaycen Joshua, Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, etc.), exact plugin parameters/control names, current 2024–2026 plugin releases or trends, signature chains documented online, gear interviews. Returns a grounded answer with citations. Brief Kev with "hold on, let me check…" before calling. Do NOT use for stuff you obviously know (basic mixing concepts, his workbench state, common plugin features).',parameters:{type:'object',properties:{question:{type:'string',description:'Focused, specific question. "What is Jaycen Joshua\'s vocal bus chain?" beats "How do I mix vocals?". Include specific names/plugins where relevant.'},context:{type:'string',description:'Optional: 1-2 sentences of conversation context that help narrow the answer (genre, what Kev is trying to achieve, plugins he has).'}},required:['question']}},
+  {type:'function',name:'save_preset',description:`Save the current chain as a named user preset that Kev can reload later from the Load Preset modal. Use this whenever Kev says "save this", "save this as a preset", "save this chain", "save this as my master chain", etc. If he doesn't specify which bus, default to "all" (saves every non-empty bus as a single multi-bus preset — best for when you've been collaborating on a full session).
+
+CRITICAL: if Kev has NOT said what to call the preset, DO NOT call this tool yet. Ask him out loud first — something natural like "What would you like to call this preset?" or "Sure, what should I name it?" — then wait for his answer and use what he says as the name. Never invent a name yourself, never use a date as a fallback. Only call this tool once you have an actual name from him.
+
+Once saved, quote the name back so he knows it landed.`,parameters:{type:'object',properties:{name:{type:'string',description:'The exact name Kev told you to use, e.g. "Jaycen Joshua master", "My trap vocal", "Friday session". Required — never auto-generate; ask Kev first.'},bus:{type:'string',enum:['master','vocal','808','drums','fx','all'],description:'Which bus to save. Default "all" saves every non-empty bus together. Single-bus values save just that one bus.'}},required:['name']}}
 ];
 
 // Resolve a plugin on a bus by position or fuzzy plugin name. Returns its 0-based index or -1.
@@ -5002,6 +5281,21 @@ async function handleToolCall(name,args){
         const g=args.genre;if(!TOP_PICKS[g])throw new Error('Unknown genre: '+g);
         STATE.genre=g;document.getElementById('genreSelect').value=g;renderLibrary();saveState();
         return{ok:true,genre:g,label:genreLabel(g)};
+      }
+      case 'save_preset':{
+        // Voice-driven save. Bus defaults to "all" so a casual "save this" captures the whole session.
+        const bus = String(args.bus || 'all');
+        const name = String(args.name || '').trim();
+        if (!name) throw new Error('Preset name required');
+        const preset = saveUserPresetAction(bus, name);
+        // If the modal is currently open, refresh its list so Kev sees the new entry without reopening.
+        const modal = document.getElementById('presetModal');
+        if (modal && modal.classList.contains('open')) renderPresetList();
+        const scope = preset.bus === 'all'
+          ? `full chain (${Object.keys(preset.chains).length} bus${Object.keys(preset.chains).length===1?'':'es'})`
+          : (BUSES.find(b=>b.id===preset.bus)?.label || preset.bus);
+        toast(`Saved "${preset.label}" — ${scope}`);
+        return {ok:true, name: preset.label, bus: preset.bus, scope};
       }
       case 'set_platform':{
         const p=args.platform;if(!METER_TARGETS[p])throw new Error('Unknown platform: '+p);

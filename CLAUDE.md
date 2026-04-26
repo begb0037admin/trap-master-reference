@@ -67,13 +67,15 @@ If you're hunting for a UI element, grep its emoji/label in the HTML body block 
 
 All user state lives in `localStorage` on the user's machine — nothing is sent to a server we control. Keys:
 
-- `trapMasterState_v1` — chain, genre, target, favorites, custom plugins, journal, knowledge notes, etc. (versioned suffix — bump to `_v2` only with a migration).
+- `trapMasterState_v1` — chain, genre, target, favorites, custom plugins, journal, knowledge notes, user-saved chain presets, etc. (versioned suffix — bump to `_v2` only with a migration).
 - `LIB_PUB_FILTER_KEY` — library publisher multi-select.
 - `RT_KEY_STORAGE` — OpenAI API key (voice).
 - `RT_ANT_KEY_STORAGE` — Anthropic API key (optional research/chat).
 - `RT_PREFS_STORAGE` — voice tab prefs (model, voice, budget cap, etc.).
 - `AICHAT_HISTORY_KEY` — text chat history (last 50 messages).
-- `trapMaster_eqLayouts_v1` — Mastering Reference grid layouts (per-section, see GridStack section below).
+- `trapMaster_eqLayouts_v2` — Mastering Reference card order + custom user-added tiles (see Sortable section below). The `_v1` key, if present, was an earlier GridStack pilot — safe to ignore/clear.
+- `trapMaster_troubleLayout_v1` — Troubleshooter (Diagnose tab) symptom pills: order + hidden built-ins + custom user-added symptoms.
+- `trapMaster_voiceToolsLayout_v1` — Voice Chat Session tools cards: order + hidden built-ins + custom note tiles.
 - Spend-tracker keys for OpenAI / Anthropic session + balance.
 
 **Never** introduce server-side persistence without flagging it — the privacy promise in `README.md` is "browser only."
@@ -119,28 +121,60 @@ The Realtime model can read and mutate the workbench through these tools (define
 
 If you add UI state that should be voice-controllable, add a tool here and wire its handler in the WEBRTC + SESSION block.
 
-## Mastering Reference grid (GridStack pilot)
+## Mastering Reference (Sortable pilot — drag-to-reorder + custom tiles)
 
-The cards on the **Mastering Reference** tab (`#eq` panel) are draggable + resizable + reorderable via [GridStack v11](https://gridstackjs.com), loaded from jsdelivr's CDN at the top of the file. This is a *pilot* — no other tabs use GridStack yet. If we like how it feels here, the same pattern can extend to other dashboards (Voice Chat session tools, Plugin Library stage columns, etc.).
+The cards on the **Mastering Reference** tab (`#eq` panel) can be dragged to reorder, and users can add their own custom tiles per section. Powered by [Sortable.js v1](https://sortablejs.github.io/Sortable/) loaded from jsdelivr — ~30 KB, no deps. This is a *pilot* — no other tabs use it yet. If it earns its keep here, the same pattern extends to other card-heavy sections (e.g. Voice Chat session tools, Plugin Library stage columns).
+
+Deliberately scoped: **no resize, no scroll-inside-tile.** Cards size themselves to their content like normal CSS-grid items. An earlier GridStack-based attempt added resize and scroll-inside-tile and Kev didn't want either — see git history for that branch if you ever need to revisit.
 
 How it's wired:
 
-- Each `<div class="row-grid">` in `#eq` carries a `data-section` attribute (`freqMap`, `loudness`, `truePeak`, `stereoWidth`). One GridStack instance per section.
-- The `EQGRID` namespace in the main script handles init, save/load, toggle, and reset.
-- Init is *lazy* — fires on the first click of the Mastering Reference tab, because GridStack needs a non-zero container width and `#eq` is `display:none` until the tab is activated.
-- Per-card IDs are slugs of the `<h3>` text inside each `.card`. Stable enough for layout persistence but **renaming an h3 will orphan the saved layout for that card** (it'll fall back to the default position).
-- `EQGRID.SECTION_DEFAULTS` controls the initial w/h for new layouts. Tweak there if a section's defaults look off.
-- The `.eq-toolbar` at the top of `#eq` exposes "Customise layout" (toggles edit mode via `grid.setStatic(false)`) and "Reset layouts" (clears `localStorage`, unwraps cards, re-inits).
+- Each `<div class="row-grid">` in `#eq` carries a `data-section` attribute (`freqMap`, `loudness`, `truePeak`, `stereoWidth`). One Sortable instance per section.
+- The `EQGRID` namespace in the main script handles init, persistence, toggle, custom-tile add/delete, and reset.
+- Init is *lazy* — fires on the first click of the Mastering Reference tab.
+- Per-card IDs: built-in cards get a slug of their `<h3>` text (`Sub-bass` → `sub-bass`); custom cards get `custom-<random>` and carry a `data-tile-id` attribute.
+- The `.eq-toolbar` at the top of `#eq` exposes "Customise layout" (toggles `.editing` class on each section + enables Sortable) and "Reset layouts" (clears `localStorage`, drops custom tiles, restores original order).
+- In edit mode each section gains a `.eq-add-tile` placeholder at the end. Clicking it expands an inline title + body form; saving creates a new custom card.
+
+Storage layout (`trapMaster_eqLayouts_v2`):
+
+```json
+{
+  "freqMap":     {"order": ["sub-bass", "bass-body", "custom-…"], "customs": [{"id": "custom-…", "title": "230 Hz trick", "body": "Kick punch sweet spot"}]},
+  "loudness":    {...},
+  "truePeak":    {...},
+  "stereoWidth": {...}
+}
+```
 
 Fallbacks:
 
-- If the GridStack CDN fails to load, `eqGridInit()` retries up to 20 times with 250ms backoff and then bails with a console warning. The Mastering Reference tab still renders — cards just stay static in their CSS-grid layout.
-- The `.row-grid` class is *removed* and `.grid-stack` is *added* at runtime. The original CSS-grid styling is the fallback if init never runs.
+- If Sortable's CDN fails to load, `eqGridInit()` retries up to 20× at 250ms then logs a warning. The tab still renders — cards just stay static.
+- `forceFallback: true` is on in the Sortable options — works more cleanly with the CSS-grid `.row-grid` than HTML5 native drag.
 
 When changing the Mastering Reference HTML:
 
-- New section → add `data-section="<key>"` to the new `.row-grid` and an entry in `EQGRID.SECTION_DEFAULTS`.
-- Renaming an existing card's `<h3>` → either update the saved layout key in `localStorage` or accept that user layouts for that card will reset.
+- New section → add `data-section="<key>"` to the new `.row-grid` and the key to `EQGRID.SECTIONS`.
+- Renaming an existing card's `<h3>` → either update the saved order key in `localStorage` or accept that the saved order for that card resets.
+
+## Other customisable tile sections (Troubleshooter + Voice Tools)
+
+After the Mastering Reference pilot proved out, the same drag/hide/add pattern was extended to two more places using a generic `makeTileSection(opts)` helper in the main script. Each section registers itself once and rerenders through a callback the helper invokes.
+
+**Troubleshooter (Diagnose tab, `#symptomGrid`):**
+
+- Pills can be reordered, built-in pills can be hidden, custom pills can be added (label only — no body).
+- Custom pill IDs are `custom-<random>` and they participate in `STATE.symptoms` exactly like built-ins (toggle on/off, included in snapshot context for Claude). The Voice AI's `list_symptoms` / `toggle_symptom` tools currently see only built-ins — extending those is a separate task.
+- `renderSymptoms` was refactored to honour saved order, hidden built-ins, and custom symptoms via `getDisplaySymptoms()` / `getAllSymptomsList()`.
+- Toolbar buttons: `#troubleCustomiseBtn`, `#troubleResetBtn`. Edit hint: `#troubleEditHint`.
+
+**Voice Chat Session tools (`#voice .rt-tools-panel .rt-tools-grid`):**
+
+- Built-in cards (Cost/min, Soft budget cap, Session breakdown, Auto-pause, Usage dashboards, History bars) can be reordered or hidden. Custom title+body note tiles can be added.
+- Built-in cards are annotated with `data-tile-id` derived from their `.label` text on first init. The annotation is idempotent.
+- Toolbar buttons: `#voiceToolsCustomiseBtn`, `#voiceToolsResetBtn`. Edit hint: `#voiceToolsEditHint`.
+
+Both sections eager-init at page load (right after `renderLibrary`) so saved customs are available before the Snapshot button is clicked. The helper retries with backoff if Sortable hasn't responded yet.
 
 ## Conventions / gotchas
 
