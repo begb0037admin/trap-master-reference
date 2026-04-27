@@ -3207,7 +3207,7 @@ async function rerankTopPicksWithClaude(){
   if (!antKey){ toast('No Anthropic key — add one on the 🎙️ Voice Chat tab first.', true); return; }
   const lib = allPlugins();
   if (!lib.length){ toast('Library is empty.', true); return; }
-  if (!confirm(`Ask Claude to re-rank ⭐ top picks across all 6 genres (Trap, Hip-Hop, R&B, Pop, Afrobeats, Lo-Fi) using your full ${lib.length}-plugin library?\n\nCosts roughly $0.03–0.05 on Sonnet 4.6. Replaces the current stars; you can hit Reset stars to revert.`)) return;
+  if (!confirm(`Ask Claude to research + re-rank ⭐ top picks across all 6 genres (Trap, Hip-Hop, R&B, Pop, Afrobeats, Lo-Fi) using your full ${lib.length}-plugin library?\n\nClaude will run 8–12 web searches across producer interviews, YouTube tutorials, and mix engineer endorsements before picking — these become your go-to defaults.\n\nCost roughly $0.15–0.30 (Sonnet 4.6 + web search). Replaces the current stars; hit Reset stars to revert.`)) return;
 
   const btn = document.getElementById('reviewStarsBtn');
   const orig = btn.textContent;
@@ -3230,9 +3230,17 @@ async function rerankTopPicksWithClaude(){
       return `- ${g} (${lbl}) [${picks.length}]: ${picks.join(', ') || '(none)'}`;
     }).join('\n');
 
-    const sys = `You re-rank "top pick" plugins for a music producer's mixing/mastering workbench. Kev has a library of plugins; for each genre he produces, pick the best plugins from his actual library that he should reach for first.
+    const sys = `You re-rank "top pick" plugins for Kev's mixing/mastering workbench. He produces trap, hip-hop, R&B, pop, afrobeats and lo-fi. The output is his GO-TO list — the plugins he reaches for first; anything outside the picks is for experimentation.
 
-OUTPUT — STRICT JSON ONLY, NO PROSE, NO MARKDOWN, NO CODE FENCES.
+THIS IS NOT A VIBE TASK. You have web_search. USE IT to ground your picks in real-world reputation:
+- Search for producer interviews, mix engineer breakdowns, YouTube tutorials by named producers/engineers — Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, Pi'erre Bourne, Boi-1da, Frank Dukes, Kenny Beats, Jaycen Joshua, Manny Marroquin, Dave Pensado, Andrew Scheps, Greg Wells, Tony Maserati, etc. for trap/hip-hop/pop/R&B; afrobeats engineers (Sarz, P.Priime, Pheelz, Vaughn Oliver) for afrobeats; lo-fi producers for lo-fi.
+- Look for plugin reviews from Production Music Live, MusicTech, Sound on Sound, Pro Mix Academy, MixWithTheMasters, and credible YouTube channels (In the Mix, Production Music Live, Mixed by Cole, Streaky, Streaky Mastering, Mike Senior, etc.).
+- Look for "best X for trap mixing 2024-2026" / "go-to vocal chain hip-hop" / "modern afrobeats master chain" type searches.
+- Where two plugins do the same job, pick the one with stronger documented professional adoption in that genre — not the one you happen to remember.
+
+Aim for ~8–12 searches across the whole task. Be strategic — search broad genre questions ("best vocal compressor trap 2025") then specific plugin checks ("Decapitator vs J37 hip-hop saturation").
+
+OUTPUT — STRICT JSON ONLY, NO PROSE, NO MARKDOWN, NO CODE FENCES, NO CITATIONS IN THE FINAL JSON.
 
 Shape:
 {
@@ -3245,25 +3253,24 @@ Shape:
 }
 
 RULES
-- Pick names ONLY from the LIBRARY below. Use the EXACT spelling — if you invent a plugin, it'll fail to match and won't render as starred.
-- 12 to 20 picks per genre. Spread across stages — at least one each from EQ (clean + colour), bus comp, character comp, saturation, transient, limiter, vocal, reverb, delay, where the genre calls for it.
-- Genre intent:
-  - trap / hiphop: 808-friendly, hard vocal pipelines, club-loud master chains, punchy transients, parallel comp, modern auto-tune.
-  - rnb: smooth opto comp, lush plate / EMT-style verbs, AirEQ-style top sheen, classic vocal channel strips.
-  - pop: bright air-shelf EQs, transparent limiters, vocal exciters, stereo wideners.
-  - afrobeats: warm tube saturation, percussion air, lush vocal verbs, slap delays, modern vocal chain.
+- Pick names ONLY from the LIBRARY below. EXACT spelling. If you invent a plugin, it fails to match and renders nothing — wasted research.
+- 12 to 20 picks per genre. Spread across stages: EQ (clean + colour), bus comp, character comp, saturation, transient, limiter, vocal, reverb, delay, de-ess where the genre calls for it. Don't pad with weak picks.
+- Where the library has multiple variants of the same thing (e.g. five Pultec emulations, three LA-2A clones, multiple 1176 models), pick the SINGLE strongest variant for that genre — based on what professional engineers actually use, not on availability.
+- Don't double-list across stages — a plugin can only appear once per genre.
+- Genre intent (use as a sanity check after research, not a substitute for it):
+  - trap / hiphop: 808-friendly low-end, hard vocal pipelines, club-loud master chains, transient punch, parallel character comp, modern auto-tune.
+  - rnb: smooth opto comp, lush plate / EMT-style verbs, top-sheen EQs, classic vocal channel strips, parallel saturation.
+  - pop: bright air-shelf EQs, transparent limiters, vocal exciters / shifters, clean stereo wideners.
+  - afrobeats: warm tube saturation, percussion air, lush vocal verbs, slap delays, modern auto-tune chain.
   - lofi: tape machines, vinyl emulators, soft opto comp, dusty character, simple eq.
-- Where the same plugin family has multiple variants in the library (e.g. several Pultec emulations, multiple LA-2A clones), PICK THE BEST ONE for each genre — don't list all variants.
-- Don't double-list across stages (a plugin can only appear once per genre).
-- If the library doesn't have a strong fit for a stage in a genre, skip it — better fewer high-quality picks than padding.
 
 LIBRARY (by stage):
 ${stageLines}
 
-CURRENT PICKS (for reference, feel free to revise):
+CURRENT PICKS (for reference — revise based on research):
 ${currentLines}
 
-Output JSON only.`;
+Run your searches. Pick. Output JSON only.`;
 
     const model = 'claude-sonnet-4-6';
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -3276,9 +3283,10 @@ Output JSON only.`;
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: sys,
-        messages: [{role:'user', content:'Re-rank top picks across all 6 genres from my current library. Return strict JSON.'}]
+        messages: [{role:'user', content:'Research and re-rank top picks across all 6 genres from my current library. Use web_search before deciding. Return strict JSON only.'}],
+        tools: [{type:'web_search_20250305', name:'web_search', max_uses:12}]
       })
     });
     if (!resp.ok){
@@ -3313,17 +3321,20 @@ Output JSON only.`;
     STATE.topPicksOverride = overrides;
     saveState();
     renderLibrary();
-    // Cost tracking
+    // Cost tracking — Sonnet tokens + web_search calls
     try{
       const u = data.usage || {};
       const pp = (typeof ANT_PRICING !== 'undefined' && ANT_PRICING[model]) || {in:3, out:15};
       const inT = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
       const outT = u.output_tokens||0;
-      const cost = (inT*pp.in + outT*pp.out)/1e6;
+      const searches = (u.server_tool_use && u.server_tool_use.web_search_requests) || 0;
+      const searchRate = (typeof ANT_WEB_SEARCH_RATE !== 'undefined') ? ANT_WEB_SEARCH_RATE : 0.01;
+      const cost = (inT*pp.in + outT*pp.out)/1e6 + searches*searchRate;
       if (cost > 0 && typeof addSpend === 'function'){ addSpend('an', cost); rtRenderCost(); }
       const costNote = cost > 0 ? ` · $${cost.toFixed(3)}` : '';
+      const searchNote = searches ? ` · ${searches} web search${searches>1?'es':''}` : '';
       const rejNote = totalRejected ? ` · ${totalRejected} rejected (not in library)` : '';
-      toast(`Stars updated · ${summary.join(' · ')}${costNote}${rejNote}`);
+      toast(`Stars updated · ${summary.join(' · ')}${searchNote}${costNote}${rejNote}`);
     }catch(_){
       toast(`Stars updated · ${summary.join(' · ')}`);
     }
