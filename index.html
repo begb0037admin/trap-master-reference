@@ -1053,7 +1053,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div style="flex:1"></div>
     <button class="btn purple sm" id="importPluginsBtn" title="Paste a list, drop a screenshot, or upload an image — Claude normalises names, guesses publisher/stage, flags duplicates">✨ Import via Claude</button>
     <button class="btn ghost sm" id="libResetStages" title="Revert any plugins you've drag-moved back to their default stage" style="display:none">↺ Reset stages</button>
-    <button class="btn green sm" id="reviewStarsBtn">📋 Request genre star review</button>
+    <button class="btn green sm" id="reviewStarsBtn" title="Ask Claude to re-rank ⭐ top picks across all 6 genres based on your full current library">✨ Re-rank stars (Claude)</button>
+    <button class="btn ghost sm" id="resetStarsBtn" title="Revert ⭐ top picks back to the built-in defaults" style="display:none">↺ Reset stars</button>
     <div class="lib-search-wrap">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16" y2="16"/></svg>
       <input type="search" class="lib-search" id="libSearch" placeholder="Search plugins by name…" autocomplete="off" spellcheck="false">
@@ -1767,7 +1768,8 @@ const STATE = {
   knowledge: [],   // research notes — see Knowledge Base tab
   journal: [],
   userPresets: [], // user-saved chain presets (per-bus). Same shape as built-in PRESETS plus user:true marker.
-  pluginStageOverrides: {} // {pluginName: stageId} — set by drag-drop in Plugin Library
+  pluginStageOverrides: {}, // {pluginName: stageId} — set by drag-drop in Plugin Library
+  topPicksOverride: null   // {trap:[...], hiphop:[...], ...} — when set, replaces TOP_PICKS for that genre. Populated by the AI re-rank button.
 };
 
 // Resolve a plugin's display stage — applies any user override from drag-drop,
@@ -1785,7 +1787,12 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function escapeJs(s){return String(s).replace(/['\\]/g,'\\$&');}
 function toast(msg,err){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200);}
 function allPlugins(){ return PLUGINS.concat(STATE.customPlugins); }
-function isTop(name){ return (TOP_PICKS[STATE.genre]||[]).includes(name); }
+function isTop(name){
+  // AI-generated override takes precedence over the built-in TOP_PICKS map.
+  const ov = STATE.topPicksOverride;
+  if (ov && Array.isArray(ov[STATE.genre])) return ov[STATE.genre].includes(name);
+  return (TOP_PICKS[STATE.genre]||[]).includes(name);
+}
 function isFav(name){ return STATE.favorites.has(name); }
 function genreLabel(id){ return document.querySelector(`#genreSelect option[value="${id}"]`)?.textContent || id; }
 
@@ -1811,7 +1818,8 @@ function saveState(){
         journal:(STATE.journal||[]).slice(0,50),
         knowledge:(STATE.knowledge||[]).slice(0,200),
         userPresets:(STATE.userPresets||[]).slice(0,100),
-        pluginStageOverrides:STATE.pluginStageOverrides||{}
+        pluginStageOverrides:STATE.pluginStageOverrides||{},
+        topPicksOverride:STATE.topPicksOverride||null
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     }catch(e){console.warn('saveState failed',e);}
@@ -1839,6 +1847,7 @@ function loadState(){
     if(Array.isArray(d.knowledge))STATE.knowledge=d.knowledge.slice(0,200);
     if(Array.isArray(d.userPresets))STATE.userPresets=d.userPresets.slice(0,100);
     if(d.pluginStageOverrides && typeof d.pluginStageOverrides==='object') STATE.pluginStageOverrides=d.pluginStageOverrides;
+    if(d.topPicksOverride && typeof d.topPicksOverride==='object') STATE.topPicksOverride=d.topPicksOverride;
   }catch(e){console.warn('loadState failed',e);}
   // One-time migration: any custom plugin saved with p:'other' + a pLabel that
   // matches a known publisher alias (Plugin Alliance, NI, UA, etc.) gets
@@ -2067,6 +2076,11 @@ function renderLibrary(){
   if (rsBtn){
     const overrides = STATE.pluginStageOverrides || {};
     rsBtn.style.display = Object.keys(overrides).length ? '' : 'none';
+  }
+  // Reset-stars button: visible only when an AI top-picks override is active.
+  const rstBtn = document.getElementById('resetStarsBtn');
+  if (rstBtn){
+    rstBtn.style.display = (STATE.topPicksOverride && Object.keys(STATE.topPicksOverride).length) ? '' : 'none';
   }
   // Wire drag-drop on every stage container so plugins can be moved between
   // categories. Re-runs every render because the DOM is replaced wholesale.
@@ -3185,38 +3199,153 @@ document.getElementById('snapshotBtn').onclick=()=>{
 
 // ========== STAR REVIEW EXPORT ==========
 document.getElementById('libResetStages').onclick=resetPluginStages;
-document.getElementById('reviewStarsBtn').onclick=()=>{
-  const lines=[];
-  lines.push('# Genre Star Review Request');
-  lines.push('Genre: '+genreLabel(STATE.genre));
-  lines.push('');
-  lines.push('## My Favorites (❤)');
-  const favs=[...STATE.favorites];
-  if(!favs.length) lines.push('_None marked yet — heart some in the Library._');
-  else {
-    // group by stage
-    const byStage={};
-    favs.forEach(name=>{
-      const p=allPlugins().find(x=>x.n===name);
-      if(!p)return;
-      (byStage[p.s]=byStage[p.s]||[]).push(p);
+// One-click: ask Claude to re-rank ⭐ top picks across all 6 genres based on the
+// full current library. Stores result as STATE.topPicksOverride which isTop()
+// reads first, so stars update live across all genres immediately.
+async function rerankTopPicksWithClaude(){
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey){ toast('No Anthropic key — add one on the 🎙️ Voice Chat tab first.', true); return; }
+  const lib = allPlugins();
+  if (!lib.length){ toast('Library is empty.', true); return; }
+  if (!confirm(`Ask Claude to re-rank ⭐ top picks across all 6 genres (Trap, Hip-Hop, R&B, Pop, Afrobeats, Lo-Fi) using your full ${lib.length}-plugin library?\n\nCosts roughly $0.03–0.05 on Sonnet 4.6. Replaces the current stars; you can hit Reset stars to revert.`)) return;
+
+  const btn = document.getElementById('reviewStarsBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Asking Claude…';
+
+  try{
+    const libByStage = {};
+    lib.forEach(p => { (libByStage[p.s]=libByStage[p.s]||[]).push(p.n); });
+    const stageLines = STAGES.map(s => {
+      const cleanLabel = s.label.replace(/^[^A-Za-z]+/,'').trim();
+      const names = (libByStage[s.id]||[]).join(', ') || '(empty)';
+      return `${cleanLabel}: ${names}`;
+    }).join('\n');
+    const genreList = ['trap','hiphop','rnb','pop','afrobeats','lofi'];
+    const currentLines = genreList.map(g => {
+      const ov = STATE.topPicksOverride;
+      const picks = (ov && Array.isArray(ov[g])) ? ov[g] : (TOP_PICKS[g] || []);
+      const lbl = genreLabel(g).replace(/^[^A-Za-z]+/,'').trim();
+      return `- ${g} (${lbl}) [${picks.length}]: ${picks.join(', ') || '(none)'}`;
+    }).join('\n');
+
+    const sys = `You re-rank "top pick" plugins for a music producer's mixing/mastering workbench. Kev has a library of plugins; for each genre he produces, pick the best plugins from his actual library that he should reach for first.
+
+OUTPUT — STRICT JSON ONLY, NO PROSE, NO MARKDOWN, NO CODE FENCES.
+
+Shape:
+{
+  "trap":     ["Plugin Name", "Plugin Name", ...],
+  "hiphop":   ["Plugin Name", ...],
+  "rnb":      ["Plugin Name", ...],
+  "pop":      ["Plugin Name", ...],
+  "afrobeats":["Plugin Name", ...],
+  "lofi":     ["Plugin Name", ...]
+}
+
+RULES
+- Pick names ONLY from the LIBRARY below. Use the EXACT spelling — if you invent a plugin, it'll fail to match and won't render as starred.
+- 12 to 20 picks per genre. Spread across stages — at least one each from EQ (clean + colour), bus comp, character comp, saturation, transient, limiter, vocal, reverb, delay, where the genre calls for it.
+- Genre intent:
+  - trap / hiphop: 808-friendly, hard vocal pipelines, club-loud master chains, punchy transients, parallel comp, modern auto-tune.
+  - rnb: smooth opto comp, lush plate / EMT-style verbs, AirEQ-style top sheen, classic vocal channel strips.
+  - pop: bright air-shelf EQs, transparent limiters, vocal exciters, stereo wideners.
+  - afrobeats: warm tube saturation, percussion air, lush vocal verbs, slap delays, modern vocal chain.
+  - lofi: tape machines, vinyl emulators, soft opto comp, dusty character, simple eq.
+- Where the same plugin family has multiple variants in the library (e.g. several Pultec emulations, multiple LA-2A clones), PICK THE BEST ONE for each genre — don't list all variants.
+- Don't double-list across stages (a plugin can only appear once per genre).
+- If the library doesn't have a strong fit for a stage in a genre, skip it — better fewer high-quality picks than padding.
+
+LIBRARY (by stage):
+${stageLines}
+
+CURRENT PICKS (for reference, feel free to revise):
+${currentLines}
+
+Output JSON only.`;
+
+    const model = 'claude-sonnet-4-6';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':antKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4000,
+        system: sys,
+        messages: [{role:'user', content:'Re-rank top picks across all 6 genres from my current library. Return strict JSON.'}]
+      })
     });
-    STAGES.forEach(st=>{if(!byStage[st.id])return;lines.push('');lines.push('**'+st.label+'**');byStage[st.id].forEach(p=>lines.push(`- ${p.n} (${(PUBS[p.p]||PUBS.other)[0]})${p.custom?' [custom]':''}`));});
+    if (!resp.ok){
+      const t = await resp.text();
+      throw new Error(`API ${resp.status}: ${t.slice(0,250)}`);
+    }
+    const data = await resp.json();
+    let raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    raw = raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+    let parsed;
+    try{ parsed = JSON.parse(raw); }
+    catch(e){
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Claude returned non-JSON: '+raw.slice(0,200));
+      parsed = JSON.parse(m[0]);
+    }
+    // Validate: only keep plugin names that exist in the library
+    const libNames = new Set(lib.map(p => p.n));
+    const overrides = {};
+    const summary = [];
+    let totalKept = 0, totalRejected = 0;
+    genreList.forEach(g => {
+      const arr = Array.isArray(parsed[g]) ? parsed[g] : [];
+      const kept = arr.filter(n => libNames.has(String(n).trim()));
+      const rej = arr.length - kept.length;
+      totalKept += kept.length;
+      totalRejected += rej;
+      overrides[g] = kept;
+      const gLbl = genreLabel(g).replace(/^[^A-Za-z]+/,'').trim();
+      summary.push(`${gLbl} ${kept.length}`);
+    });
+    STATE.topPicksOverride = overrides;
+    saveState();
+    renderLibrary();
+    // Cost tracking
+    try{
+      const u = data.usage || {};
+      const pp = (typeof ANT_PRICING !== 'undefined' && ANT_PRICING[model]) || {in:3, out:15};
+      const inT = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
+      const outT = u.output_tokens||0;
+      const cost = (inT*pp.in + outT*pp.out)/1e6;
+      if (cost > 0 && typeof addSpend === 'function'){ addSpend('an', cost); rtRenderCost(); }
+      const costNote = cost > 0 ? ` · $${cost.toFixed(3)}` : '';
+      const rejNote = totalRejected ? ` · ${totalRejected} rejected (not in library)` : '';
+      toast(`Stars updated · ${summary.join(' · ')}${costNote}${rejNote}`);
+    }catch(_){
+      toast(`Stars updated · ${summary.join(' · ')}`);
+    }
+  }catch(e){
+    toast('Re-rank failed: '+(e.message||String(e)), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
   }
-  lines.push('');
-  lines.push('## My Custom Additions');
-  if(!STATE.customPlugins.length) lines.push('_None._');
-  else STATE.customPlugins.forEach(p=>lines.push(`- ${p.n} (${p.pLabel||(PUBS[p.p]||PUBS.other)[0]}) — stage: ${p.s}`));
-  lines.push('');
-  lines.push('## Currently starred as top picks for '+genreLabel(STATE.genre));
-  const curTop=TOP_PICKS[STATE.genre]||[];
-  if(!curTop.length) lines.push('_Nothing starred yet for this genre._');
-  else curTop.forEach(n=>lines.push(`- ${n}`));
-  lines.push('');
-  lines.push('---');
-  lines.push(`_Claude — please review my favorites and custom additions, then update the artifact so the ⭐ top picks for **${genreLabel(STATE.genre)}** reflect what's actually iconic for this genre from my library. Promote / demote / add / remove as needed. Also add any genre-specific recipes or tips if helpful. Bake my custom plugins into the built-in PLUGINS list so they persist._`);
-  copyToClipboard(lines.join('\n'),'Copied — paste into chat for star review');
-};
+}
+
+function resetTopPicks(){
+  if (!STATE.topPicksOverride){ toast('No override active — already on defaults', true); return; }
+  if (!confirm('Reset ⭐ top picks back to the built-in defaults across all 6 genres?')) return;
+  STATE.topPicksOverride = null;
+  saveState();
+  renderLibrary();
+  toast('Top picks reset to built-in defaults');
+}
+
+document.getElementById('reviewStarsBtn').onclick = rerankTopPicksWithClaude;
+document.getElementById('resetStarsBtn').onclick = resetTopPicks;
 
 document.getElementById('resetBtn').onclick=()=>{if(!confirm('Clear chain, meters, flags, favorites, and custom plugins?'))return;BUSES.forEach(b=>STATE.chain[b.id]=[]);STATE.meters={};STATE.symptoms.clear();STATE.favorites.clear();STATE.customPlugins=[];renderChain();renderMeters();renderSymptoms();renderLibrary();saveState();toast('Reset');};
 
