@@ -754,8 +754,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <div class="tabs">
   <button class="tab active active-section" data-tab="chain"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="3" rx="0.6"/><rect x="3" y="8" width="18" height="3" rx="0.6"/><rect x="3" y="13" width="18" height="3" rx="0.6"/><rect x="3" y="18" width="18" height="3" rx="0.6"/><circle cx="9" cy="4.5" r="1" fill="#fff" stroke="none"/><circle cx="14" cy="9.5" r="1" fill="#fff" stroke="none"/><circle cx="7" cy="14.5" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="19.5" r="1" fill="#fff" stroke="none"/></svg></span> Chain Builder</button>
   <button class="tab active-section" data-tab="meter"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><line x1="15" y1="15" x2="20" y2="20"/><polyline points="7,10.5 9,8.5 11,12.5 13,9.5 14,10.5"/></svg></span> Diagnose</button>
-  <button class="tab voice-tab" data-tab="voice"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span> Voice Chat</button>
   <button class="tab" data-tab="aichat" style="color:#34d399;"><span class="tab-ico pop"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H10l-4.5 3.5V16.5h-0a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="12" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="15.5" cy="10" r="0.7" fill="#fff" stroke="none"/></svg></span> Chat with Claude</button>
+  <button class="tab voice-tab" data-tab="voice"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span> Voice Chat</button>
   <button class="tab" data-tab="knowledge" style="color:#fbbf24;"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z"/><line x1="7" y1="8" x2="9.5" y2="8"/><line x1="7" y1="11" x2="9.5" y2="11"/><line x1="14.5" y1="8" x2="17" y2="8"/><line x1="14.5" y1="11" x2="17" y2="11"/></svg></span> Knowledge</button>
   <button class="tab" data-tab="eq"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="14" x2="6" y2="14"/><line x1="6" y1="14" x2="9" y2="6"/><line x1="9" y1="6" x2="12" y2="20"/><line x1="12" y1="20" x2="15" y2="9"/><line x1="15" y1="9" x2="18" y2="13"/><line x1="18" y1="13" x2="21" y2="13"/></svg></span> Mastering Reference</button>
   <button class="tab" data-tab="library"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/><circle cx="7" cy="7" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="1" fill="#fff" stroke="none"/></svg></span> Plugin Library</button>
@@ -4177,11 +4177,26 @@ const TOOL_DEFS=[
   {type:'function',name:'toggle_favorite',description:'Heart / un-heart a plugin in the library (fuzzy name match).',parameters:{type:'object',properties:{plugin:{type:'string'}},required:['plugin']}},
   {type:'function',name:'record_meter',description:'Record a meter reading. meter is one of: iLufs, tp, lra, corr, crest.',parameters:{type:'object',properties:{meter:{type:'string',enum:['iLufs','tp','lra','corr','crest']},value:{type:'number'}},required:['meter','value']}},
   {type:'function',name:'add_custom_plugin',description:'Add a plugin to the library that isn\'t already built in. stage must be one of the known stage ids.',parameters:{type:'object',properties:{name:{type:'string'},publisher:{type:'string',description:'slate, ssl, ua, softube, sonnox, sonible, sndtoys, izotope, eiosis, weiss, oek, waves, ni, pa, ant, cele, liq, or other'},publisher_label:{type:'string',description:'If publisher is "other", supply a label like "FabFilter"'},stage:{type:'string'}},required:['name','publisher','stage']}},
+  {type:'function',name:'remove_custom_plugin',description:'Remove a CUSTOM plugin from Kev\'s library. Built-in plugins cannot be removed — only ones added via add_custom_plugin. Match by name (fuzzy match supported). Use this from the Plugin Library tab when Kev says things like "drop X" or "I never use Y, get rid of it".',parameters:{type:'object',properties:{name:{type:'string',description:'Plugin name. Fuzzy match — but only custom plugins are eligible.'}},required:['name']}},
   {type:'function',name:'list_plugins',description:'Search the plugin library. Pass stage_id or search text.',parameters:{type:'object',properties:{stage:{type:'string'},search:{type:'string'}},required:[]}},
   {type:'function',name:'get_library',description:'Return the full current plugin library grouped by stage. The library was inlined in your session start instructions, but call this if Kev mentions he just added plugins or you want a fresh dump.',parameters:{type:'object',properties:{},required:[]}},
   {type:'function',name:'set_plugin_settings',description:'Pin concrete setting notes to a specific plugin on a bus so they appear directly under the plugin in the chain view. USE THIS EVERY TIME you give specific parameter values (drive/threshold/Q/freq/attack/release/mix%/etc.) — the notes persist in the UI so Kev doesn\'t have to scroll the transcript. Replaces existing notes for that plugin. Target by plugin name (fuzzy match) OR by 1-indexed position.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string',description:'Plugin name — fuzzy match. Use this OR position.'},position:{type:'integer',description:'1-indexed position on the bus. Use this OR plugin.'},settings:{type:'string',description:'Terse, actionable notes. Prefer one parameter per line like "Drive: 3–4" or "HPF: 80 Hz, 12 dB/oct". Include mix% if parallel. Max ~6 lines.'}},required:['bus','settings']}},
   {type:'function',name:'clear_plugin_settings',description:'Remove settings notes from a plugin on a bus.',parameters:{type:'object',properties:{bus:{type:'string',enum:['master','vocal','808','drums','fx']},plugin:{type:'string'},position:{type:'integer'}},required:['bus']}},
   {type:'function',name:'research',description:'Look up specific knowledge using Claude with live web search. USE THIS when you might bluff: specific producer/engineer techniques (Jaycen Joshua, Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, etc.), exact plugin parameters/control names, current 2024–2026 plugin releases or trends, signature chains documented online, gear interviews. Returns a grounded answer with citations. Brief Kev with "hold on, let me check…" before calling. Do NOT use for stuff you obviously know (basic mixing concepts, his workbench state, common plugin features).',parameters:{type:'object',properties:{question:{type:'string',description:'Focused, specific question. "What is Jaycen Joshua\'s vocal bus chain?" beats "How do I mix vocals?". Include specific names/plugins where relevant.'},context:{type:'string',description:'Optional: 1-2 sentences of conversation context that help narrow the answer (genre, what Kev is trying to achieve, plugins he has).'}},required:['question']}},
+  // -- Mastering Reference (EQ tiles) --
+  {type:'function',name:'list_eq_tiles',description:'List the cards on the Mastering Reference tab, optionally filtered by section. Returns built-in tile slugs and any user-added custom tiles. Use this before adding to know what\'s already there.',parameters:{type:'object',properties:{section:{type:'string',enum:['freqMap','loudness','truePeak','stereoWidth'],description:'Optional section filter — freqMap (frequency map), loudness (loudness targets), truePeak (true peak ceilings), stereoWidth (stereo width by band).'}},required:[]}},
+  {type:'function',name:'add_eq_tile',description:`Add a custom reference tile to the Mastering Reference tab. Use this when Kev wants to capture a frequency/loudness/peak/stereo-width insight as a permanent reference card.
+
+CRITICAL: lead with your audio mastering knowledge. When Kev says "add a tile about <topic>", suggest the right SECTION (freqMap, loudness, truePeak, stereoWidth) and propose a concrete title + body grounded in real ranges (e.g. "Spotify -14 LUFS integrated, -1 dBTP" / "Sub-bass = 20–60 Hz, mono below 100 Hz"). Don't ask Kev to spec the body — offer one, then refine.
+
+body: short and scannable. One key fact per line; up to 6 lines. Plain text — bullets become a list automatically.`,parameters:{type:'object',properties:{section:{type:'string',enum:['freqMap','loudness','truePeak','stereoWidth']},title:{type:'string',description:'Short title shown as the card heading. Max 80 chars.'},body:{type:'string',description:'1–6 lines of notes. Newline-separated lines render as bullets. Max ~600 chars.'}},required:['section','title','body']}},
+  {type:'function',name:'remove_eq_tile',description:'Remove a custom Mastering Reference tile by title or id (fuzzy match on title supported). Built-in tiles cannot be deleted via this tool.',parameters:{type:'object',properties:{section:{type:'string',enum:['freqMap','loudness','truePeak','stereoWidth'],description:'Optional — narrows the search.'},title:{type:'string',description:'Tile title to remove (fuzzy match). Either title or id required.'},id:{type:'string',description:'Tile id (e.g. custom-l3a1bc). Either title or id required.'}},required:[]}},
+  // -- Knowledge Base --
+  {type:'function',name:'list_knowledge_notes',description:'List Knowledge Base notes — id, title, source, tags, ts, active flag. Use to find an existing note before adding/exporting.',parameters:{type:'object',properties:{active_only:{type:'boolean',description:'If true, only notes currently injected into session context are returned.'}},required:[]}},
+  {type:'function',name:'add_knowledge_note',description:`Add a research/technique note to Kev's Knowledge Base. Use when Kev dictates a takeaway from a producer interview, a plugin technique, a meter reading habit, or anything mix-related he wants to keep.
+
+Keep titles concise (under 80 chars) and content focused — Kev reviews these later, not real-time. If Kev rambles, condense his words into a clean note rather than transcribing verbatim.`,parameters:{type:'object',properties:{title:{type:'string'},content:{type:'string',description:'The note body — what he wants to remember. Plain text, can be multi-line.'},source:{type:'string',description:'Optional citation — producer name, interview URL, video timestamp, etc.'},tags:{type:'array',items:{type:'string'},description:'Optional tags like ["vocals","jaycen joshua","saturation"].'},activate:{type:'boolean',description:'If true, the note becomes part of the voice session context immediately. Default false — Kev usually activates manually.'}},required:['title','content']}},
+  {type:'function',name:'export_knowledge_note',description:'Export a Knowledge Base note to disk (file download) or to the system clipboard. Use after Kev says "download that note" / "copy that one to clipboard". Identify the target by id or by fuzzy title match.',parameters:{type:'object',properties:{title:{type:'string',description:'Note title — fuzzy match. Either title or id required.'},id:{type:'string',description:'Note id. Either title or id required.'},target:{type:'string',enum:['download','clipboard'],description:'download = save a .md file. clipboard = copy text to system clipboard.'}},required:['target']}},
   {type:'function',name:'save_preset',description:`Save the current chain as a named user preset that Kev can reload later from the Load Preset modal. Use this whenever Kev says "save this", "save this as a preset", "save this chain", "save this as my master chain", etc. If he doesn't specify which bus, default to "all" (saves every non-empty bus as a single multi-bus preset — best for when you've been collaborating on a full session).
 
 CRITICAL: if Kev has NOT said what to call the preset, DO NOT call this tool yet. Ask him out loud first — something natural like "What would you like to call this preset?" or "Sure, what should I name it?" — then wait for his answer and use what he says as the name. Never invent a name yourself, never use a date as a fallback. Only call this tool once you have an actual name from him.
@@ -6314,6 +6329,23 @@ async function handleToolCall(name,args){
         STATE.customPlugins.push(entry);STATE.favorites.add(name);renderLibrary();saveState();
         return{ok:true,added:name,stage};
       }
+      case 'remove_custom_plugin':{
+        const q=String(args.name||'').toLowerCase().trim();
+        if(!q)throw new Error('name required');
+        // Only custom plugins are eligible — built-ins are immutable from voice.
+        const customs=STATE.customPlugins||[];
+        let target=customs.find(p=>p.n.toLowerCase()===q);
+        if(!target)target=customs.find(p=>p.n.toLowerCase().startsWith(q));
+        if(!target)target=customs.find(p=>p.n.toLowerCase().includes(q));
+        if(!target){
+          // Tell the model whether the name matched a built-in (helpful diagnostic).
+          const builtin=PLUGINS.find(p=>p.n.toLowerCase()===q||p.n.toLowerCase().includes(q));
+          if(builtin)throw new Error(`"${builtin.n}" is a built-in plugin and cannot be removed via voice. Only custom plugins (added via add_custom_plugin) can be deleted.`);
+          throw new Error(`No custom plugin matched "${args.name}". Custom plugins: ${customs.map(p=>p.n).join(', ')||'(none yet)'}.`);
+        }
+        removeCustom(target.n);
+        return{ok:true,removed:target.n,custom_count:STATE.customPlugins.length};
+      }
       case 'list_plugins':{
         const stage=args.stage;const q=(args.search||'').toLowerCase().trim();
         const res=allPlugins().filter(p=>{if(stage&&p.s!==stage)return false;if(q&&!p.n.toLowerCase().includes(q))return false;return true;}).slice(0,60).map(p=>({n:p.n,publisher:(PUBS[p.p]||PUBS.other)[0],stage:p.s,custom:!!p.custom}));
@@ -6340,6 +6372,150 @@ async function handleToolCall(name,args){
         if(idx<0)throw new Error('Plugin not on '+bus+' bus');
         delete arr[idx].notes;renderChain();saveState();
         return{ok:true,bus,position:idx+1,plugin:arr[idx].n};
+      }
+      // -- Mastering Reference (EQ tiles) --
+      case 'list_eq_tiles':{
+        const layouts = (typeof eqGridLoadLayouts === 'function') ? eqGridLoadLayouts() : {};
+        const sectionFilter = args.section;
+        const out = {};
+        EQGRID.SECTIONS.forEach(sec => {
+          if (sectionFilter && sectionFilter !== sec) return;
+          const s = layouts[sec] || {};
+          out[sec] = {
+            customs: (s.customs || []).map(c => ({id:c.id, title:c.title, body:c.body})),
+            order: s.order || []
+          };
+        });
+        return {sections: out};
+      }
+      case 'add_eq_tile':{
+        if (typeof eqGridAddCustom !== 'function') throw new Error('Mastering Reference grid not initialised yet — open that tab once first.');
+        if (!EQGRID.SECTIONS.includes(args.section)) throw new Error(`section must be one of: ${EQGRID.SECTIONS.join(', ')}`);
+        const title = String(args.title||'').trim();
+        const body = String(args.body||'').trim();
+        if (!title) throw new Error('title required');
+        const custom = {id: eqGridGenerateCustomId(), title, body};
+        // The grid only mutates DOM if the panel has been initialised. Lazy-init
+        // it now (no-op if already done) so voice-driven adds work even if Kev
+        // never opened the tab.
+        if (typeof eqGridInit === 'function' && !EQGRID.initialized) eqGridInit();
+        eqGridAddCustom(args.section, custom);
+        return {ok:true, section: args.section, id: custom.id, title};
+      }
+      case 'remove_eq_tile':{
+        const layouts = eqGridLoadLayouts();
+        const wantId = (args.id||'').trim();
+        const wantTitle = (args.title||'').toLowerCase().trim();
+        if (!wantId && !wantTitle) throw new Error('id or title required');
+        let found = null, foundSection = null;
+        const sections = args.section ? [args.section] : EQGRID.SECTIONS;
+        for (const sec of sections){
+          const s = layouts[sec];
+          if (!s || !Array.isArray(s.customs)) continue;
+          let hit = wantId ? s.customs.find(c => c.id === wantId) : null;
+          if (!hit && wantTitle){
+            hit = s.customs.find(c => (c.title||'').toLowerCase() === wantTitle)
+               || s.customs.find(c => (c.title||'').toLowerCase().includes(wantTitle));
+          }
+          if (hit){ found = hit; foundSection = sec; break; }
+        }
+        if (!found) throw new Error('No matching custom tile. Built-in tiles cannot be removed via voice.');
+        // Mutate state directly + re-render the section so the change is durable
+        // even if the user has not opened the tab yet.
+        const section = layouts[foundSection];
+        section.customs = section.customs.filter(c => c.id !== found.id);
+        section.order = (section.order||[]).filter(o => o !== found.id);
+        eqGridSaveLayouts(layouts);
+        // If the panel is rendered, drop the DOM node too.
+        const cardEl = document.querySelector(`#eq .row-grid[data-section="${foundSection}"] .card[data-tile-id="${found.id}"]`);
+        if (cardEl) cardEl.remove();
+        toast('Tile removed');
+        return {ok:true, section: foundSection, removed: found.title};
+      }
+      // -- Knowledge Base --
+      case 'list_knowledge_notes':{
+        const all = STATE.knowledge || [];
+        const filtered = args.active_only ? all.filter(n => n && n.active) : all;
+        return {
+          count: filtered.length,
+          total: all.length,
+          notes: filtered.slice(0, 80).map(n => ({
+            id: n.id, title: n.title || '(untitled)', source: n.source || '', tags: n.tags || [],
+            ts: n.ts, active: !!n.active, has_summary: !!n.summary
+          }))
+        };
+      }
+      case 'add_knowledge_note':{
+        const title = String(args.title||'').trim();
+        const content = String(args.content||'').trim();
+        if (!title) throw new Error('title required');
+        if (!content) throw new Error('content required');
+        const note = {
+          id: 'kb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+          ts: Date.now(),
+          title,
+          source: String(args.source||'').trim(),
+          tags: Array.isArray(args.tags) ? args.tags.slice(0,10).map(t=>String(t).trim()).filter(Boolean) : [],
+          raw: content,
+          summary: '',
+          useSummary: false,
+          active: !!args.activate,
+          expanded: false
+        };
+        STATE.knowledge = STATE.knowledge || [];
+        STATE.knowledge.unshift(note);
+        if (STATE.knowledge.length > KB_MAX_NOTES) STATE.knowledge = STATE.knowledge.slice(0, KB_MAX_NOTES);
+        saveState();
+        if (typeof knowledgeRender === 'function') knowledgeRender();
+        return {ok:true, id: note.id, title: note.title, active: note.active};
+      }
+      case 'export_knowledge_note':{
+        const notes = STATE.knowledge || [];
+        const wantId = (args.id||'').trim();
+        const wantTitle = (args.title||'').toLowerCase().trim();
+        if (!wantId && !wantTitle) throw new Error('id or title required');
+        let n = wantId ? notes.find(x => x.id === wantId) : null;
+        if (!n && wantTitle){
+          n = notes.find(x => (x.title||'').toLowerCase() === wantTitle)
+           || notes.find(x => (x.title||'').toLowerCase().includes(wantTitle));
+        }
+        if (!n) throw new Error(`No note matched. Available: ${notes.slice(0,8).map(x=>x.title||'(untitled)').join(', ')}${notes.length>8?', …':''}`);
+        // Build a markdown payload. Front-matter-ish header, then the chosen
+        // body (summary if useSummary && it exists, else raw).
+        const body = (n.useSummary && n.summary) ? n.summary : (n.raw || '');
+        const tagLine = (n.tags && n.tags.length) ? `Tags: ${n.tags.join(', ')}\n` : '';
+        const srcLine = n.source ? `Source: ${n.source}\n` : '';
+        const dateLine = n.ts ? `Date: ${new Date(n.ts).toISOString().slice(0,10)}\n` : '';
+        const md = `# ${n.title || 'Untitled'}\n\n${dateLine}${srcLine}${tagLine}\n${body}\n`;
+        const target = (args.target === 'clipboard') ? 'clipboard' : 'download';
+        if (target === 'clipboard'){
+          try{
+            await navigator.clipboard.writeText(md);
+            toast(`Copied "${n.title || 'note'}" to clipboard`);
+            return {ok:true, target:'clipboard', title:n.title, bytes: md.length};
+          }catch(err){
+            // Older browsers / non-https — fall back to a hidden textarea + execCommand.
+            const ta = document.createElement('textarea');
+            ta.value = md; ta.style.position='fixed'; ta.style.opacity='0';
+            document.body.appendChild(ta); ta.select();
+            let ok=false;
+            try{ ok=document.execCommand('copy'); }catch(_){}
+            document.body.removeChild(ta);
+            if (!ok) throw new Error('Clipboard write failed: '+(err.message||err));
+            toast(`Copied "${n.title || 'note'}" to clipboard`);
+            return {ok:true, target:'clipboard', title:n.title, bytes: md.length, fallback:true};
+          }
+        }
+        // download — Blob + invisible <a download>
+        const slug = (n.title||'note').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60) || 'note';
+        const fname = `${slug}-${new Date(n.ts||Date.now()).toISOString().slice(0,10)}.md`;
+        const blob = new Blob([md], {type:'text/markdown'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fname; document.body.appendChild(a); a.click();
+        setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        toast(`Downloaded "${fname}"`);
+        return {ok:true, target:'download', file: fname, title:n.title, bytes: md.length};
       }
       case 'research':{
         if(!args.question||!args.question.trim())throw new Error('research requires a question');
@@ -6501,12 +6677,32 @@ async function rtStart(opts){
       const research = buildResearchDigest();
       if (research) fullInstructions += '\n\n' + research;
       // Tab-aware focus mode: addendum tells the model what Kev is looking at,
-      // so it leads with chain observations instead of a generic intro.
+      // so it leads with concrete observations instead of a generic intro. Each
+      // mode is set by micStartFromFloat based on the active tab.
       if (RT.focusMode === 'chain'){
         fullInstructions += '\n\nFOCUS MODE — CHAIN BUILDER:\n' +
           '- Kev is currently looking at the Chain Builder. He can see his buses (master / vocal / 808 / drums / fx) update in real time as you call tools.\n' +
           '- Open by reading his chain context first (already in the digest below) and naming ONE concrete observation about it (an empty bus, a load order issue, a missing utility plugin) — not generic mixing chat.\n' +
           '- When you make a chain change via add_plugin_to_bus / move_plugin / set_plugin_settings, narrate the SINGLE change in one short sentence so he knows what just flashed on screen.';
+      } else if (RT.focusMode === 'library'){
+        fullInstructions += '\n\nFOCUS MODE — PLUGIN LIBRARY:\n' +
+          '- Kev is on the Plugin Library tab. Use add_custom_plugin to register new plugins and remove_custom_plugin to delete custom (non-built-in) ones in real time.\n' +
+          '- Built-in plugins cannot be removed via voice — say so plainly if Kev tries.\n' +
+          '- Open by orienting on his library: "you have N plugins, M custom" + ONE concrete observation (a stage that\'s thin, a duplicate, a missing publisher). Not generic plugin chat.\n' +
+          '- Confirm each add/remove out loud with the plugin name so Kev hears what just landed.';
+      } else if (RT.focusMode === 'eq'){
+        fullInstructions += '\n\nFOCUS MODE — MASTERING REFERENCE:\n' +
+          '- Kev is on the Mastering Reference tab. He has four sections of reference cards: freqMap (frequency map), loudness (loudness targets), truePeak (true peak ceilings), stereoWidth (stereo width by band).\n' +
+          '- You have deep mastering knowledge — use it. When Kev asks for a tile, lead with concrete numeric ranges drawn from established practice (Spotify -14 LUFS integrated / -1 dBTP, Apple Music -16 LUFS, sub-bass 20-60 Hz mono below 100 Hz, vocal presence 2-5 kHz, "air" 10-16 kHz, stereo width tightening below 200 Hz, etc.). Don\'t ask Kev to write the body — propose a body, then refine.\n' +
+          '- Use add_eq_tile to create tiles, remove_eq_tile to delete custom ones. list_eq_tiles before adding to avoid duplicates.\n' +
+          '- Open by mentioning ONE concrete reference gap or addition you can make based on what\'s already there.';
+      } else if (RT.focusMode === 'knowledge'){
+        fullInstructions += '\n\nFOCUS MODE — KNOWLEDGE BASE:\n' +
+          '- Kev is on the Knowledge Base tab. He captures research, producer techniques, plugin notes — anything mix-related he wants to keep.\n' +
+          '- Use add_knowledge_note to capture a takeaway in real time. Keep titles tight and bodies focused; condense rambling into a clean note.\n' +
+          '- Use export_knowledge_note with target="download" to save a .md file or target="clipboard" to copy text. Confirm which target Kev wants if ambiguous.\n' +
+          '- list_knowledge_notes lets you find an existing note before exporting or referring to one.\n' +
+          '- Open by orienting on what\'s already in his Knowledge Base (count + ONE specific note) so it\'s clear you can see his existing notes — not just blank-slate chat.';
       }
       // -- Per-mode turn detection --
       // PTT: turn_detection:null — Kev commits input buffers and triggers responses
@@ -6963,13 +7159,28 @@ function activeTabId(){
   const t = document.querySelector('.tab.active');
   return t && t.dataset ? t.dataset.tab : '';
 }
+// Tabs where the float mic starts a tab-focused Realtime call: the model gets
+// a system-prompt addendum scoped to that tab's tooling, the call uses PTT (so
+// credits don't burn while Kev experiments with voice tools), and we DON'T jump
+// away from the active tab so Kev can watch the tools fire.
+const FOCUS_TAB_SCOPES = {
+  chain:     {focus:'chain',     mode:VOICE_MODE_PREFS.chain},  // mode honoured per chain toggle
+  library:   {focus:'library',   mode:'ptt'},
+  eq:        {focus:'eq',        mode:'ptt'},
+  knowledge: {focus:'knowledge', mode:'ptt'}
+};
 function micScopeAndMode(){
   // Returns the scope + mode that SHOULD be used right now based on which tab
   // Kev is on. Used for fresh starts only — once a session is active RT.mode
   // (or DICT.active) is the source of truth.
   const tab = activeTabId();
-  if (tab === 'chain')  return {scope:'chain',  mode:VOICE_MODE_PREFS.chain};
   if (tab === 'aichat') return {scope:'aichat', mode:VOICE_MODE_PREFS.aichat};
+  const focusCfg = FOCUS_TAB_SCOPES[tab];
+  if (focusCfg){
+    // Re-read VOICE_MODE_PREFS.chain at call time (toggle may have flipped).
+    const mode = (tab === 'chain') ? VOICE_MODE_PREFS.chain : focusCfg.mode;
+    return {scope: tab, focus: focusCfg.focus, mode};
+  }
   return {scope:'voice', mode:VOICE_MODE_PREFS.voice};
 }
 function micStartFromFloat(){
@@ -6977,12 +7188,13 @@ function micStartFromFloat(){
     toast('Save an OpenAI key on the Voice Chat tab first', true);
     return;
   }
-  const {scope, mode} = micScopeAndMode();
-  RT.focusMode = (scope === 'chain') ? 'chain' : null;
-  rtStart({mode});
-  // If we're not on the chain tab, jump to Voice Chat so the controls + status
-  // are visible. Chain tab keeps focus so Kev can watch the chain react.
-  if (scope !== 'chain'){
+  const sm = micScopeAndMode();
+  RT.focusMode = sm.focus || null;
+  rtStart({mode: sm.mode});
+  // Tabs with a focus mode (chain / library / eq / knowledge) keep focus so
+  // Kev can watch their tools fire. Everything else jumps to Voice Chat so
+  // the cost panels and full controls are visible.
+  if (!FOCUS_TAB_SCOPES[sm.scope]){
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.querySelector('.tab[data-tab="voice"]').classList.add('active');
@@ -6990,13 +7202,16 @@ function micStartFromFloat(){
     applyFloatMicVisibility();
   }
 }
-// Hide the float mic on the Voice Chat tab; restore it everywhere else. Also
-// updates the tooltip so the AI Chat tab reads "Hold to dictate" instead of
-// "Push to talk · Spacebar". Called from the tab click handler + at init.
+// Hide the float mic on tabs where it would be redundant or noisy:
+//   • Voice Chat — the big START CALL button is right there
+//   • Journal — read-only review tab, voice work belongs elsewhere
+// Restores the mic on every other tab. Also updates the tooltip so the AI Chat
+// tab reads "Hold to dictate" instead of "Push to talk · Spacebar".
+const FLOAT_MIC_HIDE_TABS = new Set(['voice','journal']);
 function applyFloatMicVisibility(){
   if (!floatMicEl) return;
   const tab = activeTabId();
-  floatMicEl.classList.toggle('tab-hidden', tab === 'voice');
+  floatMicEl.classList.toggle('tab-hidden', FLOAT_MIC_HIDE_TABS.has(tab));
   // Title hint by tab — only when nothing is actively recording.
   if (RT.active || RT.connecting || DICT.active || DICT.recording) return;
   if (tab === 'aichat') floatMicEl.title = 'Hold to dictate into AI Chat · spacebar also works';
