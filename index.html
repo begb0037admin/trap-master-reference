@@ -535,8 +535,19 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .recipe-card h5{color:#a78bfa;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px}
 .recipe-card p{color:#cbd5e1;font-size:12px;line-height:1.5}
 /* CHAIN TOOLBAR */
-.chain-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:8px}
+.chain-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:8px;flex-wrap:wrap}
 .chain-toolbar-hint{color:#6b7280;font-size:12px}
+/* Per-tab mic-mode toggle. Two buttons in a pill — the active one fills purple to
+   match the rest of the voice UI. Defaults: chain → ptt, voice → always-on (set in JS). */
+.voice-mode-toggle{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 10px;background:#0b1220;border:1px solid #374151;border-radius:999px;font-size:11px;color:#9ca3af}
+.voice-mode-toggle .vmt-label{font-weight:600;letter-spacing:.3px;color:#9ca3af}
+.voice-mode-toggle .vmt-btn{background:transparent;border:1px solid transparent;color:#cbd5e1;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;cursor:pointer;font-family:inherit}
+.voice-mode-toggle .vmt-btn:hover{background:#1f2937;color:#fff}
+.voice-mode-toggle .vmt-btn.active{background:#7c3aed;color:#fff;border-color:#a78bfa}
+.voice-mode-toggle .vmt-btn.active:hover{background:#6d28d9}
+/* Voice tab variant — slightly bigger because there's room around the call button. */
+.voice-mode-toggle[data-scope="voice"]{font-size:12px;padding:4px 10px 4px 12px}
+.voice-mode-toggle[data-scope="voice"] .vmt-btn{font-size:12px;padding:4px 11px}
 /* PRESET CARDS */
 .preset-card{background:#111827;border:1px solid #374151;border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
 .preset-card:hover{border-color:#a78bfa;background:#1f2937}
@@ -746,6 +757,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <button class="btn ghost sm" id="presetsBtn">📦 Load preset</button>
     <button class="btn ghost sm" id="autoFillBtn" title="Single Claude Haiku call — fills missing settings, revises ones that need updating, keeps the rest. ~$0.02 per click.">✨ Auto-fill settings</button>
     <button class="btn ghost sm" id="revertFillBtn" title="Restore the chain to the state before the last auto-fill" style="display:none">↺ Revert last fill</button>
+    <div class="voice-mode-toggle" data-scope="chain" title="Voice mode for the floating mic on this tab">
+      <span class="vmt-label">🎤 Mic mode:</span>
+      <button class="vmt-btn" data-mode="ptt">Push to talk</button>
+      <button class="vmt-btn" data-mode="always-on">Always on</button>
+    </div>
     <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
@@ -862,6 +878,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <span class="rt-status" id="rtStatus">Idle</span>
           <span class="rt-timer" id="rtTimer"></span>
           <span class="rt-cost" id="rtCost"></span>
+        </div>
+        <div class="voice-mode-toggle" data-scope="voice" title="How the call works once you start it">
+          <span class="vmt-label">Mode:</span>
+          <button class="vmt-btn" data-mode="ptt">Push to talk</button>
+          <button class="vmt-btn" data-mode="always-on">Always on</button>
         </div>
       </div>
 
@@ -3687,8 +3708,43 @@ const RT={
   pttHeld:false,                   // is the user currently holding PTT (mouse/space)
   countdownTimer:null,             // setInterval id for the 30s auto-end countdown
   countdownSec:30,                 // seconds remaining in auto-end countdown
-  focusMode:null                   // 'chain' when started from Chain Builder, else null
+  focusMode:null,                  // 'chain' when started from Chain Builder, else null
+  mode:'always-on'                 // 'ptt' | 'always-on' — set at rtStart from the active scope's preference
 };
+// Per-scope mic-mode preferences. The toggle on each tab writes to its own slot;
+// rtStart picks the slot that matches the calling scope. Defaults: chain → ptt
+// (Kev wants tight credit control while building chains), voice → always-on
+// (he wants a flowing conversation when he's deliberately on the Voice Chat tab).
+const VOICE_MODE_PREFS_KEY = 'trapMasterVoiceModePrefs_v1';
+const VOICE_MODE_PREFS = { chain:'ptt', voice:'always-on' };
+function loadVoiceModePrefs(){
+  try{
+    const raw = localStorage.getItem(VOICE_MODE_PREFS_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.chain === 'ptt' || d.chain === 'always-on') VOICE_MODE_PREFS.chain = d.chain;
+    if (d.voice === 'ptt' || d.voice === 'always-on') VOICE_MODE_PREFS.voice = d.voice;
+  } catch(_){}
+}
+function saveVoiceModePrefs(){
+  try{ localStorage.setItem(VOICE_MODE_PREFS_KEY, JSON.stringify(VOICE_MODE_PREFS)); }catch(_){}
+}
+function setVoiceModePref(scope, mode){
+  if (scope !== 'chain' && scope !== 'voice') return;
+  if (mode !== 'ptt' && mode !== 'always-on') return;
+  VOICE_MODE_PREFS[scope] = mode;
+  saveVoiceModePrefs();
+  paintVoiceModeToggles();
+}
+function paintVoiceModeToggles(){
+  document.querySelectorAll('.voice-mode-toggle').forEach(host => {
+    const scope = host.dataset.scope;
+    const active = VOICE_MODE_PREFS[scope];
+    host.querySelectorAll('.vmt-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === active);
+    });
+  });
+}
 // White line-art mic SVG — matches the icon used on the Voice Chat tab + section headers
 // so floating-mic, big START CALL, and the tab nav all read as the same family.
 const MIC_SVG_FLOAT='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg>';
@@ -3847,10 +3903,8 @@ function setVoiceState(state, opts){
 // reaches OpenAI (huge cost saving vs. continuous server_vad listening).
 function rtPttDown(){
   if (RT.pttHeld) return;
-  if (!RT.active){
-    // No session — bail. Big START CALL button or mic-click-to-start handles the connect path.
-    return;
-  }
+  if (!RT.active) return; // No session — start path is handled by the click handlers
+  if (RT.mode !== 'ptt') return; // Always-on calls don't accept PTT input
   RT.pttHeld = true;
   rtCancelCountdown();
   // Barge-in: cancel any in-flight Claude response so we can speak immediately.
@@ -3868,6 +3922,7 @@ function rtPttUp(){
   if (!RT.pttHeld) return;
   RT.pttHeld = false;
   if (!RT.active) return;
+  if (RT.mode !== 'ptt') return;
   if (RT.uiState !== 'recording') return;
   if (RT.micStream){
     RT.micStream.getAudioTracks().forEach(t => t.enabled = false);
@@ -6366,8 +6421,12 @@ DON'T:
 - Don't moralize about loudness wars.`;
 
 // ========== WEBRTC + SESSION ==========
-async function rtStart(){
+// rtStart accepts an optional opts.mode override ('ptt' | 'always-on'). If not
+// passed, we fall back to whichever scope last set RT.mode (the click handlers
+// on the floating mic / START CALL button set it before calling here).
+async function rtStart(opts){
   if(RT.active||RT.connecting)return;
+  if (opts && (opts.mode === 'ptt' || opts.mode === 'always-on')) RT.mode = opts.mode;
   const apiKey=localStorage.getItem(RT_KEY_STORAGE);
   if(!apiKey){rtSetKeyStatus('Save a key first.','err');return;}
   if(!window.isSecureContext){toast('Not in secure context — use http://localhost or Cowork sidebar',true);return;}
@@ -6397,11 +6456,15 @@ async function rtStart(){
     const audioEl=document.getElementById('rtAudio');
     RT.pc.ontrack=e=>{audioEl.srcObject=e.streams[0];};
     RT.micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-    // -- Mute by default in PTT mode --
-    // Setting track.enabled=false sends silence at the WebRTC layer, so OpenAI
-    // receives no audio frames at all when Kev isn't holding PTT. This is the
-    // primary credit-saving mechanism vs. continuous server_vad listening.
-    RT.micStream.getAudioTracks().forEach(t=>{t.enabled=false;});
+    // -- PTT: mute mic by default; always-on: leave it live --
+    // In PTT mode track.enabled=false sends silence at the WebRTC layer so
+    // OpenAI receives nothing until Kev holds the button. In always-on mode
+    // we let audio flow continuously so server_vad can detect turns naturally.
+    if (RT.mode === 'ptt'){
+      RT.micStream.getAudioTracks().forEach(t=>{t.enabled=false;});
+    } else {
+      RT.micStream.getAudioTracks().forEach(t=>{t.enabled=true;});
+    }
     RT.micStream.getTracks().forEach(t=>RT.pc.addTrack(t,RT.micStream));
     RT.dc=RT.pc.createDataChannel('oai-events');
     RT.dc.addEventListener('message',onRtEvent);
@@ -6422,17 +6485,19 @@ async function rtStart(){
           '- Open by reading his chain context first (already in the digest below) and naming ONE concrete observation about it (an empty bus, a load order issue, a missing utility plugin) — not generic mixing chat.\n' +
           '- When you make a chain change via add_plugin_to_bus / move_plugin / set_plugin_settings, narrate the SINGLE change in one short sentence so he knows what just flashed on screen.';
       }
-      // -- PTT mode: server_vad disabled --
-      // turn_detection:null tells OpenAI we'll commit input buffers and trigger
-      // responses manually. Saves credits (no constant listening), and gives us
-      // a clean state machine: hold PTT → buffer → release → commit + response.create.
-      // If Kev wants always-on later we can flip this to {type:'server_vad',...}
-      // via a UI toggle without touching the rest of the wiring.
+      // -- Per-mode turn detection --
+      // PTT: turn_detection:null — Kev commits input buffers and triggers responses
+      //     manually via the PTT handlers. Saves credits (no constant listening).
+      // Always-on: server_vad — OpenAI auto-detects when Kev finishes speaking
+      //     and replies, like a natural phone call.
+      const turnDetection = (RT.mode === 'ptt')
+        ? null
+        : {type:'server_vad', threshold:0.55, prefix_padding_ms:300, silence_duration_ms:650};
       rtSend({type:'session.update',session:{
         instructions:fullInstructions,
         tools:TOOL_DEFS,
         tool_choice:'auto',
-        turn_detection:null,
+        turn_detection:turnDetection,
         voice,
         modalities:['audio','text']
       }});
@@ -6484,8 +6549,14 @@ async function onRtEvent(e){
   RT.lastEventAt=Date.now();
   switch(msg.type){
     case 'session.created':case 'session.updated':break;
-    // VAD speech_started/stopped no longer fire (turn_detection:null), but harmless if they ever come.
-    case 'input_audio_buffer.speech_started':rtSetStatus('live','You: speaking…');break;
+    // VAD events only fire in always-on mode (server_vad). User starting to
+    // speak cancels the silence countdown so the call doesn't auto-end mid-
+    // sentence; user finishing flips the status to "Thinking…" while OpenAI
+    // generates the reply.
+    case 'input_audio_buffer.speech_started':
+      rtSetStatus('live','You: speaking…');
+      if (RT.mode !== 'ptt') rtCancelCountdown();
+      break;
     case 'input_audio_buffer.speech_stopped':rtSetStatus('live','Thinking…');break;
     case 'input_audio_buffer.committed':break;
     case 'response.created':setVoiceState('responding');break;
@@ -6577,56 +6648,111 @@ function rtCleanup(){
   setVoiceState('idle');
 }
 
-// Main call button
+// Main call button on the Voice Chat tab. Uses the voice-scope mode preference
+// (default 'always-on'). Toggle the chip next to the call button to flip it.
 document.getElementById('rtCallBtn').addEventListener('click',()=>{
-  if(RT.active||RT.connecting)rtEnd();
-  else rtStart();
+  if(RT.active||RT.connecting){ rtEnd(); return; }
+  RT.focusMode = null;
+  rtStart({mode: VOICE_MODE_PREFS.voice});
 });
 
-// -- Floating mic = PTT --
-// No more tab-switch on click. The mic stays inline so Kev can watch his chain
-// (or whatever tab he's on) react in real time as Claude calls tools.
-//   • No active session → click anywhere on the button starts a call (with
-//     'chain' focus mode if he triggered it from the Chain Builder tab).
-//   • Active session → mousedown/touchstart begins recording, mouseup/leave
-//     commits + asks for a response. PTT held during PURPLE (responding) is a
-//     barge-in: rtPttDown sends response.cancel so he can interrupt cleanly.
+// Mic-mode toggle wiring — both the chain-toolbar pill and the voice-tab pill
+// route through one click handler. Persisted per scope; takes effect on the
+// NEXT call (mid-call switching would require session.update gymnastics that
+// aren't worth it for a setting Kev rarely flips).
+document.querySelectorAll('.voice-mode-toggle .vmt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const host = btn.closest('.voice-mode-toggle');
+    if (!host) return;
+    const scope = host.dataset.scope;
+    const mode = btn.dataset.mode;
+    setVoiceModePref(scope, mode);
+    if (RT.active || RT.connecting){
+      toast(`${scope === 'chain' ? 'Chain mic' : 'Voice chat'} → ${mode === 'ptt' ? 'Push to talk' : 'Always on'} (next call)`);
+    } else {
+      toast(`${scope === 'chain' ? 'Chain mic' : 'Voice chat'} → ${mode === 'ptt' ? 'Push to talk' : 'Always on'}`);
+    }
+  });
+});
+
+// -- Floating mic --
+// The mic is anchored bottom-right and visible across every tab. Behaviour
+// depends on which tab is active AND that scope's mode preference:
+//
+//   On Chain Builder tab:
+//     • No session → start one. Mode = the chain-scope toggle (default 'ptt').
+//       Sets RT.focusMode='chain' so the system-prompt addendum kicks in and
+//       the model opens with a chain-aware observation. NO tab switch — Kev
+//       wants to watch the chain react.
+//     • Session in PTT mode → mousedown begins recording, mouseup commits.
+//     • Session in always-on mode → click toggles the call (start/end). No PTT.
+//
+//   On any other tab:
+//     • No session → start one in the voice-scope mode (default 'always-on')
+//       and jump to the Voice Chat tab so cost panels and full controls are
+//       visible.
+//     • Session in PTT mode → mousedown/up still works as PTT (he started a
+//       PTT call from chain, then navigated away).
+//     • Session in always-on mode → click ends the call.
 const floatMicEl = document.getElementById('floatMic');
-function detectFocusMode(){
-  // If Kev is on the Chain Builder tab when he triggers voice, give the model
-  // a chain-focused opening so the conversation doesn't waste a get_context
-  // round-trip on something it can already see in the digest.
-  const activeTab = document.querySelector('.tab.active');
-  const tab = activeTab && activeTab.dataset ? activeTab.dataset.tab : '';
-  if (tab === 'chain') return 'chain';
-  return null;
+function activeTabId(){
+  const t = document.querySelector('.tab.active');
+  return t && t.dataset ? t.dataset.tab : '';
+}
+function micScopeAndMode(){
+  // Returns the mic-mode that SHOULD be used right now based on which tab
+  // Kev is on. Used for fresh starts only — once a session is active RT.mode
+  // is the source of truth.
+  const tab = activeTabId();
+  if (tab === 'chain') return {scope:'chain', mode:VOICE_MODE_PREFS.chain};
+  return {scope:'voice', mode:VOICE_MODE_PREFS.voice};
+}
+function micStartFromFloat(){
+  if (!localStorage.getItem(RT_KEY_STORAGE)){
+    toast('Save an OpenAI key on the Voice Chat tab first', true);
+    return;
+  }
+  const {scope, mode} = micScopeAndMode();
+  RT.focusMode = (scope === 'chain') ? 'chain' : null;
+  rtStart({mode});
+  // If we're not on the chain tab, jump to Voice Chat so the controls + status
+  // are visible. Chain tab keeps focus so Kev can watch the chain react.
+  if (scope !== 'chain'){
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('.tab[data-tab="voice"]').classList.add('active');
+    document.getElementById('voice').classList.add('active');
+  }
 }
 floatMicEl.addEventListener('mousedown', e=>{
   e.preventDefault();
   if (!RT.active && !RT.connecting){
-    if (!localStorage.getItem(RT_KEY_STORAGE)){
-      toast('Save an OpenAI key on the Voice Chat tab first', true);
-      return;
-    }
-    RT.focusMode = detectFocusMode();
-    rtStart();
+    micStartFromFloat();
     return;
   }
-  rtPttDown();
+  // Active session — only PTT mode treats hold as record. In always-on mode
+  // the click handler (mouseup) handles end-call instead, and we ignore the
+  // hold here so we don't accidentally commit an empty buffer.
+  if (RT.mode === 'ptt') rtPttDown();
 });
-floatMicEl.addEventListener('mouseup', ()=>rtPttUp());
+floatMicEl.addEventListener('mouseup', ()=>{
+  if (!RT.active && !RT.connecting) return;
+  if (RT.mode === 'ptt'){ rtPttUp(); return; }
+  // Always-on: a click on an active call ends it.
+  rtEnd();
+});
 floatMicEl.addEventListener('mouseleave', ()=>{ if (RT.pttHeld) rtPttUp(); });
 floatMicEl.addEventListener('touchstart', e=>{
   e.preventDefault();
-  if (!RT.active && !RT.connecting){
-    if (!localStorage.getItem(RT_KEY_STORAGE)){ toast('Save an OpenAI key on the Voice Chat tab first', true); return; }
-    RT.focusMode = detectFocusMode();
-    rtStart();
-    return;
-  }
-  rtPttDown();
+  if (!RT.active && !RT.connecting){ micStartFromFloat(); return; }
+  if (RT.mode === 'ptt') rtPttDown();
 }, {passive:false});
-floatMicEl.addEventListener('touchend', e=>{ e.preventDefault(); rtPttUp(); }, {passive:false});
+floatMicEl.addEventListener('touchend', e=>{
+  e.preventDefault();
+  if (!RT.active && !RT.connecting) return;
+  if (RT.mode === 'ptt'){ rtPttUp(); return; }
+  rtEnd();
+}, {passive:false});
 
 // -- Spacebar PTT shortcut --
 // Skipped while Kev is typing in any text field so it doesn't break editing.
@@ -6646,6 +6772,7 @@ window.addEventListener('keydown', e=>{
   if (e.repeat) return;
   if (isTypingTarget(e.target)) return;
   if (!RT.active) return;
+  if (RT.mode !== 'ptt') return; // Always-on calls don't use spacebar
   e.preventDefault();
   rtPttDown();
 });
@@ -6653,6 +6780,7 @@ window.addEventListener('keyup', e=>{
   if (e.code !== 'Space') return;
   if (isTypingTarget(e.target)) return;
   if (!RT.active) return;
+  if (RT.mode !== 'ptt') return;
   e.preventDefault();
   rtPttUp();
 });
@@ -6664,6 +6792,8 @@ window.addEventListener('beforeunload',()=>rtCleanup());
 rtLoadKey();
 rtLoadAntKey();
 rtLoadPrefs();
+loadVoiceModePrefs();
+paintVoiceModeToggles();
 // Kick the state machine into idle so the floating mic + START CALL button get
 // the breathing-green animation + tooltip on first paint.
 setVoiceState('idle');
