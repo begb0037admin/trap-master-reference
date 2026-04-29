@@ -506,6 +506,17 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .floating-mic{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;border:none;color:#fff;font-size:22px;font-weight:700;cursor:pointer;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none}
 .floating-mic:hover{transform:scale(1.06)}
 .floating-mic:active{transform:scale(0.98)}
+/* Hide the floating mic when the Voice Chat tab is active — the big START CALL
+   button is right there, so two pulsing buttons at once is visual noise. The
+   class is toggled by applyFloatMicVisibility() on every tab switch. */
+.floating-mic.tab-hidden{display:none}
+/* Dictation states — the float mic pulls double duty on the AI Chat tab. We
+   reuse the same colour family as the RT states (so it still reads as the same
+   button) but with subtly different shading so Kev can tell at a glance whether
+   he's recording for Whisper vs. holding a Realtime call. */
+.floating-mic.state-dict-idle{background:#0d8a6a;animation:mic-breath 2s ease-in-out infinite}
+.floating-mic.state-dict-recording{background:#dc2626;box-shadow:0 0 0 6px rgba(220,38,38,.35),0 4px 14px rgba(0,0,0,.5);animation:none}
+.floating-mic.state-dict-transcribing{background:#7c3aed;animation:mic-amber 0.9s ease-in-out infinite}
 /* Idle — green breathing pulse */
 .floating-mic.state-idle{background:#10a37f;animation:mic-breath 2s ease-in-out infinite}
 .floating-mic.state-idle:hover{background:#0d8a6a}
@@ -986,6 +997,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save to the 📜 Journal">📜 TL;DR → Journal</button>
       <button class="btn purple sm" id="aiChatImportPlugins" title="Paste a messy plugin list — Claude parses + normalises and adds them to your library">✨ Import plugins</button>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
+      <div class="voice-mode-toggle" data-scope="aichat" title="How the floating mic dictates into this chat. PTT = hold to record, drops the transcript into the input box for review. Always-on = each utterance auto-sends to Claude.">
+        <span class="vmt-label">🎤 Mic mode:</span>
+        <button class="vmt-btn" data-mode="ptt">Push to talk</button>
+        <button class="vmt-btn" data-mode="always-on">Always on</button>
+      </div>
     </div>
     <div class="aichat-transcript" id="aiChatTranscript">
       <div class="aichat-empty">Start a chat with Claude. Paste a session snapshot, ask about a producer's technique, or discuss your current chain — Claude has full visibility into your workbench every message.</div>
@@ -2617,6 +2633,7 @@ function applyGenrePicker(){
   document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
   document.querySelector('.tab[data-tab="chain"]').classList.add('active');
   document.getElementById('chain').classList.add('active');
+  if (typeof applyFloatMicVisibility === 'function') applyFloatMicVisibility();
   toast(`Loaded ${loaded} ${genreLabel(newGenre).replace(/^\S+\s*/,'')} preset${loaded===1?'':'s'}${replace?'':' (appended)'}`);
 }
 
@@ -3103,6 +3120,7 @@ function applyPreset(id){
   document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
   document.querySelector('.tab[data-tab="chain"]').classList.add('active');
   document.getElementById('chain').classList.add('active');
+  if (typeof applyFloatMicVisibility === 'function') applyFloatMicVisibility();
 }
 
 // Pure save action — also called by the voice AI's `save_preset` tool.
@@ -3416,6 +3434,7 @@ function renderSymptoms(){
       const aichatPanel = document.getElementById('aichat');
       if (aichatTab) aichatTab.classList.add('active');
       if (aichatPanel) aichatPanel.classList.add('active');
+      if (typeof applyFloatMicVisibility === 'function') applyFloatMicVisibility();
       setTimeout(() => {
         if (ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); ta.scrollTop = ta.scrollHeight; }
       }, 50);
@@ -3458,7 +3477,7 @@ function renderRecipes(){
 }
 
 // ========== TABS ==========
-document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.tab).classList.add('active');});});
+document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.tab).classList.add('active');if(typeof applyFloatMicVisibility==='function')applyFloatMicVisibility();});});
 document.getElementById('platformSelect').onchange=()=>{renderMeters();updateMeters();saveState();};
 
 // ========== SNAPSHOT EXPORT ==========
@@ -3714,9 +3733,12 @@ const RT={
 // Per-scope mic-mode preferences. The toggle on each tab writes to its own slot;
 // rtStart picks the slot that matches the calling scope. Defaults: chain → ptt
 // (Kev wants tight credit control while building chains), voice → always-on
-// (he wants a flowing conversation when he's deliberately on the Voice Chat tab).
+// (he wants a flowing conversation when he's deliberately on the Voice Chat tab),
+// aichat → ptt (Whisper transcription is so-so on plugin names — review before
+// send is the safer default).
 const VOICE_MODE_PREFS_KEY = 'trapMasterVoiceModePrefs_v1';
-const VOICE_MODE_PREFS = { chain:'ptt', voice:'always-on' };
+const VOICE_MODE_PREFS = { chain:'ptt', voice:'always-on', aichat:'ptt' };
+const VALID_SCOPES = new Set(['chain','voice','aichat']);
 function loadVoiceModePrefs(){
   try{
     const raw = localStorage.getItem(VOICE_MODE_PREFS_KEY);
@@ -3724,13 +3746,14 @@ function loadVoiceModePrefs(){
     const d = JSON.parse(raw);
     if (d.chain === 'ptt' || d.chain === 'always-on') VOICE_MODE_PREFS.chain = d.chain;
     if (d.voice === 'ptt' || d.voice === 'always-on') VOICE_MODE_PREFS.voice = d.voice;
+    if (d.aichat === 'ptt' || d.aichat === 'always-on') VOICE_MODE_PREFS.aichat = d.aichat;
   } catch(_){}
 }
 function saveVoiceModePrefs(){
   try{ localStorage.setItem(VOICE_MODE_PREFS_KEY, JSON.stringify(VOICE_MODE_PREFS)); }catch(_){}
 }
 function setVoiceModePref(scope, mode){
-  if (scope !== 'chain' && scope !== 'voice') return;
+  if (!VALID_SCOPES.has(scope)) return;
   if (mode !== 'ptt' && mode !== 'always-on') return;
   VOICE_MODE_PREFS[scope] = mode;
   saveVoiceModePrefs();
@@ -6667,44 +6690,286 @@ document.querySelectorAll('.voice-mode-toggle .vmt-btn').forEach(btn => {
     const scope = host.dataset.scope;
     const mode = btn.dataset.mode;
     setVoiceModePref(scope, mode);
-    if (RT.active || RT.connecting){
-      toast(`${scope === 'chain' ? 'Chain mic' : 'Voice chat'} → ${mode === 'ptt' ? 'Push to talk' : 'Always on'} (next call)`);
-    } else {
-      toast(`${scope === 'chain' ? 'Chain mic' : 'Voice chat'} → ${mode === 'ptt' ? 'Push to talk' : 'Always on'}`);
-    }
+    const scopeLabel = scope === 'chain' ? 'Chain mic'
+                     : scope === 'aichat' ? 'AI Chat mic'
+                     : 'Voice chat';
+    const modeLabel = mode === 'ptt' ? 'Push to talk' : 'Always on';
+    // For Realtime calls the toggle takes effect on the NEXT call (mid-call session
+    // updates would need extra plumbing). Dictation has no session, so the AI Chat
+    // toggle takes effect immediately on the next mic press.
+    const liveCall = (RT.active || RT.connecting) && scope !== 'aichat';
+    toast(`${scopeLabel} → ${modeLabel}${liveCall ? ' (next call)' : ''}`);
   });
 });
 
+// =============================================================================
+// DICTATION (DICT) — Speech-to-text into the AI Chat textarea
+// =============================================================================
+// On the AI Chat tab the floating mic does NOT start an OpenAI Realtime call.
+// It captures audio and transcribes it via Whisper (when an OpenAI key is
+// saved) or the browser's Web Speech API (fallback). The transcript is dropped
+// into #aiChatInput, then either left for review (PTT) or sent immediately
+// (always-on).
+//
+//   PTT mode (default): hold mic → MediaRecorder records → release → POST to
+//     /v1/audio/transcriptions → transcript appended to the input box. Kev
+//     reviews, edits, attaches a screenshot, hits Send when ready.
+//
+//   Always-on mode: click mic to start. Web Speech runs continuous; each
+//     "final" utterance lands in the textarea AND fires aichatSend(). Click
+//     mic again to stop. (Whisper would need our own VAD for this — out of
+//     scope for v1.)
+//
+// Cost: Whisper is ~$0.006 / minute. Rolled into the OpenAI session spend
+// tracker via addSpend('oai', delta). Web Speech is free.
+const DICT = {
+  active: false,           // always-on session running
+  recording: false,        // MediaRecorder currently capturing (PTT)
+  mediaRecorder: null,
+  stream: null,
+  chunks: [],
+  recStartedAt: 0,         // performance.now() — for cost tracking
+  recognition: null,       // Web Speech instance (always-on, or PTT fallback)
+};
+
+function dictPreferredEngine(){
+  // Whisper if an OpenAI key is saved, else Web Speech. Always-on always uses
+  // Web Speech (request-based Whisper would need our own VAD for streaming).
+  return localStorage.getItem(RT_KEY_STORAGE) ? 'whisper' : 'webspeech';
+}
+function dictWebSpeechCtor(){
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+// Visual state on the float mic during dictation. Reuses MIC_SVG_FLOAT so the
+// button icon doesn't change shape. State classes are namespaced state-dict-*
+// so they don't conflict with setVoiceState()'s RT machine.
+function dictSetMicState(state){
+  const mic = floatMicEl;
+  if (!mic) return;
+  mic.classList.remove('state-idle','state-connecting','state-recording','state-responding','state-waiting','urgent','state-dict-idle','state-dict-recording','state-dict-transcribing');
+  mic.classList.add('state-' + state);
+  mic.innerHTML = MIC_SVG_FLOAT;
+  if (state === 'dict-idle')              mic.title = 'Hold to dictate into AI Chat · spacebar also works';
+  else if (state === 'dict-recording')    mic.title = 'Recording — release to transcribe';
+  else if (state === 'dict-transcribing') mic.title = 'Transcribing…';
+}
+// After a PTT release / always-on stop, return the mic to whichever idle paint
+// fits the active tab.
+function dictResetMic(){
+  if (activeTabId() === 'aichat'){
+    if (DICT.active) dictSetMicState('dict-recording');
+    else dictSetMicState('dict-idle');
+  } else {
+    setVoiceState(RT.active ? RT.uiState : 'idle');
+  }
+}
+
+// -- PTT path: MediaRecorder → Whisper, or Web Speech one-shot fallback --
+async function dictPttDown(){
+  if (DICT.recording || DICT.active) return;
+  const engine = dictPreferredEngine();
+  try{
+    if (engine === 'whisper'){
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      DICT.stream = stream;
+      DICT.chunks = [];
+      const mr = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm'});
+      mr.ondataavailable = e => { if (e.data && e.data.size > 0) DICT.chunks.push(e.data); };
+      mr.onstop = () => dictWhisperFlush();
+      mr.start();
+      DICT.mediaRecorder = mr;
+      DICT.recStartedAt = performance.now();
+      DICT.recording = true;
+      dictSetMicState('dict-recording');
+    } else {
+      const Ctor = dictWebSpeechCtor();
+      if (!Ctor){ toast('Speech recognition not supported in this browser', true); return; }
+      const rec = new Ctor();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-US';
+      rec.onresult = (e) => {
+        const t = (e.results && e.results[0] && e.results[0][0] && e.results[0][0].transcript) || '';
+        if (t) dictDeliverTranscript(t.trim(), 'ptt');
+      };
+      rec.onerror = (ev) => { console.warn('[DICT] Web Speech error:', ev.error); };
+      rec.onend = () => { DICT.recording = false; DICT.recognition = null; dictResetMic(); };
+      rec.start();
+      DICT.recognition = rec;
+      DICT.recording = true;
+      dictSetMicState('dict-recording');
+    }
+  }catch(err){
+    console.warn('[DICT] start failed:', err);
+    toast('Mic blocked or unavailable', true);
+    DICT.recording = false;
+    dictResetMic();
+  }
+}
+function dictPttUp(){
+  if (!DICT.recording) return;
+  DICT.recording = false;
+  if (DICT.mediaRecorder){
+    dictSetMicState('dict-transcribing');
+    try{ DICT.mediaRecorder.stop(); }catch(_){}
+    DICT.mediaRecorder = null;
+  } else if (DICT.recognition){
+    try{ DICT.recognition.stop(); }catch(_){}
+  }
+}
+
+// MediaRecorder onstop handler. Builds a Blob, POSTs to Whisper, drops the
+// transcript into the textarea.
+async function dictWhisperFlush(){
+  // Stop the audio tracks first — the browser tab keeps a hot mic indicator
+  // until they're released, even though we're not recording any more.
+  if (DICT.stream){
+    DICT.stream.getTracks().forEach(t => t.stop());
+    DICT.stream = null;
+  }
+  const chunks = DICT.chunks;
+  DICT.chunks = [];
+  if (!chunks.length){ dictResetMic(); return; }
+  const durSec = (performance.now() - DICT.recStartedAt) / 1000;
+  const blob = new Blob(chunks, {type:'audio/webm'});
+  const key = localStorage.getItem(RT_KEY_STORAGE);
+  if (!key){ toast('No OpenAI key saved', true); dictResetMic(); return; }
+  try{
+    const fd = new FormData();
+    fd.append('file', blob, 'speech.webm');
+    fd.append('model', 'whisper-1');
+    // Seed Whisper with audio-engineering jargon so plugin and producer names
+    // don't get mangled into nearby English words. Costs nothing extra.
+    fd.append('prompt', 'Audio mixing and mastering context. Plugin and producer names: Pultec, FabFilter Pro-Q, Pro-L, Pro-MB, Pro-G, Soothe2, Trackspacer, Waves CLA, SSL, API, 1176, LA-2A, Renaissance, Soundtoys, Decapitator, Devil-Loc, Auto-Tune, Melodyne, Oeksound, Brainworx, Plugin Alliance, iZotope, Ozone, Neutron, RX, Kilohearts, Valhalla, Saturn, Timeless, MicroShift, OTT, Serum, T-RackS, Harrison, Fusion, sidechain, multiband.');
+    const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${key}` },
+      body: fd
+    });
+    if (!r.ok){
+      const errText = await r.text().catch(()=>'(no body)');
+      console.warn('[DICT] Whisper error', r.status, errText);
+      toast(`Transcription failed (${r.status})`, true);
+      return;
+    }
+    const j = await r.json();
+    const text = (j && (j.text || j.transcript) || '').trim();
+    // Whisper is $0.006 / minute. Roll into the OpenAI cumulative spend so the
+    // panel reflects dictation costs alongside Realtime audio.
+    const cost = Math.max(0, durSec / 60 * 0.006);
+    if (typeof addSpend === 'function' && cost > 0) addSpend('oai', cost);
+    console.log(`[DICT] Whisper: ${durSec.toFixed(1)}s · $${cost.toFixed(4)} · "${text.slice(0,80)}${text.length>80?'…':''}"`);
+    if (text) dictDeliverTranscript(text, 'ptt');
+    else toast('No speech detected', true);
+  }catch(err){
+    console.warn('[DICT] Whisper fetch failed:', err);
+    toast('Transcription failed — see console', true);
+  }finally{
+    dictResetMic();
+  }
+}
+
+// -- Always-on path: Web Speech continuous → auto-send each utterance --
+function dictStartAlwaysOn(){
+  if (DICT.active || DICT.recording) return;
+  const Ctor = dictWebSpeechCtor();
+  if (!Ctor){
+    toast('Always-on dictation needs Chrome/Edge speech recognition', true);
+    return;
+  }
+  const rec = new Ctor();
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.lang = 'en-US';
+  rec.onresult = (e) => {
+    // Web Speech may finalise multiple results in a single event; iterate from
+    // resultIndex so we only act on the new ones.
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const r = e.results[i];
+      if (!r.isFinal) continue;
+      const t = (r[0] && r[0].transcript || '').trim();
+      if (t) dictDeliverTranscript(t, 'always-on');
+    }
+  };
+  rec.onerror = (ev) => {
+    console.warn('[DICT] Always-on Web Speech error:', ev.error);
+    if (ev.error === 'not-allowed' || ev.error === 'audio-capture'){
+      toast('Mic blocked — check site permissions', true);
+      dictStopAlwaysOn();
+    }
+  };
+  rec.onend = () => {
+    // Continuous recognition is auto-stopped by browsers periodically; restart
+    // while the always-on session is meant to be live so the conversation
+    // keeps flowing.
+    if (DICT.active){ try{ rec.start(); }catch(_){} }
+    else { dictResetMic(); }
+  };
+  try{ rec.start(); }catch(err){ console.warn('[DICT] start failed:', err); toast('Mic blocked or unavailable', true); return; }
+  DICT.recognition = rec;
+  DICT.active = true;
+  dictSetMicState('dict-recording');
+  toast('Dictation on — each pause sends to Claude');
+}
+function dictStopAlwaysOn(){
+  if (!DICT.active) return;
+  DICT.active = false;
+  if (DICT.recognition){ try{ DICT.recognition.stop(); }catch(_){} DICT.recognition = null; }
+  dictResetMic();
+  toast('Dictation off');
+}
+
+// Land a transcript in #aiChatInput. PTT just appends. Always-on appends + sends.
+function dictDeliverTranscript(text, mode){
+  const input = document.getElementById('aiChatInput');
+  if (!input) return;
+  const cur = input.value;
+  // Insert a leading space if the input already has content that doesn't end
+  // in whitespace — keeps successive utterances readable.
+  const piece = (cur && !/\s$/.test(cur)) ? ' ' + text : text;
+  input.value = cur + piece;
+  input.focus();
+  input.scrollTop = input.scrollHeight;
+  // Re-fire any input listeners (the Send button enables/disables based on it).
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  if (mode === 'always-on' && typeof aichatSend === 'function'){
+    aichatSend();
+  }
+}
+
 // -- Floating mic --
-// The mic is anchored bottom-right and visible across every tab. Behaviour
-// depends on which tab is active AND that scope's mode preference:
+// The mic is anchored bottom-right and visible on every tab EXCEPT Voice Chat
+// (where the big START CALL button does the same job — two pulsing buttons is
+// visual noise). Behaviour dispatches by active tab:
 //
-//   On Chain Builder tab:
-//     • No session → start one. Mode = the chain-scope toggle (default 'ptt').
-//       Sets RT.focusMode='chain' so the system-prompt addendum kicks in and
-//       the model opens with a chain-aware observation. NO tab switch — Kev
-//       wants to watch the chain react.
-//     • Session in PTT mode → mousedown begins recording, mouseup commits.
-//     • Session in always-on mode → click toggles the call (start/end). No PTT.
+//   On AI Chat tab → DICT module (Whisper / Web Speech transcription into
+//     #aiChatInput). Does NOT start an OpenAI Realtime call.
+//     • PTT mode (default): hold → record → release → transcript drops into
+//       the textarea for review. Kev hits Send when ready.
+//     • Always-on mode: click to start, each utterance auto-sends to Claude.
 //
-//   On any other tab:
-//     • No session → start one in the voice-scope mode (default 'always-on')
-//       and jump to the Voice Chat tab so cost panels and full controls are
-//       visible.
-//     • Session in PTT mode → mousedown/up still works as PTT (he started a
-//       PTT call from chain, then navigated away).
-//     • Session in always-on mode → click ends the call.
+//   On Chain Builder tab → RT module with chain focus mode.
+//     • PTT mode (default): hold/release as recording.
+//     • Always-on: click toggles call. No tab switch — Kev watches chain react.
+//
+//   On any other tab → RT module without focus mode.
+//     • Starts a session in the voice-scope mode (default 'always-on') and
+//       jumps to Voice Chat so cost panels + full controls are visible.
+//     • If a session was started elsewhere and Kev navigated away, the mic
+//       still respects the original session's mode.
 const floatMicEl = document.getElementById('floatMic');
 function activeTabId(){
   const t = document.querySelector('.tab.active');
   return t && t.dataset ? t.dataset.tab : '';
 }
 function micScopeAndMode(){
-  // Returns the mic-mode that SHOULD be used right now based on which tab
+  // Returns the scope + mode that SHOULD be used right now based on which tab
   // Kev is on. Used for fresh starts only — once a session is active RT.mode
-  // is the source of truth.
+  // (or DICT.active) is the source of truth.
   const tab = activeTabId();
-  if (tab === 'chain') return {scope:'chain', mode:VOICE_MODE_PREFS.chain};
+  if (tab === 'chain')  return {scope:'chain',  mode:VOICE_MODE_PREFS.chain};
+  if (tab === 'aichat') return {scope:'aichat', mode:VOICE_MODE_PREFS.aichat};
   return {scope:'voice', mode:VOICE_MODE_PREFS.voice};
 }
 function micStartFromFloat(){
@@ -6722,33 +6987,80 @@ function micStartFromFloat(){
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.querySelector('.tab[data-tab="voice"]').classList.add('active');
     document.getElementById('voice').classList.add('active');
+    applyFloatMicVisibility();
   }
 }
+// Hide the float mic on the Voice Chat tab; restore it everywhere else. Also
+// updates the tooltip so the AI Chat tab reads "Hold to dictate" instead of
+// "Push to talk · Spacebar". Called from the tab click handler + at init.
+function applyFloatMicVisibility(){
+  if (!floatMicEl) return;
+  const tab = activeTabId();
+  floatMicEl.classList.toggle('tab-hidden', tab === 'voice');
+  // Title hint by tab — only when nothing is actively recording.
+  if (RT.active || RT.connecting || DICT.active || DICT.recording) return;
+  if (tab === 'aichat') floatMicEl.title = 'Hold to dictate into AI Chat · spacebar also works';
+  else floatMicEl.title = 'Push to talk · Spacebar';
+}
+
+// On AI Chat tab the mic dispatches to DICT instead of RT. Always-on toggles
+// the dictation session on click; PTT records while held.
 floatMicEl.addEventListener('mousedown', e=>{
   e.preventDefault();
+  if (activeTabId() === 'aichat'){
+    // Always-on always-on dictation: click TOGGLES the session. PTT: hold to record.
+    const mode = VOICE_MODE_PREFS.aichat;
+    if (mode === 'always-on'){
+      if (DICT.active) dictStopAlwaysOn();
+      else dictStartAlwaysOn();
+      return;
+    }
+    dictPttDown();
+    return;
+  }
   if (!RT.active && !RT.connecting){
     micStartFromFloat();
     return;
   }
-  // Active session — only PTT mode treats hold as record. In always-on mode
+  // Active RT session — only PTT mode treats hold as record. In always-on mode
   // the click handler (mouseup) handles end-call instead, and we ignore the
   // hold here so we don't accidentally commit an empty buffer.
   if (RT.mode === 'ptt') rtPttDown();
 });
 floatMicEl.addEventListener('mouseup', ()=>{
+  if (activeTabId() === 'aichat'){
+    if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
+    return;
+  }
   if (!RT.active && !RT.connecting) return;
   if (RT.mode === 'ptt'){ rtPttUp(); return; }
   // Always-on: a click on an active call ends it.
   rtEnd();
 });
-floatMicEl.addEventListener('mouseleave', ()=>{ if (RT.pttHeld) rtPttUp(); });
+floatMicEl.addEventListener('mouseleave', ()=>{
+  if (DICT.recording && VOICE_MODE_PREFS.aichat === 'ptt') dictPttUp();
+  if (RT.pttHeld) rtPttUp();
+});
 floatMicEl.addEventListener('touchstart', e=>{
   e.preventDefault();
+  if (activeTabId() === 'aichat'){
+    const mode = VOICE_MODE_PREFS.aichat;
+    if (mode === 'always-on'){
+      if (DICT.active) dictStopAlwaysOn(); else dictStartAlwaysOn();
+      return;
+    }
+    dictPttDown();
+    return;
+  }
   if (!RT.active && !RT.connecting){ micStartFromFloat(); return; }
   if (RT.mode === 'ptt') rtPttDown();
 }, {passive:false});
 floatMicEl.addEventListener('touchend', e=>{
   e.preventDefault();
+  if (activeTabId() === 'aichat'){
+    if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
+    return;
+  }
   if (!RT.active && !RT.connecting) return;
   if (RT.mode === 'ptt'){ rtPttUp(); return; }
   rtEnd();
@@ -6771,6 +7083,13 @@ window.addEventListener('keydown', e=>{
   if (e.code !== 'Space') return;
   if (e.repeat) return;
   if (isTypingTarget(e.target)) return;
+  // AI Chat dictation (PTT mode only) gets the spacebar too. We deliberately
+  // skip 'always-on' so a stray space press doesn't toggle the session off.
+  if (activeTabId() === 'aichat' && VOICE_MODE_PREFS.aichat === 'ptt' && !DICT.recording){
+    e.preventDefault();
+    dictPttDown();
+    return;
+  }
   if (!RT.active) return;
   if (RT.mode !== 'ptt') return; // Always-on calls don't use spacebar
   e.preventDefault();
@@ -6779,6 +7098,11 @@ window.addEventListener('keydown', e=>{
 window.addEventListener('keyup', e=>{
   if (e.code !== 'Space') return;
   if (isTypingTarget(e.target)) return;
+  if (DICT.recording && VOICE_MODE_PREFS.aichat === 'ptt'){
+    e.preventDefault();
+    dictPttUp();
+    return;
+  }
   if (!RT.active) return;
   if (RT.mode !== 'ptt') return;
   e.preventDefault();
@@ -6797,6 +7121,9 @@ paintVoiceModeToggles();
 // Kick the state machine into idle so the floating mic + START CALL button get
 // the breathing-green animation + tooltip on first paint.
 setVoiceState('idle');
+// Sync mic visibility with whatever tab is initially active (Chain Builder by
+// default). On Voice Chat tab the mic stays hidden until Kev navigates away.
+applyFloatMicVisibility();
 
 // ========== COST PANEL WIRING ==========
 document.getElementById('oaTopup').onclick=()=>window.open('https://platform.openai.com/settings/organization/billing/overview','_blank','noopener');
