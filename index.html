@@ -172,7 +172,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .bus-col h4 .clear-bus-btn{background:transparent;border:1px solid #7f1d1d;color:#fca5a5;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .12s}
 .bus-col h4 .clear-bus-btn:hover{background:#7f1d1d;color:#fee2e2;border-color:#b91c1c}
 .chain-list{margin-bottom:10px}
-.chain-item{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px}
+.chain-item{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:6px;margin-bottom:5px;font-size:12px;cursor:grab;-webkit-user-select:none;user-select:none}
+.chain-item:active{cursor:grabbing}
+.chain-item button{cursor:pointer}
+.chain-list .sortable-ghost{opacity:.35;background:#1e1b4b;border-color:#7c3aed}
+.chain-list .sortable-drag{opacity:.92;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .chain-item.has-notes{border-color:#4c1d95}
 .chain-head{display:flex;align-items:flex-start;gap:8px}
 .chain-head .order{color:#9ca3af;font-family:"SF Mono",monospace;font-size:10px;min-width:14px;padding-top:3px;flex-shrink:0}
@@ -496,9 +500,33 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .speaking-indicator{height:3px;background:#374151;border-radius:2px;overflow:hidden;margin-top:8px;position:relative}
 .speaking-indicator.active::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#34d399,transparent);animation:slide 1.8s infinite}
 @keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.floating-mic{position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;background:#f97316;border:none;color:#fff;font-size:22px;cursor:pointer;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:all .15s}
-.floating-mic:hover{background:#ea580c;transform:scale(1.05)}
-.floating-mic.recording{background:#dc2626;animation:pulse 1.2s infinite}
+/* Floating PTT mic — green idle / red recording / purple Claude-active / amber connecting.
+   The button shows the mic emoji in most states; in the auto-end countdown it shows
+   the remaining seconds instead of the mic. setVoiceState() swaps the class + label. */
+.floating-mic{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;border:none;color:#fff;font-size:22px;font-weight:700;cursor:pointer;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none}
+.floating-mic:hover{transform:scale(1.06)}
+.floating-mic:active{transform:scale(0.98)}
+/* Idle — green breathing pulse */
+.floating-mic.state-idle{background:#10a37f;animation:mic-breath 2s ease-in-out infinite}
+.floating-mic.state-idle:hover{background:#0d8a6a}
+/* Connecting — amber rotation */
+.floating-mic.state-connecting{background:#b45309;animation:mic-amber 1.2s ease-in-out infinite}
+/* Recording (PTT held) — red, solid */
+.floating-mic.state-recording{background:#dc2626;box-shadow:0 0 0 6px rgba(220,38,38,.35),0 4px 14px rgba(0,0,0,.5);animation:none}
+/* Claude responding — purple ring pulse */
+.floating-mic.state-responding{background:#7c3aed;animation:mic-purple 0.8s ease-in-out infinite}
+/* Waiting / countdown — purple, faster pulse, button text becomes the seconds remaining */
+.floating-mic.state-waiting{background:#7c3aed;animation:mic-countdown 0.55s ease-in-out infinite;font-size:20px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.floating-mic.state-waiting.urgent{background:#9333ea;animation:mic-countdown-urgent 0.32s ease-in-out infinite}
+/* Spinner SVG used while connecting — independent rotation that runs alongside the
+   amber pulse on the button (the pulse animates the box-shadow, this animates the icon). */
+.floating-mic .mic-spin{animation:mic-spin 0.9s linear infinite;transform-origin:50% 50%}
+@keyframes mic-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes mic-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.55),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 12px rgba(16,163,127,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.65),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 14px rgba(251,191,36,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.6),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 16px rgba(167,139,250,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.7),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 10px rgba(167,139,250,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,.85),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 12px rgba(217,70,239,0),0 4px 14px rgba(0,0,0,.45)}}
 .toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s;z-index:200}
 .toast.show{opacity:1}.toast.err{background:#7f1d1d;color:#fecaca}
 /* GENRE RECIPE STRIP */
@@ -611,12 +639,25 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   .rt-call-row{grid-template-columns:1fr;gap:10px}
   .rt-tool-card.history{grid-column:auto}
 }
-.rt-call-btn{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#7c3aed,#4c1d95);border:3px solid #a78bfa;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s;box-shadow:0 6px 24px rgba(124,58,237,.35);padding:12px;font-family:inherit}
-.rt-call-btn:hover:not(:disabled){transform:scale(1.02);box-shadow:0 10px 36px rgba(124,58,237,.55)}
-.rt-call-btn:disabled{opacity:.35;cursor:not-allowed;background:radial-gradient(circle,#374151,#1f2937);border-color:#4b5563;box-shadow:none}
-.rt-call-btn.connecting{background:radial-gradient(circle,#b45309,#78350f);border-color:#fbbf24;animation:pulse-amber 1.2s infinite}
-.rt-call-btn.live{background:radial-gradient(circle,#059669,#065f46);border-color:#34d399;animation:pulse-green 1.6s infinite}
-.rt-call-btn.speaking{background:radial-gradient(circle,#2563eb,#1e3a8a);border-color:#60a5fa}
+/* Big START CALL button — mirrors the floating-mic state colours so both buttons
+   visually match across the app. Same five states: idle (green), connecting (amber),
+   recording (red), responding (purple), waiting/countdown (purple, button text
+   replaced with seconds remaining). */
+.rt-call-btn{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#10a37f,#065f46);border:3px solid #6ee7b7;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:background .15s,border-color .15s,transform .12s,box-shadow .15s;box-shadow:0 6px 24px rgba(16,163,127,.35);padding:12px;font-family:inherit;animation:rt-breath 2s ease-in-out infinite}
+.rt-call-btn:hover:not(:disabled){transform:scale(1.02)}
+.rt-call-btn:disabled{opacity:.35;cursor:not-allowed;background:radial-gradient(circle,#374151,#1f2937);border-color:#4b5563;box-shadow:none;animation:none}
+.rt-call-btn.state-connecting{background:radial-gradient(circle,#b45309,#78350f);border-color:#fbbf24;animation:rt-amber 1.2s ease-in-out infinite}
+.rt-call-btn.state-recording{background:radial-gradient(circle,#dc2626,#7f1d1d);border-color:#fca5a5;box-shadow:0 0 0 8px rgba(220,38,38,.3),0 6px 24px rgba(0,0,0,.55);animation:none}
+.rt-call-btn.state-responding{background:radial-gradient(circle,#7c3aed,#4c1d95);border-color:#a78bfa;animation:rt-purple 0.8s ease-in-out infinite}
+.rt-call-btn.state-waiting{background:radial-gradient(circle,#7c3aed,#4c1d95);border-color:#a78bfa;animation:rt-countdown 0.55s ease-in-out infinite}
+.rt-call-btn.state-waiting.urgent{background:radial-gradient(circle,#9333ea,#581c87);border-color:#d8b4fe;animation:rt-countdown-urgent 0.32s ease-in-out infinite}
+@keyframes rt-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.45),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 16px rgba(16,163,127,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.55),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.55),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 22px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.65),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 14px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,.85),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 16px rgba(217,70,239,0),0 6px 24px rgba(0,0,0,.45)}}
+.rt-call-btn .rt-call-countdown{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.rt-call-btn.state-waiting .rt-call-icon,.rt-call-btn.state-waiting .rt-call-label{display:none}
 @keyframes pulse-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0)}}
 @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 22px rgba(52,211,153,0)}}
 .rt-call-icon{font-size:40px;line-height:1}
@@ -703,6 +744,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <div class="recipes-strip" id="recipesStrip"></div>
   <div class="chain-toolbar">
     <button class="btn ghost sm" id="presetsBtn">📦 Load preset</button>
+    <button class="btn ghost sm" id="autoFillBtn" title="Single Claude Haiku call — fills missing settings, revises ones that need updating, keeps the rest. ~$0.02 per click.">✨ Auto-fill settings</button>
+    <button class="btn ghost sm" id="revertFillBtn" title="Restore the chain to the state before the last auto-fill" style="display:none">↺ Revert last fill</button>
     <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
@@ -811,7 +854,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <!-- CENTER: Call button + status row -->
       <div class="rt-main" style="background:transparent;border:none;padding:0;margin:0;gap:12px;">
         <button class="rt-call-btn" id="rtCallBtn" disabled>
-          <span class="rt-call-icon">🎙️</span>
+          <span class="rt-call-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="44" height="44"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span>
           <span class="rt-call-label" id="rtCallLabel">Save a key to start</span>
         </button>
         <div class="rt-status-row">
@@ -1231,7 +1274,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   </div>
 </div>
 
-<button class="floating-mic" id="floatMic" title="Push to talk">🎤</button>
+<button class="floating-mic state-idle" id="floatMic" title="Push to talk · Spacebar"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></button>
 <div class="toast" id="toast">Copied</div>
 
 <!-- Sortable.js — bundled drag-and-drop with no deps. Loads before the main
@@ -1914,8 +1957,44 @@ function renderChain(){
     const rows=items.length?items.map((p,i)=>renderChainItem(b.id,p,i,items.length)).join(''):'<div class="chain-empty">empty — add plugins below</div>';
     // Clear button only renders when the bus has at least one plugin — no point if it's already empty.
     const clearBtn = items.length ? `<button class="clear-bus-btn" type="button" title="Clear all plugins from this bus" onclick="clearBusFromUI('${escapeJs(b.id)}')">Clear</button>` : '';
-    return `<div class="bus-col"><h4>${escapeHtml(b.label)} <span class="count">${items.length}</span>${clearBtn}</h4><div class="chain-list">${rows}</div><button class="btn ghost sm" onclick="openPicker('${b.id}')">+ Add plugin</button></div>`;
+    return `<div class="bus-col"><h4>${escapeHtml(b.label)} <span class="count">${items.length}</span>${clearBtn}</h4><div class="chain-list" data-bus="${escapeHtml(b.id)}">${rows}</div><button class="btn ghost sm" onclick="openPicker('${b.id}')">+ Add plugin</button></div>`;
   }).join('');
+  // Sortable drag-drop within each bus. Pattern matches the library / Mastering
+  // Reference / Troubleshooter sections — same filter approach so clicks on the
+  // ×, 📝, ↑, ↓ buttons don't trigger a drag.
+  initChainDragDrop();
+}
+// Drag-to-reorder within each .chain-list. No cross-bus drag (group:false): each
+// list is its own group. We re-init on every render because renderChain replaces
+// the DOM wholesale; data-sortableReady flag stops double-binding.
+function initChainDragDrop(){
+  if (typeof Sortable === 'undefined') return;
+  document.querySelectorAll('#busGrid .chain-list').forEach(host => {
+    if (host.dataset.sortableReady === '1') return;
+    host.dataset.sortableReady = '1';
+    Sortable.create(host, {
+      animation: 180,
+      // Within-bus only — give each list its own group so cross-bus drops are blocked.
+      group: 'chain-' + host.dataset.bus,
+      // Skip the drag when the click lands on any action button (delete, notes,
+      // up/down arrows). Without this filter the × tap would also start a drag.
+      filter: '.del, .notes-btn, .chain-actions button, .chain-notes-clear',
+      preventOnFilter: false,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      forceFallback: true,
+      onEnd: (evt) => {
+        if (evt.oldIndex === evt.newIndex) return;
+        const busId = evt.from.dataset.bus;
+        const arr = STATE.chain[busId];
+        if (!arr) return;
+        const [moved] = arr.splice(evt.oldIndex, 1);
+        arr.splice(evt.newIndex, 0, moved);
+        renderChain();
+        saveState();
+      }
+    });
+  });
 }
 // UI handler for the per-bus Clear button. Confirms before wiping so a misclick can't nuke a chain.
 function clearBusFromUI(busId){
@@ -1966,6 +2045,203 @@ function saveChainNotes(busId,idx,text){
 function clearChainNotes(busId,idx){
   const item=STATE.chain[busId]&&STATE.chain[busId][idx];if(!item)return;
   delete item.notes;renderChain();saveState();
+}
+
+// ========== AUTO-FILL CHAIN SETTINGS ==========
+// Single Haiku call analyses the whole chain holistically and decides per
+// plugin: 'fill' (was empty), 'revise' (existing notes need adjusting because
+// of new chain context), or 'keep' (existing notes are still appropriate).
+// Holistic > per-plugin: a clipper added before a limiter changes the right
+// limiter ceiling; a saturator after EQ changes the right EQ tilt; etc.
+// Cost target: ~$0.015–$0.030 per click (Haiku, ~5–8k tokens total).
+let CHAIN_FILL_SNAPSHOT = null; // last-good chain state for the Revert button
+
+function snapshotChainFill(){
+  // Deep clone so subsequent edits don't mutate the snapshot.
+  CHAIN_FILL_SNAPSHOT = {};
+  BUSES.forEach(b => {
+    CHAIN_FILL_SNAPSHOT[b.id] = (STATE.chain[b.id]||[]).map(p => ({...p}));
+  });
+}
+
+function buildAutoFillPrompt(){
+  // Compact JSON spec of the chain so Haiku can reason about it. We include
+  // empty buses too — sometimes the absence of a bus matters (no vocal bus =
+  // instrumental, so the master treatment is different).
+  const chainSpec = {};
+  BUSES.forEach(b => {
+    chainSpec[b.id] = (STATE.chain[b.id]||[]).map((p,i) => ({
+      idx: i, name: p.n, publisher: p.p, stage: p.s,
+      current_notes: p.notes || ''
+    }));
+  });
+  const ps = document.getElementById('platformSelect');
+  const platformLabel = ps && ps.selectedOptions[0] ? ps.selectedOptions[0].textContent : '';
+  return {
+    genre: genreLabel(STATE.genre),
+    platform: platformLabel,
+    chain: chainSpec
+  };
+}
+
+async function autoFillChainSettings(){
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey){
+    toast('Save an Anthropic key on the Voice Chat tab first', true);
+    return;
+  }
+  // Bail if every bus is empty.
+  const total = BUSES.reduce((n,b) => n + (STATE.chain[b.id]||[]).length, 0);
+  if (!total){ toast('Add some plugins first', true); return; }
+
+  const btn = document.getElementById('autoFillBtn');
+  const origLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '✨ Thinking…';
+
+  // Snapshot BEFORE we mutate so Revert is reliable.
+  snapshotChainFill();
+
+  const sysPrompt = `You are a mixing/mastering engineer reviewing the entire signal chain holistically.
+
+The user (Kev) has built a chain across 5 buses (master, vocal, 808, drums, fx). For EACH plugin, decide:
+- "fill": the current_notes is empty AND this plugin needs settings.
+- "revise": current_notes exists but should change because of CHAIN CONTEXT (a clipper added later changes the limiter ceiling, a new saturator changes the EQ tilt, etc.). Only revise when there's a real reason — don't churn.
+- "keep": current_notes is fine OR plugin doesn't need settings notes (e.g. utility/metering plugins).
+
+When you fill or revise, write SHORT practical settings — 2–4 lines max, e.g.
+"Drive: 3
+Tone: bright (B)
+Mix: 60% wet"
+
+Use settings appropriate to the GENRE, PLATFORM TARGET, and the OTHER PLUGINS in the chain. Reference real plugin parameters by name where possible.
+
+Output STRICT JSON — no prose, no markdown fences:
+{
+  "buses": {
+    "master": [
+      {"idx": 0, "action": "fill"|"revise"|"keep", "notes": "<2-4 line settings, omit when keep>", "reason": "<one short sentence — why this action>"},
+      ...
+    ],
+    "vocal": [...],
+    "808": [...],
+    "drums": [...],
+    "fx": [...]
+  }
+}
+
+Include EVERY plugin you were given, in the same order. Use action="keep" liberally — don't churn settings that are already fine.`;
+
+  const userMsg = JSON.stringify(buildAutoFillPrompt(), null, 2);
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':antKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:4096,
+        system:sysPrompt,
+        messages:[{role:'user', content:userMsg}]
+      })
+    });
+    if (!resp.ok){
+      const errTxt = await resp.text();
+      toast(`Auto-fill ${resp.status}: ${errTxt.slice(0,150)}`, true);
+      return;
+    }
+    const data = await resp.json();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+    // Track Anthropic spend
+    const u = data.usage || {};
+    const pp = ANT_PRICING['claude-haiku-4-5-20251001'];
+    const inTok = (u.input_tokens||0) + (u.cache_read_input_tokens||0) + (u.cache_creation_input_tokens||0);
+    const outTok = u.output_tokens||0;
+    const cost = (inTok*pp.in + outTok*pp.out)/1e6;
+    if (cost > 0){ try{ addSpend('an', cost); rtRenderCost(); }catch(_){} }
+
+    // Parse — strip ```json fences if present
+    let parsed;
+    try {
+      let cleaned = raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'');
+      const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+      if (s>=0 && e>s) cleaned = cleaned.slice(s, e+1);
+      parsed = JSON.parse(cleaned);
+    } catch(_){
+      toast('Auto-fill response wasn\'t valid JSON — nothing changed.', true);
+      return;
+    }
+
+    // Apply per-bus, build a change log.
+    const changes = { fill:0, revise:0, keep:0, items:[] };
+    const buses = parsed.buses || {};
+    BUSES.forEach(b => {
+      const arr = STATE.chain[b.id]; if (!arr) return;
+      const planned = (buses[b.id]||[]);
+      planned.forEach(entry => {
+        const idx = entry.idx;
+        if (typeof idx !== 'number' || !arr[idx]) return;
+        const action = entry.action;
+        if (action === 'keep'){
+          changes.keep++;
+          return;
+        }
+        const newNotes = (entry.notes||'').trim();
+        if (!newNotes) return;
+        if (action === 'fill' || action === 'revise'){
+          arr[idx].notes = newNotes;
+          changes[action]++;
+          changes.items.push({
+            bus: b.label, plugin: arr[idx].n, action,
+            reason: entry.reason || ''
+          });
+        }
+      });
+    });
+
+    saveState();
+    renderChain();
+    document.getElementById('revertFillBtn').style.display = '';
+    showFillSummary(changes, cost);
+  } catch(err){
+    console.error('autoFill failed', err);
+    toast('Auto-fill failed: ' + (err.message||err), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  }
+}
+
+function showFillSummary(changes, cost){
+  const total = changes.fill + changes.revise + changes.keep;
+  const filledMsg = changes.fill ? `${changes.fill} filled` : '';
+  const revisedMsg = changes.revise ? `${changes.revise} revised` : '';
+  const keptMsg = changes.keep ? `${changes.keep} kept` : '';
+  const parts = [filledMsg, revisedMsg, keptMsg].filter(Boolean).join(' · ');
+  toast(`✨ ${parts || 'no changes'} (${total} plugins, $${cost.toFixed(3)})`);
+  // Console log keeps the full reason list for the curious — toast can't fit it all.
+  if (changes.items.length){
+    console.group('Auto-fill change log');
+    changes.items.forEach(c => console.log(`[${c.bus}] ${c.plugin} — ${c.action}: ${c.reason}`));
+    console.groupEnd();
+  }
+}
+
+function revertLastFill(){
+  if (!CHAIN_FILL_SNAPSHOT){ toast('Nothing to revert', true); return; }
+  BUSES.forEach(b => {
+    STATE.chain[b.id] = (CHAIN_FILL_SNAPSHOT[b.id]||[]).map(p => ({...p}));
+  });
+  CHAIN_FILL_SNAPSHOT = null;
+  saveState();
+  renderChain();
+  document.getElementById('revertFillBtn').style.display = 'none';
+  toast('Reverted last auto-fill');
 }
 
 // ========== PICKER ==========
@@ -2893,6 +3169,8 @@ function renameUserPreset(id){
 }
 
 document.getElementById('presetsBtn').onclick=openPresetModal;
+document.getElementById('autoFillBtn').onclick=autoFillChainSettings;
+document.getElementById('revertFillBtn').onclick=revertLastFill;
 document.getElementById('presetClose').onclick=closePresetModal;
 document.getElementById('presetModal').onclick=e=>{if(e.target.id==='presetModal')closePresetModal();};
 document.getElementById('presetBusFilter').onchange=renderPresetList;
@@ -3403,8 +3681,19 @@ const RT={
   usage:{inAudio:0,outAudio:0,inText:0,outText:0},
   lastOaCost:0,                    // for delta tracking when streaming spend
   budgetWarned:false,
-  lastEventAt:0                    // for auto-pause stuck-call detection
+  lastEventAt:0,                   // for auto-pause stuck-call detection
+  // -- Push-to-talk state machine --
+  uiState:'idle',                  // 'idle' | 'connecting' | 'recording' | 'responding' | 'waiting'
+  pttHeld:false,                   // is the user currently holding PTT (mouse/space)
+  countdownTimer:null,             // setInterval id for the 30s auto-end countdown
+  countdownSec:30,                 // seconds remaining in auto-end countdown
+  focusMode:null                   // 'chain' when started from Chain Builder, else null
 };
+// White line-art mic SVG — matches the icon used on the Voice Chat tab + section headers
+// so floating-mic, big START CALL, and the tab nav all read as the same family.
+const MIC_SVG_FLOAT='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg>';
+// Connecting spinner — same stroke family as the mic, no emoji.
+const SPIN_SVG_FLOAT='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" width="24" height="24" aria-hidden="true" class="mic-spin"><path d="M12 3a9 9 0 1 1-9 9" /></svg>';
 const RT_KEY_STORAGE='trapMasterApiKey_v1';
 const RT_ANT_KEY_STORAGE='trapMasterAntKey_v1';
 const RT_PREFS_STORAGE='trapMasterRtPrefs_v1';
@@ -3496,14 +3785,118 @@ document.getElementById('rtVoice').onchange=rtSavePrefs;
 document.getElementById('rtClaudeModel').onchange=rtSavePrefs;
 
 // -- Status helpers --
+// rtSetStatus drives the small status pill (dot + text) in the Voice tab.
+// setVoiceState drives the COLOUR STATE on both the floating mic and the big
+// START CALL button — green idle / red recording / purple Claude / amber connecting,
+// plus the auto-end countdown (where the button text becomes the seconds remaining).
 function rtSetStatus(state,label){
-  const dot=document.getElementById('rtDot'),st=document.getElementById('rtStatus'),btn=document.getElementById('rtCallBtn');
-  dot.className='rt-dot'+(state?' '+state:'');
-  st.textContent=label||state||'Idle';
-  btn.classList.remove('connecting','live','speaking');
-  if(state==='connecting')btn.classList.add('connecting');
-  else if(state==='live'||state==='listening')btn.classList.add('live');
-  else if(state==='speaking')btn.classList.add('speaking');
+  const dot=document.getElementById('rtDot'),st=document.getElementById('rtStatus');
+  if (dot) dot.className='rt-dot'+(state?' '+state:'');
+  if (st)  st.textContent=label||state||'Idle';
+}
+function setVoiceState(state, opts){
+  RT.uiState = state;
+  const sec = opts && typeof opts.remainingSec === 'number' ? opts.remainingSec : null;
+  // -- Floating mic --
+  // Idle/recording/responding all show the same SVG mic so the icon language
+  // stays consistent with the Voice Chat tab + section headers — only the
+  // colour, animation, and tooltip change. Waiting (countdown) replaces the
+  // icon with the seconds remaining digits.
+  const mic = document.getElementById('floatMic');
+  if (mic){
+    mic.classList.remove('state-idle','state-connecting','state-recording','state-responding','state-waiting','urgent');
+    mic.classList.add('state-' + state);
+    if (state === 'waiting' && sec !== null){
+      mic.textContent = String(sec);
+      if (sec <= 5) mic.classList.add('urgent');
+      mic.title = `Auto-end in ${sec}s — push to talk to extend`;
+    } else if (state === 'connecting'){
+      mic.innerHTML = SPIN_SVG_FLOAT;
+      mic.title = 'Connecting…';
+    } else if (state === 'recording'){
+      mic.innerHTML = MIC_SVG_FLOAT;
+      mic.title = 'Recording — release to send';
+    } else if (state === 'responding'){
+      mic.innerHTML = MIC_SVG_FLOAT;
+      mic.title = 'Claude is speaking — push to interrupt';
+    } else { // idle
+      mic.innerHTML = MIC_SVG_FLOAT;
+      mic.title = 'Push to talk · Spacebar';
+    }
+  }
+  // -- Big START CALL button --
+  // The icon + label are CSS-hidden during waiting so the countdown digits sit
+  // alone in the centre. Other states keep the icon + label visible.
+  const btn = document.getElementById('rtCallBtn');
+  if (btn){
+    btn.classList.remove('state-connecting','state-recording','state-responding','state-waiting','urgent');
+    if (state !== 'idle') btn.classList.add('state-' + state);
+    let cd = btn.querySelector('.rt-call-countdown');
+    if (state === 'waiting' && sec !== null){
+      if (!cd){ cd = document.createElement('div'); cd.className='rt-call-countdown'; btn.appendChild(cd); }
+      cd.textContent = String(sec);
+      if (sec <= 5) btn.classList.add('urgent');
+    } else if (cd){
+      cd.remove();
+    }
+  }
+}
+
+// -- Push-to-talk handlers --
+// Audio is muted at the WebRTC track level when not pushing, so dead air never
+// reaches OpenAI (huge cost saving vs. continuous server_vad listening).
+function rtPttDown(){
+  if (RT.pttHeld) return;
+  if (!RT.active){
+    // No session — bail. Big START CALL button or mic-click-to-start handles the connect path.
+    return;
+  }
+  RT.pttHeld = true;
+  rtCancelCountdown();
+  // Barge-in: cancel any in-flight Claude response so we can speak immediately.
+  if (RT.uiState === 'responding'){
+    rtSend({type:'response.cancel'});
+  }
+  if (RT.micStream){
+    RT.micStream.getAudioTracks().forEach(t => t.enabled = true);
+  }
+  rtSend({type:'input_audio_buffer.clear'});
+  setVoiceState('recording');
+  rtSetStatus('live','You: speaking…');
+}
+function rtPttUp(){
+  if (!RT.pttHeld) return;
+  RT.pttHeld = false;
+  if (!RT.active) return;
+  if (RT.uiState !== 'recording') return;
+  if (RT.micStream){
+    RT.micStream.getAudioTracks().forEach(t => t.enabled = false);
+  }
+  rtSend({type:'input_audio_buffer.commit'});
+  rtSend({type:'response.create'});
+  setVoiceState('responding');
+  rtSetStatus('speaking','Thinking…');
+}
+
+// -- Auto-end on silence --
+// When Claude finishes responding, start a 30s countdown shown in the call buttons.
+// Push PTT to extend (resets timer). 0 → call ends automatically — saves credits if Kev walks away.
+function rtStartCountdown(){
+  rtCancelCountdown();
+  RT.countdownSec = 30;
+  setVoiceState('waiting', {remainingSec: RT.countdownSec});
+  RT.countdownTimer = setInterval(() => {
+    RT.countdownSec--;
+    if (RT.countdownSec <= 0){
+      rtCancelCountdown();
+      rtEnd('Auto-ended after 30s of silence');
+      return;
+    }
+    setVoiceState('waiting', {remainingSec: RT.countdownSec});
+  }, 1000);
+}
+function rtCancelCountdown(){
+  if (RT.countdownTimer){ clearInterval(RT.countdownTimer); RT.countdownTimer = null; }
 }
 function rtFmtTime(ms){const s=Math.floor(ms/1000);const m=Math.floor(s/60);const r=s%60;return `${m}:${String(r).padStart(2,'0')}`;}
 function rtTickTimer(){
@@ -5979,6 +6372,7 @@ async function rtStart(){
   if(!apiKey){rtSetKeyStatus('Save a key first.','err');return;}
   if(!window.isSecureContext){toast('Not in secure context — use http://localhost or Cowork sidebar',true);return;}
   RT.connecting=true;rtSetStatus('connecting','Connecting…');
+  setVoiceState('connecting');
   document.getElementById('rtCallLabel').textContent='Connecting…';
   RT.usage={inAudio:0,outAudio:0,inText:0,outText:0};
   RT.lastOaCost=0;RT.budgetWarned=false;RT.lastEventAt=Date.now();
@@ -6003,6 +6397,11 @@ async function rtStart(){
     const audioEl=document.getElementById('rtAudio');
     RT.pc.ontrack=e=>{audioEl.srcObject=e.streams[0];};
     RT.micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    // -- Mute by default in PTT mode --
+    // Setting track.enabled=false sends silence at the WebRTC layer, so OpenAI
+    // receives no audio frames at all when Kev isn't holding PTT. This is the
+    // primary credit-saving mechanism vs. continuous server_vad listening.
+    RT.micStream.getAudioTracks().forEach(t=>{t.enabled=false;});
     RT.micStream.getTracks().forEach(t=>RT.pc.addTrack(t,RT.micStream));
     RT.dc=RT.pc.createDataChannel('oai-events');
     RT.dc.addEventListener('message',onRtEvent);
@@ -6015,11 +6414,25 @@ async function rtStart(){
       let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
       const research = buildResearchDigest();
       if (research) fullInstructions += '\n\n' + research;
+      // Tab-aware focus mode: addendum tells the model what Kev is looking at,
+      // so it leads with chain observations instead of a generic intro.
+      if (RT.focusMode === 'chain'){
+        fullInstructions += '\n\nFOCUS MODE — CHAIN BUILDER:\n' +
+          '- Kev is currently looking at the Chain Builder. He can see his buses (master / vocal / 808 / drums / fx) update in real time as you call tools.\n' +
+          '- Open by reading his chain context first (already in the digest below) and naming ONE concrete observation about it (an empty bus, a load order issue, a missing utility plugin) — not generic mixing chat.\n' +
+          '- When you make a chain change via add_plugin_to_bus / move_plugin / set_plugin_settings, narrate the SINGLE change in one short sentence so he knows what just flashed on screen.';
+      }
+      // -- PTT mode: server_vad disabled --
+      // turn_detection:null tells OpenAI we'll commit input buffers and trigger
+      // responses manually. Saves credits (no constant listening), and gives us
+      // a clean state machine: hold PTT → buffer → release → commit + response.create.
+      // If Kev wants always-on later we can flip this to {type:'server_vad',...}
+      // via a UI toggle without touching the rest of the wiring.
       rtSend({type:'session.update',session:{
         instructions:fullInstructions,
         tools:TOOL_DEFS,
         tool_choice:'auto',
-        turn_detection:{type:'server_vad',threshold:0.55,prefix_padding_ms:300,silence_duration_ms:650},
+        turn_detection:null,
         voice,
         modalities:['audio','text']
       }});
@@ -6027,7 +6440,13 @@ async function rtStart(){
       // Greeting is picked from our time-aware pool (90 combos) and locked verbatim —
       // do NOT fabricate context (e.g. "I see you're working on a drill track").
       const greeting = pickGreeting();
-      rtSend({type:'response.create',response:{modalities:['audio','text'],instructions:`Open by saying EXACTLY this line, verbatim, no additions, no embellishment, no claims about what Kev is currently working on: "${greeting}". Then stop and wait for him. Do NOT call any tools yet. Do NOT invent any awareness of his session — call get_context only if and when he asks for help with something specific.`}});
+      // Chain-focus mode opens with a chain-aware line instead of the usual greeting,
+      // because Kev triggered voice from the Chain Builder so a generic "what are you
+      // working on" wastes a turn — he can already see the chain on screen.
+      const openInstr = RT.focusMode === 'chain'
+        ? `Open with a brief greeting using Kev's name (one short sentence — e.g. "Looking at your chain, Kev — got a sec?"), then ONE concrete observation about his current chain from the LIBRARY DIGEST above (empty bus, suspicious order, obvious missing utility). Two sentences max. Do NOT call get_context — the digest already has it. Then stop.`
+        : `Open by saying EXACTLY this line, verbatim, no additions, no embellishment, no claims about what Kev is currently working on: "${greeting}". Then stop and wait for him. Do NOT call any tools yet. Do NOT invent any awareness of his session — call get_context only if and when he asks for help with something specific.`;
+      rtSend({type:'response.create',response:{modalities:['audio','text'],instructions:openInstr}});
     });
     RT.pc.addEventListener('connectionstatechange',()=>{
       const s=RT.pc.connectionState;
@@ -6051,6 +6470,7 @@ async function rtStart(){
     rtSetStatus('err','Error: '+e.message);
     document.getElementById('rtCallLabel').textContent='Start call';
     rtCleanup();
+    setVoiceState('idle');
   }
 }
 
@@ -6064,9 +6484,11 @@ async function onRtEvent(e){
   RT.lastEventAt=Date.now();
   switch(msg.type){
     case 'session.created':case 'session.updated':break;
+    // VAD speech_started/stopped no longer fire (turn_detection:null), but harmless if they ever come.
     case 'input_audio_buffer.speech_started':rtSetStatus('live','You: speaking…');break;
     case 'input_audio_buffer.speech_stopped':rtSetStatus('live','Thinking…');break;
-    case 'response.created':break;
+    case 'input_audio_buffer.committed':break;
+    case 'response.created':setVoiceState('responding');break;
     case 'response.output_item.added':{
       // Function-call items carry their name + call_id here (not on the arguments deltas).
       const it=msg.item;
@@ -6076,7 +6498,10 @@ async function onRtEvent(e){
       }
       break;
     }
-    case 'response.audio.delta':rtSetStatus('speaking','AI speaking…');break;
+    case 'response.audio.delta':
+      rtSetStatus('speaking','AI speaking…');
+      if (RT.uiState !== 'responding' && RT.uiState !== 'recording') setVoiceState('responding');
+      break;
     case 'response.audio.done':rtSetStatus('live','Listening…');break;
     case 'response.audio_transcript.delta':
       rtAppendTurnText(msg.item_id,'ai',msg.delta,false);break;
@@ -6111,9 +6536,16 @@ async function onRtEvent(e){
       if(usage){
         RT.usage.inAudio+=usage.input_token_details?.audio_tokens||0;
         RT.usage.outAudio+=usage.output_token_details?.audio_tokens||0;
-        RT.usage.inText+=(usage.input_token_details?.text_tokens)||0;
-        RT.usage.outText+=(usage.output_token_details?.text_tokens)||0;
+        RT.usage.inText+=(usage.input_text_tokens)||(usage.input_token_details?.text_tokens)||0;
+        RT.usage.outText+=(usage.output_text_tokens)||(usage.output_token_details?.text_tokens)||0;
         rtRenderCost();
+      }
+      // Claude finished speaking — start the 30s silence countdown unless a tool
+      // call is still in flight (handleToolCall fires its own response.create which
+      // produces another response.done; the countdown just resets cleanly).
+      if (RT.active && RT.uiState !== 'recording'){
+        rtSetStatus('live','Listening…');
+        rtStartCountdown();
       }
       break;
     }
@@ -6132,6 +6564,9 @@ function rtEnd(reason){
 }
 function rtCleanup(){
   RT.active=false;RT.connecting=false;
+  RT.pttHeld=false;
+  RT.focusMode=null;
+  rtCancelCountdown();
   if(RT.timer){clearInterval(RT.timer);RT.timer=null;}
   RT.startedAt=0;
   if(RT.dc){try{RT.dc.close();}catch(_){}RT.dc=null;}
@@ -6139,6 +6574,7 @@ function rtCleanup(){
   if(RT.micStream){RT.micStream.getTracks().forEach(t=>t.stop());RT.micStream=null;}
   RT.pendingToolCalls={};
   RT.transcriptIndex={};
+  setVoiceState('idle');
 }
 
 // Main call button
@@ -6147,14 +6583,78 @@ document.getElementById('rtCallBtn').addEventListener('click',()=>{
   else rtStart();
 });
 
-// Floating mic now routes to the voice tab + starts a call.
-document.getElementById('floatMic').addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelector('.tab[data-tab="voice"]').classList.add('active');
-  document.getElementById('voice').classList.add('active');
-  if(!localStorage.getItem(RT_KEY_STORAGE))return;
-  if(!RT.active&&!RT.connecting)rtStart();
+// -- Floating mic = PTT --
+// No more tab-switch on click. The mic stays inline so Kev can watch his chain
+// (or whatever tab he's on) react in real time as Claude calls tools.
+//   • No active session → click anywhere on the button starts a call (with
+//     'chain' focus mode if he triggered it from the Chain Builder tab).
+//   • Active session → mousedown/touchstart begins recording, mouseup/leave
+//     commits + asks for a response. PTT held during PURPLE (responding) is a
+//     barge-in: rtPttDown sends response.cancel so he can interrupt cleanly.
+const floatMicEl = document.getElementById('floatMic');
+function detectFocusMode(){
+  // If Kev is on the Chain Builder tab when he triggers voice, give the model
+  // a chain-focused opening so the conversation doesn't waste a get_context
+  // round-trip on something it can already see in the digest.
+  const activeTab = document.querySelector('.tab.active');
+  const tab = activeTab && activeTab.dataset ? activeTab.dataset.tab : '';
+  if (tab === 'chain') return 'chain';
+  return null;
+}
+floatMicEl.addEventListener('mousedown', e=>{
+  e.preventDefault();
+  if (!RT.active && !RT.connecting){
+    if (!localStorage.getItem(RT_KEY_STORAGE)){
+      toast('Save an OpenAI key on the Voice Chat tab first', true);
+      return;
+    }
+    RT.focusMode = detectFocusMode();
+    rtStart();
+    return;
+  }
+  rtPttDown();
+});
+floatMicEl.addEventListener('mouseup', ()=>rtPttUp());
+floatMicEl.addEventListener('mouseleave', ()=>{ if (RT.pttHeld) rtPttUp(); });
+floatMicEl.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  if (!RT.active && !RT.connecting){
+    if (!localStorage.getItem(RT_KEY_STORAGE)){ toast('Save an OpenAI key on the Voice Chat tab first', true); return; }
+    RT.focusMode = detectFocusMode();
+    rtStart();
+    return;
+  }
+  rtPttDown();
+}, {passive:false});
+floatMicEl.addEventListener('touchend', e=>{ e.preventDefault(); rtPttUp(); }, {passive:false});
+
+// -- Spacebar PTT shortcut --
+// Skipped while Kev is typing in any text field so it doesn't break editing.
+// Holding repeats keydown; we ignore those (e.repeat) so we don't spam rtPttDown.
+function isTypingTarget(t){
+  if (!t) return false;
+  const tag = t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  if (t.isContentEditable) return true;
+  // If a button or link has keyboard focus, let it consume Space — otherwise
+  // PTT would fire alongside the button's default activation.
+  if (tag === 'BUTTON' || tag === 'A') return true;
+  return false;
+}
+window.addEventListener('keydown', e=>{
+  if (e.code !== 'Space') return;
+  if (e.repeat) return;
+  if (isTypingTarget(e.target)) return;
+  if (!RT.active) return;
+  e.preventDefault();
+  rtPttDown();
+});
+window.addEventListener('keyup', e=>{
+  if (e.code !== 'Space') return;
+  if (isTypingTarget(e.target)) return;
+  if (!RT.active) return;
+  e.preventDefault();
+  rtPttUp();
 });
 
 // End call on page hide / unload so we don't leave the mic open.
@@ -6164,6 +6664,9 @@ window.addEventListener('beforeunload',()=>rtCleanup());
 rtLoadKey();
 rtLoadAntKey();
 rtLoadPrefs();
+// Kick the state machine into idle so the floating mic + START CALL button get
+// the breathing-green animation + tooltip on first paint.
+setVoiceState('idle');
 
 // ========== COST PANEL WIRING ==========
 document.getElementById('oaTopup').onclick=()=>window.open('https://platform.openai.com/settings/organization/billing/overview','_blank','noopener');
