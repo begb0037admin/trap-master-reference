@@ -511,8 +511,8 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
    persists across sessions in localStorage (trapMasterFloatMicPos_v1). State
    classes (state-idle / state-recording / state-responding / state-connecting
    / state-waiting + dict-* variants) drive colour + animation. */
-.floating-mic{position:fixed;top:80px;right:20px;left:auto;width:40px;height:40px;border-radius:50%;border:none;color:#fff;font-size:14px;font-weight:700;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;transition:background .15s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;z-index:200;touch-action:none}
-.floating-mic > svg{width:20px;height:20px;pointer-events:none}
+.floating-mic{position:fixed;top:80px;right:20px;left:auto;width:90px;height:90px;border-radius:50%;border:none;color:#fff;font-size:28px;font-weight:700;cursor:grab;box-shadow:0 6px 20px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;transition:background .15s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;z-index:200;touch-action:none}
+.floating-mic > svg{width:42px;height:42px;pointer-events:none}
 .floating-mic:hover{transform:scale(1.06)}
 .floating-mic:active:not(.dragging){transform:scale(0.96)}
 .floating-mic.dragging{cursor:grabbing;box-shadow:0 8px 20px rgba(0,0,0,.55);transition:none}
@@ -531,11 +531,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 /* Connecting — amber rotation */
 .floating-mic.state-connecting{background:#b45309;animation:mic-amber 1.2s ease-in-out infinite}
 /* Recording (PTT held) — red, solid */
-.floating-mic.state-recording{background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.35),0 2px 8px rgba(0,0,0,.5);animation:none}
+.floating-mic.state-recording{background:#dc2626;box-shadow:0 0 0 8px rgba(220,38,38,.35),0 4px 14px rgba(0,0,0,.5);animation:none}
 /* Claude responding — purple ring pulse */
 .floating-mic.state-responding{background:#7c3aed;animation:mic-purple 0.8s ease-in-out infinite}
 /* Waiting / countdown — purple, faster pulse, button text becomes the seconds */
-.floating-mic.state-waiting{background:#7c3aed;animation:mic-countdown 0.55s ease-in-out infinite;font-size:14px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.floating-mic.state-waiting{background:#7c3aed;animation:mic-countdown 0.55s ease-in-out infinite;font-size:34px;letter-spacing:0;font-variant-numeric:tabular-nums}
 .floating-mic.state-waiting.urgent{background:#9333ea;animation:mic-countdown-urgent 0.32s ease-in-out infinite}
 /* Spinner SVG used while connecting — independent rotation that runs alongside
    the amber pulse on the button (the pulse animates box-shadow, this rotates icon). */
@@ -6826,17 +6826,25 @@ async function rtStart(opts){
         voice,
         modalities:['audio','text']
       }});
-      // Kick off with a greeting request so the model opens the conversation.
-      // Greeting is picked from our time-aware pool (90 combos) and locked verbatim —
-      // do NOT fabricate context (e.g. "I see you're working on a drill track").
-      const greeting = pickGreeting();
-      // Chain-focus mode opens with a chain-aware line instead of the usual greeting,
-      // because Kev triggered voice from the Chain Builder so a generic "what are you
-      // working on" wastes a turn — he can already see the chain on screen.
-      const openInstr = RT.focusMode === 'chain'
-        ? `Open with a brief greeting using Kev's name (one short sentence — e.g. "Looking at your chain, Kev — got a sec?"), then ONE concrete observation about his current chain from the LIBRARY DIGEST above (empty bus, suspicious order, obvious missing utility). Two sentences max. Do NOT call get_context — the digest already has it. Then stop.`
-        : `Open by saying EXACTLY this line, verbatim, no additions, no embellishment, no claims about what Kev is currently working on: "${greeting}". Then stop and wait for him. Do NOT call any tools yet. Do NOT invent any awareness of his session — call get_context only if and when he asks for help with something specific.`;
-      rtSend({type:'response.create',response:{modalities:['audio','text'],instructions:openInstr}});
+      // Greeting only fires in always-on mode. In PTT mode Kev wants silence —
+      // he pushes when he has something to say, AI replies after. No "good
+      // morning" / "looking at your chain" intro that would burn credits and
+      // talk over a decision he's still making.
+      if (RT.mode !== 'ptt'){
+        // Greeting is picked from our time-aware pool (90 combos) and locked
+        // verbatim — do NOT fabricate context (e.g. "I see you're working on
+        // a drill track").
+        const greeting = pickGreeting();
+        // Chain-focus mode opens with a chain-aware line instead of the usual
+        // greeting, because Kev triggered voice from the Chain Builder so a
+        // generic "what are you working on" wastes a turn — he can already
+        // see the chain on screen. (Only relevant if always-on is toggled on
+        // for the chain mic; default is PTT and no greeting fires there.)
+        const openInstr = RT.focusMode === 'chain'
+          ? `Open with a brief greeting using Kev's name (one short sentence — e.g. "Looking at your chain, Kev — got a sec?"), then ONE concrete observation about his current chain from the LIBRARY DIGEST above (empty bus, suspicious order, obvious missing utility). Two sentences max. Do NOT call get_context — the digest already has it. Then stop.`
+          : `Open by saying EXACTLY this line, verbatim, no additions, no embellishment, no claims about what Kev is currently working on: "${greeting}". Then stop and wait for him. Do NOT call any tools yet. Do NOT invent any awareness of his session — call get_context only if and when he asks for help with something specific.`;
+        rtSend({type:'response.create',response:{modalities:['audio','text'],instructions:openInstr}});
+      }
     });
     RT.pc.addEventListener('connectionstatechange',()=>{
       const s=RT.pc.connectionState;
@@ -6844,6 +6852,11 @@ async function rtStart(opts){
         RT.active=true;RT.connecting=false;RT.startedAt=Date.now();RT.timer=setInterval(rtTickTimer,1000);
         rtSetStatus('live','Connected — listening');
         document.getElementById('rtCallLabel').textContent='End call';
+        // Drop the amber connecting ring as soon as the connection is up. In
+        // always-on mode the greeting will quickly flip this to 'responding';
+        // in PTT mode there's no greeting so 'idle' (green breathing pulse) is
+        // the correct visible state — "ready, push when you want to talk".
+        setVoiceState('idle');
         // Spacebar-started PTT: if Kev pressed space to start the session and
         // is still holding it now, begin recording immediately so the press
         // feels like a single uninterrupted gesture even though connection
