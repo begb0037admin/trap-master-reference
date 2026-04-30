@@ -3747,7 +3747,17 @@ const RT={
   // We track the held-state of space at module scope and queue a PTT-down to
   // fire from the connection-state hook below.
   spaceHeld:false,
-  pttQueuedFromSpace:false
+  pttQueuedFromSpace:false,
+  // -- End-of-speech detection (Web Audio analyser on the remote track) --
+  // The Realtime API fires response.done as soon as the SERVER has finished
+  // streaming audio, but the client's WebRTC buffer keeps playing for another
+  // 500-1500ms. Starting the auto-end countdown on response.done meant it ate
+  // into the AI's actual playback. We watch the remote audio level instead and
+  // only start the countdown after sustained silence.
+  audioCtx:null,
+  audioAnalyser:null,
+  audioData:null,
+  silenceWatchTimer:null
 };
 // Per-scope mic-mode preferences. The toggle on each tab writes to its own slot;
 // rtStart picks the slot that matches the calling scope. Defaults: chain → ptt
@@ -3951,10 +3961,17 @@ function rtPttDown(){
   if (RT.mode !== 'ptt') return; // Always-on calls don't accept PTT input
   RT.pttHeld = true;
   rtCancelCountdown();
-  // Barge-in: cancel any in-flight Claude response so we can speak immediately.
+  rtCancelSilenceWatch();
+  // Barge-in: cancel any in-flight Claude response AND drop the audio buffer
+  // that's already streaming to the speakers. response.cancel halts mid-flight
+  // generation server-side; output_audio_buffer.clear interrupts the audio
+  // playback that may still be draining after a response.done has fired —
+  // without this, holding space during the post-response 'waiting' state lets
+  // her keep talking from a buffered playback queue.
   if (RT.uiState === 'responding'){
     rtSend({type:'response.cancel'});
   }
+  rtSend({type:'output_audio_buffer.clear'});
   if (RT.micStream){
     RT.micStream.getAudioTracks().forEach(t => t.enabled = true);
   }
@@ -3978,17 +3995,26 @@ function rtPttUp(){
 }
 
 // -- Auto-end on silence --
-// When Claude finishes responding, start a 30s countdown shown in the call buttons.
-// Push PTT to extend (resets timer). 0 → call ends automatically — saves credits if Kev walks away.
+// After Claude finishes responding we start a 15s countdown shown in the call
+// buttons. PTT (or any sound from Claude) cancels it. 0 → call ends — saves
+// credits if Kev walks away.
+//
+// Two-stage start: response.done arrives BEFORE the audio buffer drains (the
+// server's done sending; the client takes another second or so to play out
+// what's queued). Starting the countdown right on response.done used to cut
+// her off mid-sentence. Instead we run a silence watcher first (analyser on
+// the remote audio track) and only start the actual countdown after ~800ms
+// of sustained silence in the playback.
+const COUNTDOWN_START_SEC = 15;
 function rtStartCountdown(){
   rtCancelCountdown();
-  RT.countdownSec = 30;
+  RT.countdownSec = COUNTDOWN_START_SEC;
   setVoiceState('waiting', {remainingSec: RT.countdownSec});
   RT.countdownTimer = setInterval(() => {
     RT.countdownSec--;
     if (RT.countdownSec <= 0){
       rtCancelCountdown();
-      rtEnd('Auto-ended after 30s of silence');
+      rtEnd('Auto-ended after ' + COUNTDOWN_START_SEC + 's of silence');
       return;
     }
     setVoiceState('waiting', {remainingSec: RT.countdownSec});
@@ -3996,6 +4022,43 @@ function rtStartCountdown(){
 }
 function rtCancelCountdown(){
   if (RT.countdownTimer){ clearInterval(RT.countdownTimer); RT.countdownTimer = null; }
+}
+// Returns true if the remote audio track is currently producing audible
+// signal. Reads the analyser's time-domain buffer and looks for any deviation
+// from the silent midpoint (128). Threshold of 4 catches normal speech without
+// being thrown off by stream noise floor.
+function rtRemoteAudioActive(){
+  if (!RT.audioAnalyser || !RT.audioData) return false;
+  RT.audioAnalyser.getByteTimeDomainData(RT.audioData);
+  let max = 0;
+  for (let i = 0; i < RT.audioData.length; i++){
+    const dev = Math.abs(RT.audioData[i] - 128);
+    if (dev > max) max = dev;
+  }
+  return max > 4;
+}
+function rtStartSilenceWatch(){
+  rtCancelSilenceWatch();
+  // No analyser available (older browser or setup error) — fall back to the
+  // original behaviour and start the countdown immediately. Better than no
+  // auto-end at all.
+  if (!RT.audioAnalyser){ rtStartCountdown(); return; }
+  const REQUIRED_SILENT_TICKS = 4; // 4 × 200ms = 800ms of continuous silence
+  let silentTicks = 0;
+  RT.silenceWatchTimer = setInterval(() => {
+    if (rtRemoteAudioActive()){
+      silentTicks = 0;
+      return;
+    }
+    silentTicks++;
+    if (silentTicks >= REQUIRED_SILENT_TICKS){
+      rtCancelSilenceWatch();
+      rtStartCountdown();
+    }
+  }, 200);
+}
+function rtCancelSilenceWatch(){
+  if (RT.silenceWatchTimer){ clearInterval(RT.silenceWatchTimer); RT.silenceWatchTimer = null; }
 }
 function rtFmtTime(ms){const s=Math.floor(ms/1000);const m=Math.floor(s/60);const r=s%60;return `${m}:${String(r).padStart(2,'0')}`;}
 function rtTickTimer(){
@@ -6674,7 +6737,29 @@ async function rtStart(opts){
     // 2. Set up peer connection + data channel + mic track.
     RT.pc=new RTCPeerConnection();
     const audioEl=document.getElementById('rtAudio');
-    RT.pc.ontrack=e=>{audioEl.srcObject=e.streams[0];};
+    RT.pc.ontrack=e=>{
+      audioEl.srcObject=e.streams[0];
+      // Wire a Web Audio analyser to the remote audio so we can tell when the
+      // AI's playback has actually finished (vs. just the server-side
+      // response.done event, which fires while audio is still draining).
+      try{
+        if (RT.audioCtx){ try{ RT.audioCtx.close(); }catch(_){} RT.audioCtx=null; }
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) throw new Error('no AudioContext');
+        RT.audioCtx = new Ctx();
+        const source = RT.audioCtx.createMediaStreamSource(e.streams[0]);
+        const an = RT.audioCtx.createAnalyser();
+        an.fftSize = 256;
+        an.smoothingTimeConstant = 0.4;
+        source.connect(an);
+        RT.audioAnalyser = an;
+        RT.audioData = new Uint8Array(an.frequencyBinCount);
+      }catch(err){
+        console.warn('[RT] audio analyser setup failed — falling back to immediate countdown:', err);
+        RT.audioAnalyser = null;
+        RT.audioData = null;
+      }
+    };
     RT.micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
     // -- PTT: mute mic by default; always-on: leave it live --
     // In PTT mode track.enabled=false sends silence at the WebRTC layer so
@@ -6807,7 +6892,10 @@ async function onRtEvent(e){
     // generates the reply.
     case 'input_audio_buffer.speech_started':
       rtSetStatus('live','You: speaking…');
-      if (RT.mode !== 'ptt') rtCancelCountdown();
+      if (RT.mode !== 'ptt'){
+        rtCancelCountdown();
+        rtCancelSilenceWatch();
+      }
       break;
     case 'input_audio_buffer.speech_stopped':rtSetStatus('live','Thinking…');break;
     case 'input_audio_buffer.committed':break;
@@ -6863,12 +6951,13 @@ async function onRtEvent(e){
         RT.usage.outText+=(usage.output_text_tokens)||(usage.output_token_details?.text_tokens)||0;
         rtRenderCost();
       }
-      // Claude finished speaking — start the 30s silence countdown unless a tool
-      // call is still in flight (handleToolCall fires its own response.create which
-      // produces another response.done; the countdown just resets cleanly).
+      // Claude finished SENDING audio — but the local WebRTC buffer keeps
+      // playing. Start a silence watcher on the remote track instead of the
+      // countdown directly; the countdown kicks in only after sustained
+      // silence so we don't cut her off mid-playback.
       if (RT.active && RT.uiState !== 'recording'){
         rtSetStatus('live','Listening…');
-        rtStartCountdown();
+        rtStartSilenceWatch();
       }
       break;
     }
@@ -6889,12 +6978,20 @@ function rtCleanup(){
   RT.active=false;RT.connecting=false;
   RT.pttHeld=false;
   RT.focusMode=null;
+  RT.spaceHeld=false;
+  RT.pttQueuedFromSpace=false;
   rtCancelCountdown();
+  rtCancelSilenceWatch();
   if(RT.timer){clearInterval(RT.timer);RT.timer=null;}
   RT.startedAt=0;
   if(RT.dc){try{RT.dc.close();}catch(_){}RT.dc=null;}
   if(RT.pc){try{RT.pc.close();}catch(_){}RT.pc=null;}
   if(RT.micStream){RT.micStream.getTracks().forEach(t=>t.stop());RT.micStream=null;}
+  // Tear down the audio analyser so a new call wires a fresh AudioContext to
+  // the new remote stream (Chrome holds onto closed contexts otherwise).
+  if(RT.audioCtx){try{RT.audioCtx.close();}catch(_){}RT.audioCtx=null;}
+  RT.audioAnalyser=null;
+  RT.audioData=null;
   RT.pendingToolCalls={};
   RT.transcriptIndex={};
   setVoiceState('idle');
@@ -7414,9 +7511,10 @@ function isTypingTarget(t){
   const tag = t.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
   if (t.isContentEditable) return true;
-  // If a button or link has keyboard focus, let it consume Space — otherwise
-  // PTT would fire alongside the button's default activation.
-  if (tag === 'BUTTON' || tag === 'A') return true;
+  // Buttons + links DELIBERATELY don't count — letting Space fall through to a
+  // focused button activates the browser's default Space-scroll-page behaviour
+  // on Chrome (focus often stays on the last-clicked tab button after switching
+  // tabs). PTT wins over button re-activation; users can re-click tabs anyway.
   return false;
 }
 window.addEventListener('keydown', e=>{
