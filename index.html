@@ -800,7 +800,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns. Floating mic is push-to-talk on this tab — toggle modes from the Voice Chat tab.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
-  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "📋 Snapshot → Claude" when dialed in — every snapshot is auto-saved as a Session Snapshot under the Voice Chat tab.</div>
+  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "Snapshot → Claude" when dialed in — every snapshot is auto-saved as a Session Snapshot under the Voice Chat tab.</div>
 </div>
 
 <div class="panel" id="meter">
@@ -1007,9 +1007,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <button class="btn ghost sm" id="journalExport">⬇ Export all</button>
     <button class="btn ghost sm" id="journalClear" title="Delete every saved snapshot below.">🗑 Clear snapshots</button>
   </div>
-  <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — hit <strong>📋 Snapshot → Claude</strong> to start your session log.</div></div>
+  <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — hit <strong>Snapshot → Claude</strong> to start your session log.</div></div>
 
-  <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Maag EQ4 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em> &nbsp;📜 Live transcript and session snapshots live just below.</div>
+  <div class="tip-box alt"><strong>How it works:</strong> your API key talks to OpenAI's Realtime API directly from this browser — audio in over WebRTC, audio back live. I've got tools for your chain, library, meters, and flags, so I can actually read and modify the workbench while we talk. Try: <em>"what's on my master bus?"</em>, <em>"add Maag EQ4 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em> &nbsp;Live transcript and session snapshots live just below.</div>
 
   <div class="tip-box warn" id="browserWarn" style="display:none;"><strong>Heads up:</strong> voice needs a secure context (HTTPS or localhost). Chrome blocks the mic on <code>file://</code> URLs — open this artifact via the Cowork sidebar, or serve the folder with <code>python3 -m http.server</code> and open <code>http://localhost:8000</code>. Safari is more forgiving but still needs mic permission.</div>
 
@@ -1060,7 +1060,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div id="aiChatImagePreview" style="display:none"></div>
     <input type="file" id="aiChatImageInput" accept="image/*" style="display:none">
     <div class="aichat-compose">
-      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click 📷 below." rows="9"></textarea>
+      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click Attach screenshot →" rows="9"></textarea>
       <div class="send-col">
         <button id="aiChatSend" type="button">Send ↵</button>
         <button id="aiChatImageBtn" type="button" title="Attach a screenshot — Claude can read meters, plugin settings, transcripts, anything visible">📷 Attach screenshot</button>
@@ -3280,7 +3280,7 @@ function journalAdd(text){
 }
 function renderJournal(){
   const list=document.getElementById('journalList'); if(!list) return;
-  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — hit <strong>📋 Snapshot → Claude</strong> from the Chain Builder to log a session, or use <strong>📜 TL;DR → Snapshot</strong> on the Chat with Claude tab to save a chat summary.</div>';return;}
+  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — hit <strong>Snapshot → Claude</strong> from the Chain Builder to log a session, or use <strong>TL;DR → Snapshot</strong> on the Chat with Claude tab to save a chat summary.</div>';return;}
   list.innerHTML=STATE.journal.map(e=>{
     const type = e.type || 'snapshot';
     const time = new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
