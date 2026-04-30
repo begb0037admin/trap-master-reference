@@ -4115,12 +4115,12 @@ function rtStartSilenceWatch(){
   // original behaviour and start the countdown immediately. Better than no
   // auto-end at all.
   if (!RT.audioAnalyser){ rtStartCountdown(); return; }
-  // 10 SECONDS of continuous silence required before the countdown starts.
-  // Earlier 800ms threshold cut Claude off when she paused mid-sentence —
-  // natural inter-clause pauses are 500-1500ms and she'd often resume after
-  // we'd already triggered the countdown. 10s is long enough that any pause
-  // is clearly the end of a thought, not breath / typing on her end.
-  const REQUIRED_SILENT_TICKS = 50; // 50 × 200ms = 10s
+  // 3 SECONDS of continuous silence required before the countdown starts.
+  // The 15s countdown still runs after this, so total auto-end window is
+  // 3s + 15s = 18s after Claude truly stops. 3s rides out natural breaths
+  // and inter-clause pauses without padding the dead time before the visible
+  // countdown kicks in.
+  const REQUIRED_SILENT_TICKS = 15; // 15 × 200ms = 3s
   let silentTicks = 0;
   RT.silenceWatchTimer = setInterval(() => {
     if (rtRemoteAudioActive()){
