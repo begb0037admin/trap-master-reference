@@ -4115,7 +4115,12 @@ function rtStartSilenceWatch(){
   // original behaviour and start the countdown immediately. Better than no
   // auto-end at all.
   if (!RT.audioAnalyser){ rtStartCountdown(); return; }
-  const REQUIRED_SILENT_TICKS = 4; // 4 × 200ms = 800ms of continuous silence
+  // 10 SECONDS of continuous silence required before the countdown starts.
+  // Earlier 800ms threshold cut Claude off when she paused mid-sentence —
+  // natural inter-clause pauses are 500-1500ms and she'd often resume after
+  // we'd already triggered the countdown. 10s is long enough that any pause
+  // is clearly the end of a thought, not breath / typing on her end.
+  const REQUIRED_SILENT_TICKS = 50; // 50 × 200ms = 10s
   let silentTicks = 0;
   RT.silenceWatchTimer = setInterval(() => {
     if (rtRemoteAudioActive()){
@@ -7013,6 +7018,14 @@ async function onRtEvent(e){
       // PTT release goes back to the silence countdown instead of ending
       // the call (since we know Kev meant to be in conversation).
       RT.hadAnyResponse = true;
+      // If Claude was paused long enough that we already started the silence
+      // countdown and now resumes speaking, cancel both so the call doesn't
+      // auto-end mid-sentence on a pause that turned out not to be the end.
+      // The next response.done will restart the silence watcher cleanly.
+      if (RT.countdownTimer || RT.silenceWatchTimer){
+        rtCancelCountdown();
+        rtCancelSilenceWatch();
+      }
       break;
     case 'response.audio.done':rtSetStatus('live','Listening…');break;
     case 'response.audio_transcript.delta':
@@ -7356,6 +7369,16 @@ function dictStopAlwaysOn(){
 }
 
 // Land a transcript in #aiChatInput. PTT just appends. Always-on appends + sends.
+//
+// PTT MODE: do NOT focus the textarea after dropping the transcript. Auto-
+// focusing meant the very next spacebar press went into the textarea (typing
+// a space) instead of triggering PTT — Kev had to click Send before he could
+// PTT again. The user model is: PTT is the primary verb; clicking the
+// textarea is the explicit way to switch to typing/editing mode. Mouse click
+// = secondary, PTT = primary.
+//
+// ALWAYS-ON MODE: focus is moot because we auto-send the transcript anyway,
+// but we leave the textarea unfocused too for consistency.
 function dictDeliverTranscript(text, mode){
   const input = document.getElementById('aiChatInput');
   if (!input) return;
@@ -7364,7 +7387,6 @@ function dictDeliverTranscript(text, mode){
   // in whitespace — keeps successive utterances readable.
   const piece = (cur && !/\s$/.test(cur)) ? ' ' + text : text;
   input.value = cur + piece;
-  input.focus();
   input.scrollTop = input.scrollHeight;
   // Re-fire any input listeners (the Send button enables/disables based on it).
   input.dispatchEvent(new Event('input', {bubbles:true}));
