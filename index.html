@@ -541,6 +541,25 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
    the amber pulse on the button (the pulse animates box-shadow, this rotates icon). */
 .floating-mic .mic-spin{animation:mic-spin 0.9s linear infinite;transform-origin:50% 50%}
 @keyframes mic-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* In-call indicator — small red dot that blinks in the top-right corner
+   whenever a Realtime session is live. The state-* colour gives a clear cue
+   while recording / responding / waiting, but state-idle in-call looks
+   identical to pre-call idle without this — Kev couldn't tell a stranded PTT
+   session from "ready to start". The dot is the unambiguous signal. */
+.floating-mic{position:fixed} /* re-anchors so ::after positioning is reliable in stacking contexts */
+.floating-mic.in-call::after{
+  content:'';
+  position:absolute;
+  top:6px;right:6px;
+  width:14px;height:14px;
+  background:#dc2626;
+  border:2px solid #fff;
+  border-radius:50%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.3);
+  animation:mic-live-blink 1.6s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes mic-live-blink{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes mic-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.55),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 8px rgba(16,163,127,0),0 2px 8px rgba(0,0,0,.4)}}
 @keyframes mic-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.65),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 10px rgba(251,191,36,0),0 2px 8px rgba(0,0,0,.4)}}
 @keyframes mic-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.6),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 10px rgba(167,139,250,0),0 2px 8px rgba(0,0,0,.4)}}
@@ -778,15 +797,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <button class="btn ghost sm" id="presetsBtn">📦 Load preset</button>
     <button class="btn ghost sm" id="autoFillBtn" title="Single Claude Haiku call — fills missing settings, revises ones that need updating, keeps the rest. ~$0.02 per click.">✨ Auto-fill settings</button>
     <button class="btn ghost sm" id="revertFillBtn" title="Restore the chain to the state before the last auto-fill" style="display:none">↺ Revert last fill</button>
-    <div class="voice-mode-toggle" data-scope="chain" title="Voice mode for the floating mic on this tab">
-      <span class="vmt-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg>Mic mode:</span>
-      <button class="vmt-btn" data-mode="ptt">Push to talk</button>
-      <button class="vmt-btn" data-mode="always-on">Always on</button>
-    </div>
-    <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns.</span>
+    <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns. Floating mic is push-to-talk on this tab — toggle modes from the Voice Chat tab.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
-  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "📋 Snapshot → Claude" when dialed in — every snapshot is auto-saved to the 📜 Journal.</div>
+  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "📋 Snapshot → Claude" when dialed in — every snapshot is auto-saved as a Session Snapshot under the Voice Chat tab.</div>
 </div>
 
 <div class="panel" id="meter">
@@ -979,6 +993,10 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <div class="rt-transcript" id="rtTranscript">
     <div class="rt-placeholder">Transcript will appear here once the call starts.</div>
   </div>
+  <div class="journal-toolbar">
+    <div style="flex:1"></div>
+    <button class="btn ghost sm" id="rtTranscriptClear" title="Wipe the on-screen transcript. Doesn't affect saved snapshots.">🗑 Clear transcript</button>
+  </div>
 
   <div class="section-head">
     <h2><span class="sec-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><polyline points="16,4 16,7 19,7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>Session Snapshots</h2>
@@ -987,7 +1005,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <div class="journal-toolbar">
     <div style="flex:1"></div>
     <button class="btn ghost sm" id="journalExport">⬇ Export all</button>
-    <button class="btn ghost sm" id="journalClear">🗑 Clear</button>
+    <button class="btn ghost sm" id="journalClear" title="Delete every saved snapshot below.">🗑 Clear snapshots</button>
   </div>
   <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — hit <strong>📋 Snapshot → Claude</strong> to start your session log.</div></div>
 
@@ -1027,7 +1045,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <option value="gpt-4o-mini-tts">4o-mini-tts (expressive)</option>
         </select>
       </span>
-      <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save it as a Session Snapshot under the Voice Chat tab">📜 TL;DR → Journal</button>
+      <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save it as a Session Snapshot under the Voice Chat tab">📜 TL;DR → Snapshot</button>
       <button class="btn purple sm" id="aiChatImportPlugins" title="Paste a messy plugin list — Claude parses + normalises and adds them to your library">✨ Import plugins</button>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history">🗑 Clear chat</button>
       <div class="voice-mode-toggle" data-scope="aichat" title="How the floating mic dictates into this chat. PTT = hold to record, drops the transcript into the input box for review. Always-on = each utterance auto-sends to Claude.">
@@ -3262,7 +3280,7 @@ function journalAdd(text){
 }
 function renderJournal(){
   const list=document.getElementById('journalList'); if(!list) return;
-  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No entries yet — hit <strong>📋 Snapshot → Claude</strong> from the Chain Builder to log a session, or use <strong>📜 TL;DR → Journal</strong> on the Chat with Claude tab to save a chat summary.</div>';return;}
+  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — hit <strong>📋 Snapshot → Claude</strong> from the Chain Builder to log a session, or use <strong>📜 TL;DR → Snapshot</strong> on the Chat with Claude tab to save a chat summary.</div>';return;}
   list.innerHTML=STATE.journal.map(e=>{
     const type = e.type || 'snapshot';
     const time = new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -3321,8 +3339,21 @@ function exportJournal(){
   copyToClipboard(lines.join('\n'),'Full journal copied to clipboard');
 }
 document.getElementById('journalClear').onclick=()=>{
-  if(!confirm('Clear all journal entries? This cannot be undone.')) return;
-  STATE.journal=[]; renderJournal(); saveState(); toast('Journal cleared');
+  if(!confirm('Clear all session snapshots? This cannot be undone.')) return;
+  STATE.journal=[]; renderJournal(); saveState(); toast('Snapshots cleared');
+};
+// Clear the on-screen Live Voice Transcript. Doesn't touch saved snapshots
+// (those live in STATE.journal). Restores the placeholder so the panel still
+// reads as something rather than an empty box.
+document.getElementById('rtTranscriptClear').onclick=()=>{
+  const el = document.getElementById('rtTranscript');
+  if (!el) return;
+  el.innerHTML = '<div class="rt-placeholder">Transcript will appear here once the call starts.</div>';
+  // The transcript index keys items by item_id so Realtime delta events can
+  // append to the right turn — wipe it so a stale id can't reattach text to
+  // a removed DOM node mid-call.
+  RT.transcriptIndex = {};
+  toast('Transcript cleared');
 };
 document.getElementById('journalExport').onclick=exportJournal;
 
@@ -3748,6 +3779,21 @@ const RT={
   // fire from the connection-state hook below.
   spaceHeld:false,
   pttQueuedFromSpace:false,
+  // -- Mouse-driven session start (mirror of the spacebar flow) --
+  // Mousedown on the floating mic in PTT mode now starts a session AND queues
+  // a PTT-down to fire when the connection completes — same single-gesture
+  // behaviour as space. Without this, a quick tap-and-release used to start a
+  // session and then leave it stranded with the mic muted (no audio committed,
+  // no greeting, no obvious sign anything happened).
+  mouseHeldOnMic:false,
+  pttQueuedFromMouse:false,
+  // Timestamp of the most recent PTT-down. Used to discard buffers that were
+  // held for less than ~300ms (an accidental tap with no real speech).
+  pttDownAt:0,
+  // True after at least one Claude response has played in this session. If
+  // false and the user cancels an empty PTT, we end the call entirely rather
+  // than leave them in a stranded session they didn't realise was open.
+  hadAnyResponse:false,
   // -- End-of-speech detection (Web Audio analyser on the remote track) --
   // The Realtime API fires response.done as soon as the SERVER has finished
   // streaming audio, but the client's WebRTC buffer keeps playing for another
@@ -3773,7 +3819,9 @@ function loadVoiceModePrefs(){
     const raw = localStorage.getItem(VOICE_MODE_PREFS_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
-    if (d.chain === 'ptt' || d.chain === 'always-on') VOICE_MODE_PREFS.chain = d.chain;
+    // Chain is now locked to PTT (no user toggle). We ignore any persisted
+    // 'always-on' on chain so an old value can't slip through.
+    VOICE_MODE_PREFS.chain = 'ptt';
     if (d.voice === 'ptt' || d.voice === 'always-on') VOICE_MODE_PREFS.voice = d.voice;
     if (d.aichat === 'ptt' || d.aichat === 'always-on') VOICE_MODE_PREFS.aichat = d.aichat;
   } catch(_){}
@@ -3960,6 +4008,7 @@ function rtPttDown(){
   if (!RT.active) return; // No session — start path is handled by the click handlers
   if (RT.mode !== 'ptt') return; // Always-on calls don't accept PTT input
   RT.pttHeld = true;
+  RT.pttDownAt = Date.now();
   rtCancelCountdown();
   rtCancelSilenceWatch();
   // Barge-in: cancel any in-flight Claude response AND drop the audio buffer
@@ -3979,14 +4028,37 @@ function rtPttDown(){
   setVoiceState('recording');
   rtSetStatus('live','You: speaking…');
 }
+// Minimum hold time before we'll commit the captured audio. Below this we
+// assume the press was an accidental tap (no real speech) and discard the
+// buffer instead of paying OpenAI to transcribe a click. Tuned by ear: very
+// short utterances like "yes" / "no" need ~200-300ms; this is conservative.
+const PTT_MIN_HOLD_MS = 300;
 function rtPttUp(){
   if (!RT.pttHeld) return;
   RT.pttHeld = false;
   if (!RT.active) return;
   if (RT.mode !== 'ptt') return;
   if (RT.uiState !== 'recording') return;
+  // Mute the track so any audio that's still in the WebRTC pipe doesn't reach
+  // OpenAI after we've decided what to do with the buffer.
   if (RT.micStream){
     RT.micStream.getAudioTracks().forEach(t => t.enabled = false);
+  }
+  const heldMs = Date.now() - (RT.pttDownAt || 0);
+  if (heldMs < PTT_MIN_HOLD_MS){
+    // Accidental tap. Drop whatever we captured without committing. If this
+    // was a brand-new session with no AI turn yet, end the call entirely so
+    // Kev isn't left in a stranded session he didn't realise he started.
+    rtSend({type:'input_audio_buffer.clear'});
+    if (!RT.hadAnyResponse){
+      rtEnd('Tap too short — call cancelled');
+      return;
+    }
+    // Mid-conversation false start — just go back to the silence countdown.
+    setVoiceState('idle');
+    rtSetStatus('live','Listening…');
+    rtStartCountdown();
+    return;
   }
   rtSend({type:'input_audio_buffer.commit'});
   rtSend({type:'response.create'});
@@ -6852,6 +6924,12 @@ async function rtStart(opts){
         RT.active=true;RT.connecting=false;RT.startedAt=Date.now();RT.timer=setInterval(rtTickTimer,1000);
         rtSetStatus('live','Connected — listening');
         document.getElementById('rtCallLabel').textContent='End call';
+        // Mark the floating mic as in-call so the red blinking dot lights up.
+        // This is the only visual cue that tells "session live, mic idle, push
+        // when ready" apart from "no session, click to start" — both render as
+        // green breathing in PTT mode otherwise.
+        const fm = document.getElementById('floatMic');
+        if (fm) fm.classList.add('in-call');
         // Drop the amber connecting ring as soon as the connection is up. In
         // always-on mode the greeting will quickly flip this to 'responding';
         // in PTT mode there's no greeting so 'idle' (green breathing pulse) is
@@ -6864,6 +6942,12 @@ async function rtStart(opts){
         if (RT.pttQueuedFromSpace){
           RT.pttQueuedFromSpace = false;
           if (RT.spaceHeld && RT.mode === 'ptt') rtPttDown();
+        }
+        // Same flow for a press-and-hold on the floating mic — start recording
+        // automatically if the press is still active when connection lands.
+        if (RT.pttQueuedFromMouse){
+          RT.pttQueuedFromMouse = false;
+          if (RT.mouseHeldOnMic && RT.mode === 'ptt') rtPttDown();
         }
       }
       else if(s==='failed'||s==='disconnected'||s==='closed'){if(RT.active||RT.connecting)rtEnd('Connection '+s);}
@@ -6925,6 +7009,10 @@ async function onRtEvent(e){
     case 'response.audio.delta':
       rtSetStatus('speaking','AI speaking…');
       if (RT.uiState !== 'responding' && RT.uiState !== 'recording') setVoiceState('responding');
+      // Sticky flag — once we've heard her speak in this session, an empty
+      // PTT release goes back to the silence countdown instead of ending
+      // the call (since we know Kev meant to be in conversation).
+      RT.hadAnyResponse = true;
       break;
     case 'response.audio.done':rtSetStatus('live','Listening…');break;
     case 'response.audio_transcript.delta':
@@ -6993,6 +7081,14 @@ function rtCleanup(){
   RT.focusMode=null;
   RT.spaceHeld=false;
   RT.pttQueuedFromSpace=false;
+  RT.mouseHeldOnMic=false;
+  RT.pttQueuedFromMouse=false;
+  RT.pttDownAt=0;
+  RT.hadAnyResponse=false;
+  // Drop the in-call indicator class so the floating mic looks "available"
+  // again, not "session live".
+  const fm = document.getElementById('floatMic');
+  if (fm) fm.classList.remove('in-call');
   rtCancelCountdown();
   rtCancelSilenceWatch();
   if(RT.timer){clearInterval(RT.timer);RT.timer=null;}
@@ -7333,6 +7429,11 @@ function micStartFromFloat(){
   }
   const sm = micScopeAndMode();
   RT.focusMode = sm.focus || null;
+  // Single-gesture PTT: if this is a press-and-hold to start a PTT session,
+  // queue rtPttDown to fire as soon as the connection completes (mirror of the
+  // pttQueuedFromSpace flow). Without this, hold-to-start created a session
+  // but never recorded — a quick release left it stranded in the background.
+  if (sm.mode === 'ptt') RT.pttQueuedFromMouse = true;
   rtStart({mode: sm.mode});
   // Tabs with a focus mode (chain / library / eq / knowledge) keep focus so
   // Kev can watch their tools fire. Everything else jumps to Voice Chat so
@@ -7455,6 +7556,7 @@ floatMicEl.addEventListener('mousedown', e=>{
     dictPttDown();
     return;
   }
+  RT.mouseHeldOnMic = true;
   if (!RT.active && !RT.connecting){
     micStartFromFloat();
     return;
@@ -7468,11 +7570,22 @@ floatMicEl.addEventListener('mouseup', ()=>{
   // If this press was a drag, eat the click — saving the new position is the
   // only thing that should happen on release.
   const wasDrag = dragEnd();
-  if (wasDrag) return;
+  if (wasDrag){ RT.mouseHeldOnMic = false; return; }
   if (activeTabId() === 'aichat'){
+    RT.mouseHeldOnMic = false;
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
     return;
   }
+  // Released BEFORE the session finished connecting — abort the session
+  // entirely. Without this, a quick tap leaves a stranded background call
+  // that costs credits and ticks a timer Kev can't see.
+  if (RT.connecting && RT.pttQueuedFromMouse){
+    RT.pttQueuedFromMouse = false;
+    RT.mouseHeldOnMic = false;
+    rtEnd('Released before connect — call cancelled');
+    return;
+  }
+  RT.mouseHeldOnMic = false;
   if (!RT.active && !RT.connecting) return;
   if (RT.mode === 'ptt'){ rtPttUp(); return; }
   // Always-on: a click on an active call ends it.
@@ -7498,17 +7611,26 @@ floatMicEl.addEventListener('touchstart', e=>{
     dictPttDown();
     return;
   }
+  RT.mouseHeldOnMic = true;
   if (!RT.active && !RT.connecting){ micStartFromFloat(); return; }
   if (RT.mode === 'ptt') rtPttDown();
 }, {passive:false});
 floatMicEl.addEventListener('touchend', e=>{
   e.preventDefault();
   const wasDrag = dragEnd();
-  if (wasDrag) return;
+  if (wasDrag){ RT.mouseHeldOnMic = false; return; }
   if (activeTabId() === 'aichat'){
+    RT.mouseHeldOnMic = false;
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
     return;
   }
+  if (RT.connecting && RT.pttQueuedFromMouse){
+    RT.pttQueuedFromMouse = false;
+    RT.mouseHeldOnMic = false;
+    rtEnd('Released before connect — call cancelled');
+    return;
+  }
+  RT.mouseHeldOnMic = false;
   if (!RT.active && !RT.connecting) return;
   if (RT.mode === 'ptt'){ rtPttUp(); return; }
   rtEnd();
