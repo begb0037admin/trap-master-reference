@@ -7545,6 +7545,15 @@ window.addEventListener('resize', () => {
 // PTT/dict recording started here is cancelled inside dragMove.
 floatMicEl.addEventListener('mousedown', e=>{
   e.preventDefault();
+  // Steal focus away from any text input. e.preventDefault() above stops the
+  // default focus shift on mousedown — without this blur, the textarea on the
+  // AI Chat tab keeps focus after a paste, so subsequent spacebar presses go
+  // to the textarea (typing a space) instead of triggering PTT. Blur unblocks
+  // the spacebar shortcut and makes the click-then-hold flow work cleanly.
+  const ae = document.activeElement;
+  if (ae && ae !== floatMicEl && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)){
+    try{ ae.blur(); }catch(_){}
+  }
   dragStart(e.clientX, e.clientY);
   if (activeTabId() === 'aichat'){
     const mode = VOICE_MODE_PREFS.aichat;
@@ -7601,6 +7610,12 @@ floatMicEl.addEventListener('mouseleave', ()=>{
 });
 floatMicEl.addEventListener('touchstart', e=>{
   e.preventDefault();
+  // Mirror of the mousedown blur — pastes on iPad keep the textarea focused
+  // and would swallow the (on-screen) spacebar otherwise.
+  const ae = document.activeElement;
+  if (ae && ae !== floatMicEl && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)){
+    try{ ae.blur(); }catch(_){}
+  }
   const t = e.touches[0]; if (t) dragStart(t.clientX, t.clientY);
   if (activeTabId() === 'aichat'){
     const mode = VOICE_MODE_PREFS.aichat;
