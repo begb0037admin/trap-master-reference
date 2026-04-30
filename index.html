@@ -35,12 +35,18 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .btn.purple{background:#a855f7;color:#fff;box-shadow:0 0 0 1px #c084fc inset}
 .btn.purple:hover{background:#9333ea;box-shadow:0 0 0 1px #d8b4fe inset}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #374151;margin-bottom:18px}
-.tab{background:transparent;color:#9ca3af;border:none;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.2px;display:inline-flex;align-items:center;gap:7px;transition:color .12s,background .12s,border-color .12s}
+.tabs{display:flex;flex-wrap:wrap;gap:14px;border-bottom:1px solid #374151;margin-bottom:18px;align-items:center}
+.tab{background:transparent;color:#9ca3af;border:none;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.2px;display:inline-flex;align-items:center;gap:7px;transition:color .12s,background .12s,border-color .12s,font-size .15s,transform .15s}
 .tab:hover{color:#d1d5db;background:rgba(255,255,255,.02)}
-.tab.active{color:#a78bfa;border-bottom-color:#a78bfa}
-.tab.active-section{color:#34d399;border-bottom-color:#34d399}
+/* Section accents: tabs that are conceptually "always green" (Chain Builder,
+   Diagnose, Chat with Claude) keep the green TEXT colour even when not active,
+   but the underline stays clear until the tab is selected. Same idea for the
+   Voice Chat tab in orange. The selected tab gets the underline + a 16px size
+   bump + a tiny scale lift so it visibly dominates the row. */
+.tab.active-section{color:#34d399}
 .tab.voice-tab{color:#f97316}
+.tab.active{color:#a78bfa;border-bottom-color:#a78bfa;font-size:16px;font-weight:700;transform:translateY(-1px)}
+.tab.active-section.active{color:#34d399;border-bottom-color:#34d399}
 .tab.voice-tab.active{color:#fb923c;border-bottom-color:#fb923c}
 /* Tab icon pop — slightly larger, soft shadow lifts the silhouette off the dark background */
 .tab-ico{font-size:17px;line-height:1;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(255,255,255,.08));transition:transform .12s,filter .12s}
@@ -508,7 +514,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
    / state-connecting / state-waiting + dict-* variants) drive the colour and
    animation just like before; the rings are scaled down to suit the smaller
    40px footprint. */
-.floating-mic{margin-left:auto;align-self:center;width:40px;height:40px;border-radius:50%;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:inline-flex;align-items:center;justify-content:center;transition:background .15s,transform .12s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;flex-shrink:0}
+.floating-mic{align-self:center;width:40px;height:40px;border-radius:50%;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:inline-flex;align-items:center;justify-content:center;transition:background .15s,transform .12s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;flex-shrink:0;margin-left:6px}
 .floating-mic > svg{width:20px;height:20px}
 .floating-mic:hover{transform:scale(1.08)}
 .floating-mic:active{transform:scale(0.96)}
@@ -759,7 +765,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <div class="tabs">
   <button class="tab active active-section" data-tab="chain"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="3" rx="0.6"/><rect x="3" y="8" width="18" height="3" rx="0.6"/><rect x="3" y="13" width="18" height="3" rx="0.6"/><rect x="3" y="18" width="18" height="3" rx="0.6"/><circle cx="9" cy="4.5" r="1" fill="#fff" stroke="none"/><circle cx="14" cy="9.5" r="1" fill="#fff" stroke="none"/><circle cx="7" cy="14.5" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="19.5" r="1" fill="#fff" stroke="none"/></svg></span> Chain Builder</button>
   <button class="tab active-section" data-tab="meter"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><line x1="15" y1="15" x2="20" y2="20"/><polyline points="7,10.5 9,8.5 11,12.5 13,9.5 14,10.5"/></svg></span> Diagnose</button>
-  <button class="tab" data-tab="aichat" style="color:#34d399;"><span class="tab-ico pop"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H10l-4.5 3.5V16.5h-0a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="12" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="15.5" cy="10" r="0.7" fill="#fff" stroke="none"/></svg></span> Chat with Claude</button>
+  <button class="tab active-section" data-tab="aichat"><span class="tab-ico pop"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H10l-4.5 3.5V16.5h-0a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="12" cy="10" r="0.7" fill="#fff" stroke="none"/><circle cx="15.5" cy="10" r="0.7" fill="#fff" stroke="none"/></svg></span> Chat with Claude</button>
   <button class="tab voice-tab" data-tab="voice"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span> Voice Chat</button>
   <button class="tab" data-tab="knowledge" style="color:#fbbf24;"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z"/><line x1="7" y1="8" x2="9.5" y2="8"/><line x1="7" y1="11" x2="9.5" y2="11"/><line x1="14.5" y1="8" x2="17" y2="8"/><line x1="14.5" y1="11" x2="17" y2="11"/></svg></span> Knowledge</button>
   <button class="tab" data-tab="eq"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="14" x2="6" y2="14"/><line x1="6" y1="14" x2="9" y2="6"/><line x1="9" y1="6" x2="12" y2="20"/><line x1="12" y1="20" x2="15" y2="9"/><line x1="15" y1="9" x2="18" y2="13"/><line x1="18" y1="13" x2="21" y2="13"/></svg></span> Mastering Reference</button>
@@ -3739,7 +3745,13 @@ const RT={
   countdownTimer:null,             // setInterval id for the 30s auto-end countdown
   countdownSec:30,                 // seconds remaining in auto-end countdown
   focusMode:null,                  // 'chain' when started from Chain Builder, else null
-  mode:'always-on'                 // 'ptt' | 'always-on' — set at rtStart from the active scope's preference
+  mode:'always-on',                // 'ptt' | 'always-on' — set at rtStart from the active scope's preference
+  // Spacebar-driven session start: pressing space on a PTT tab with no active
+  // session should both START the session AND begin recording once it connects.
+  // We track the held-state of space at module scope and queue a PTT-down to
+  // fire from the connection-state hook below.
+  spaceHeld:false,
+  pttQueuedFromSpace:false
 };
 // Per-scope mic-mode preferences. The toggle on each tab writes to its own slot;
 // rtStart picks the slot that matches the calling scope. Defaults: chain → ptt
@@ -6747,7 +6759,19 @@ async function rtStart(opts){
     });
     RT.pc.addEventListener('connectionstatechange',()=>{
       const s=RT.pc.connectionState;
-      if(s==='connected'){RT.active=true;RT.connecting=false;RT.startedAt=Date.now();RT.timer=setInterval(rtTickTimer,1000);rtSetStatus('live','Connected — listening');document.getElementById('rtCallLabel').textContent='End call';}
+      if(s==='connected'){
+        RT.active=true;RT.connecting=false;RT.startedAt=Date.now();RT.timer=setInterval(rtTickTimer,1000);
+        rtSetStatus('live','Connected — listening');
+        document.getElementById('rtCallLabel').textContent='End call';
+        // Spacebar-started PTT: if Kev pressed space to start the session and
+        // is still holding it now, begin recording immediately so the press
+        // feels like a single uninterrupted gesture even though connection
+        // took a moment.
+        if (RT.pttQueuedFromSpace){
+          RT.pttQueuedFromSpace = false;
+          if (RT.spaceHeld && RT.mode === 'ptt') rtPttDown();
+        }
+      }
       else if(s==='failed'||s==='disconnected'||s==='closed'){if(RT.active||RT.connecting)rtEnd('Connection '+s);}
     });
 
@@ -7294,9 +7318,11 @@ floatMicEl.addEventListener('touchend', e=>{
   rtEnd();
 }, {passive:false});
 
-// -- Spacebar PTT shortcut --
-// Skipped while Kev is typing in any text field so it doesn't break editing.
-// Holding repeats keydown; we ignore those (e.repeat) so we don't spam rtPttDown.
+// -- Spacebar — context-aware "do the right thing" key --
+// On a PTT tab pressing space STARTS a session AND begins recording once the
+// connection opens (no need to click the mic first). On Voice Chat in always-on
+// mode, space starts the call on first press and ends it on the second. On AI
+// Chat, space holds for dictation (PTT only). Skipped while typing.
 function isTypingTarget(t){
   if (!t) return false;
   const tag = t.tagName;
@@ -7311,30 +7337,75 @@ window.addEventListener('keydown', e=>{
   if (e.code !== 'Space') return;
   if (e.repeat) return;
   if (isTypingTarget(e.target)) return;
-  // AI Chat dictation (PTT mode only) gets the spacebar too. We deliberately
-  // skip 'always-on' so a stray space press doesn't toggle the session off.
-  if (activeTabId() === 'aichat' && VOICE_MODE_PREFS.aichat === 'ptt' && !DICT.recording){
-    e.preventDefault();
-    dictPttDown();
+  e.preventDefault();
+  RT.spaceHeld = true;
+  const tab = activeTabId();
+
+  // ---- AI Chat: dictation only (no Realtime sessions). PTT mode only —
+  // always-on stays on the mic-button click so a stray spacebar can't toggle
+  // the session off mid-thought.
+  if (tab === 'aichat'){
+    if (VOICE_MODE_PREFS.aichat === 'ptt' && !DICT.recording) dictPttDown();
     return;
   }
-  if (!RT.active) return;
-  if (RT.mode !== 'ptt') return; // Always-on calls don't use spacebar
-  e.preventDefault();
-  rtPttDown();
+
+  // ---- Voice Chat: space toggles the call.
+  if (tab === 'voice'){
+    if (RT.active){
+      if (RT.mode === 'ptt') rtPttDown();
+      else rtEnd();   // always-on session: space ends the call
+      return;
+    }
+    if (RT.connecting) return;
+    if (!localStorage.getItem(RT_KEY_STORAGE)){ toast('Save an OpenAI key first', true); return; }
+    RT.focusMode = null;
+    const startMode = VOICE_MODE_PREFS.voice;
+    if (startMode === 'ptt') RT.pttQueuedFromSpace = true;
+    rtStart({mode: startMode});
+    return;
+  }
+
+  // ---- Focus tabs (chain / library / eq / knowledge): pressing space starts
+  // a PTT session. On connect we'll fire rtPttDown if the space is still held.
+  if (FOCUS_TAB_SCOPES[tab]){
+    if (RT.active){
+      if (RT.mode === 'ptt') rtPttDown();
+      return;
+    }
+    if (RT.connecting) return;
+    if (!localStorage.getItem(RT_KEY_STORAGE)){ toast('Save an OpenAI key first', true); return; }
+    const cfg = FOCUS_TAB_SCOPES[tab];
+    RT.focusMode = cfg.focus;
+    const mode = (tab === 'chain') ? VOICE_MODE_PREFS.chain : cfg.mode;
+    if (mode === 'ptt') RT.pttQueuedFromSpace = true;
+    rtStart({mode});
+    return;
+  }
+
+  // ---- Other tabs (Diagnose): PTT during an active session, otherwise no-op
+  // — we don't auto-start sessions from random tabs to keep credit cost
+  // predictable. Kev can still click the mic to start.
+  if (RT.active && RT.mode === 'ptt') rtPttDown();
 });
 window.addEventListener('keyup', e=>{
   if (e.code !== 'Space') return;
   if (isTypingTarget(e.target)) return;
+  e.preventDefault();
+  RT.spaceHeld = false;
+
+  // Dictation release
   if (DICT.recording && VOICE_MODE_PREFS.aichat === 'ptt'){
-    e.preventDefault();
     dictPttUp();
     return;
   }
-  if (!RT.active) return;
-  if (RT.mode !== 'ptt') return;
-  e.preventDefault();
-  rtPttUp();
+
+  // RT PTT release (only if currently held — protects against a release while
+  // the queued-from-space session is still mid-connect).
+  if (RT.active && RT.mode === 'ptt' && RT.pttHeld) rtPttUp();
+
+  // If the session was queued from space and Kev let go before it opened,
+  // cancel the queue so we don't grab audio against his will once it connects.
+  if (RT.pttQueuedFromSpace) RT.pttQueuedFromSpace = false;
 });
 
 // End call on page hide / unload so we don't leave the mic open.
