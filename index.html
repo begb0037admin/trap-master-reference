@@ -506,18 +506,16 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .speaking-indicator{height:3px;background:#374151;border-radius:2px;overflow:hidden;margin-top:8px;position:relative}
 .speaking-indicator.active::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#34d399,transparent);animation:slide 1.8s infinite}
 @keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-/* PTT mic — anchored at the right end of the .tabs strip (where the Journal
-   tab used to live). Used to be position:fixed bottom-right, but that fell
-   off-screen when the browser window was narrow — anchoring it inside the tab
-   row lets it scale with the layout and sit predictably under the toolbar
-   Reset button. State classes (state-idle / state-recording / state-responding
-   / state-connecting / state-waiting + dict-* variants) drive the colour and
-   animation just like before; the rings are scaled down to suit the smaller
-   40px footprint. */
-.floating-mic{align-self:center;width:40px;height:40px;border-radius:50%;border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:inline-flex;align-items:center;justify-content:center;transition:background .15s,transform .12s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;flex-shrink:0;margin-left:6px}
-.floating-mic > svg{width:20px;height:20px}
-.floating-mic:hover{transform:scale(1.08)}
-.floating-mic:active{transform:scale(0.96)}
+/* PTT mic — floats above the page and is draggable. Default position is
+   top-right of the viewport; user can grab it and drop it anywhere. Position
+   persists across sessions in localStorage (trapMasterFloatMicPos_v1). State
+   classes (state-idle / state-recording / state-responding / state-connecting
+   / state-waiting + dict-* variants) drive colour + animation. */
+.floating-mic{position:fixed;top:80px;right:20px;left:auto;width:40px;height:40px;border-radius:50%;border:none;color:#fff;font-size:14px;font-weight:700;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;transition:background .15s,box-shadow .15s;font-family:inherit;user-select:none;-webkit-user-select:none;z-index:200;touch-action:none}
+.floating-mic > svg{width:20px;height:20px;pointer-events:none}
+.floating-mic:hover{transform:scale(1.06)}
+.floating-mic:active:not(.dragging){transform:scale(0.96)}
+.floating-mic.dragging{cursor:grabbing;box-shadow:0 8px 20px rgba(0,0,0,.55);transition:none}
 /* Hide the mic when on the Voice Chat tab — the big START CALL button there
    is the primary affordance, two pulsing buttons would be noise. */
 .floating-mic.tab-hidden{display:none}
@@ -770,11 +768,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <button class="tab" data-tab="knowledge" style="color:#fbbf24;"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z"/><line x1="7" y1="8" x2="9.5" y2="8"/><line x1="7" y1="11" x2="9.5" y2="11"/><line x1="14.5" y1="8" x2="17" y2="8"/><line x1="14.5" y1="11" x2="17" y2="11"/></svg></span> Knowledge</button>
   <button class="tab" data-tab="eq"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="14" x2="6" y2="14"/><line x1="6" y1="14" x2="9" y2="6"/><line x1="9" y1="6" x2="12" y2="20"/><line x1="12" y1="20" x2="15" y2="9"/><line x1="15" y1="9" x2="18" y2="13"/><line x1="18" y1="13" x2="21" y2="13"/></svg></span> Mastering Reference</button>
   <button class="tab" data-tab="library"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/><circle cx="7" cy="7" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="1" fill="#fff" stroke="none"/></svg></span> Plugin Library</button>
-  <!-- PTT mic anchored at the right end of the tab strip. margin-left:auto in
-       the CSS shoves it past the last tab into the empty space the Journal
-       tab used to occupy, directly below the toolbar Reset button. -->
-  <button class="floating-mic state-idle" id="floatMic" title="Push to talk · Spacebar"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></button>
 </div>
+<!-- PTT mic — position:fixed, draggable, persists position in localStorage. -->
+<button class="floating-mic state-idle" id="floatMic" title="Push to talk · Spacebar — drag to move"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></button>
 
 <div class="panel active" id="chain">
   <div class="recipes-strip" id="recipesStrip"></div>
@@ -7255,12 +7251,91 @@ function applyFloatMicVisibility(){
   else floatMicEl.title = 'Push to talk · Spacebar';
 }
 
+// -- Drag-to-move --
+// The mic is position:fixed by default but the user can drag it anywhere on
+// the page. We save the resting x/y to localStorage so the position sticks
+// across sessions. Threshold-based detection: a press that moves <5px is a
+// PTT click; >5px enters drag mode and any in-flight recording is cancelled.
+const FLOAT_MIC_POS_KEY = 'trapMasterFloatMicPos_v1';
+const DRAG = {active:false, moved:false, startX:0, startY:0, elemStartX:0, elemStartY:0, threshold:5};
+function clampMicX(x){ return Math.max(4, Math.min(x, window.innerWidth - 44)); }
+function clampMicY(y){ return Math.max(4, Math.min(y, window.innerHeight - 44)); }
+function applyFloatMicPos(x, y){
+  floatMicEl.style.left = clampMicX(x) + 'px';
+  floatMicEl.style.top  = clampMicY(y) + 'px';
+  floatMicEl.style.right = 'auto';
+}
+function loadFloatMicPos(){
+  try{
+    const raw = localStorage.getItem(FLOAT_MIC_POS_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (typeof p.x === 'number' && typeof p.y === 'number') applyFloatMicPos(p.x, p.y);
+  }catch(_){}
+}
+function saveFloatMicPos(x, y){
+  try{ localStorage.setItem(FLOAT_MIC_POS_KEY, JSON.stringify({x, y})); }catch(_){}
+}
+function dragStart(clientX, clientY){
+  const rect = floatMicEl.getBoundingClientRect();
+  DRAG.startX = clientX;
+  DRAG.startY = clientY;
+  DRAG.elemStartX = rect.left;
+  DRAG.elemStartY = rect.top;
+  DRAG.active = true;
+  DRAG.moved = false;
+}
+function dragMove(clientX, clientY){
+  if (!DRAG.active) return;
+  const dx = clientX - DRAG.startX;
+  const dy = clientY - DRAG.startY;
+  if (!DRAG.moved && (dx*dx + dy*dy) > DRAG.threshold * DRAG.threshold){
+    // Crossed the drag threshold — cancel any PTT/dictation that fired on
+    // mousedown so we don't record while the user is repositioning.
+    DRAG.moved = true;
+    floatMicEl.classList.add('dragging');
+    if (RT.pttHeld) rtPttUp();
+    if (DICT.recording) dictPttUp();
+  }
+  if (DRAG.moved){
+    applyFloatMicPos(DRAG.elemStartX + dx, DRAG.elemStartY + dy);
+  }
+}
+function dragEnd(){
+  if (!DRAG.active) return false;
+  const wasDrag = DRAG.moved;
+  DRAG.active = false;
+  DRAG.moved = false;
+  floatMicEl.classList.remove('dragging');
+  if (wasDrag){
+    const rect = floatMicEl.getBoundingClientRect();
+    saveFloatMicPos(rect.left, rect.top);
+  }
+  return wasDrag;
+}
+// Document-level move/up so dragging keeps tracking even when the cursor
+// leaves the small mic body.
+document.addEventListener('mousemove', e => { if (DRAG.active) dragMove(e.clientX, e.clientY); });
+document.addEventListener('touchmove', e => {
+  if (!DRAG.active) return;
+  const t = e.touches[0]; if (!t) return;
+  dragMove(t.clientX, t.clientY);
+  if (DRAG.moved) e.preventDefault();
+}, {passive:false});
+// Window resize — clamp mic back into the viewport so it can't be lost off-screen.
+window.addEventListener('resize', () => {
+  const rect = floatMicEl.getBoundingClientRect();
+  applyFloatMicPos(rect.left, rect.top);
+});
+
 // On AI Chat tab the mic dispatches to DICT instead of RT. Always-on toggles
-// the dictation session on click; PTT records while held.
+// the dictation session on click; PTT records while held. dragStart fires on
+// every press too — if the user moves >5px the press becomes a drag and any
+// PTT/dict recording started here is cancelled inside dragMove.
 floatMicEl.addEventListener('mousedown', e=>{
   e.preventDefault();
+  dragStart(e.clientX, e.clientY);
   if (activeTabId() === 'aichat'){
-    // Always-on always-on dictation: click TOGGLES the session. PTT: hold to record.
     const mode = VOICE_MODE_PREFS.aichat;
     if (mode === 'always-on'){
       if (DICT.active) dictStopAlwaysOn();
@@ -7280,6 +7355,10 @@ floatMicEl.addEventListener('mousedown', e=>{
   if (RT.mode === 'ptt') rtPttDown();
 });
 floatMicEl.addEventListener('mouseup', ()=>{
+  // If this press was a drag, eat the click — saving the new position is the
+  // only thing that should happen on release.
+  const wasDrag = dragEnd();
+  if (wasDrag) return;
   if (activeTabId() === 'aichat'){
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
     return;
@@ -7290,11 +7369,16 @@ floatMicEl.addEventListener('mouseup', ()=>{
   rtEnd();
 });
 floatMicEl.addEventListener('mouseleave', ()=>{
+  // Don't auto-end PTT here while dragging — the cursor leaves the mic body
+  // constantly during a drag. dragMove already cancelled any PTT when the
+  // threshold was crossed.
+  if (DRAG.active) return;
   if (DICT.recording && VOICE_MODE_PREFS.aichat === 'ptt') dictPttUp();
   if (RT.pttHeld) rtPttUp();
 });
 floatMicEl.addEventListener('touchstart', e=>{
   e.preventDefault();
+  const t = e.touches[0]; if (t) dragStart(t.clientX, t.clientY);
   if (activeTabId() === 'aichat'){
     const mode = VOICE_MODE_PREFS.aichat;
     if (mode === 'always-on'){
@@ -7309,6 +7393,8 @@ floatMicEl.addEventListener('touchstart', e=>{
 }, {passive:false});
 floatMicEl.addEventListener('touchend', e=>{
   e.preventDefault();
+  const wasDrag = dragEnd();
+  if (wasDrag) return;
   if (activeTabId() === 'aichat'){
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
     return;
@@ -7423,6 +7509,8 @@ setVoiceState('idle');
 // Sync mic visibility with whatever tab is initially active (Chain Builder by
 // default). On Voice Chat tab the mic stays hidden until Kev navigates away.
 applyFloatMicVisibility();
+// Restore the user-chosen mic position from a previous session, if any.
+loadFloatMicPos();
 
 // ========== COST PANEL WIRING ==========
 document.getElementById('oaTopup').onclick=()=>window.open('https://platform.openai.com/settings/organization/billing/overview','_blank','noopener');
