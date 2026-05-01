@@ -4077,7 +4077,7 @@ function rtPttUp(){
 // her off mid-sentence. Instead we run a silence watcher first (analyser on
 // the remote audio track) and only start the actual countdown after ~800ms
 // of sustained silence in the playback.
-const COUNTDOWN_START_SEC = 15;
+const COUNTDOWN_START_SEC = 6;
 function rtStartCountdown(){
   rtCancelCountdown();
   RT.countdownSec = COUNTDOWN_START_SEC;
@@ -4115,12 +4115,12 @@ function rtStartSilenceWatch(){
   // original behaviour and start the countdown immediately. Better than no
   // auto-end at all.
   if (!RT.audioAnalyser){ rtStartCountdown(); return; }
-  // 5 SECONDS of continuous silence required before the countdown starts.
-  // The 15s countdown still runs after this, so total auto-end window is
-  // 5s + 15s = 20s after Claude truly stops. 5s rides out natural breaths,
-  // inter-clause pauses, AND the small gap while Kev is thinking before he
-  // starts replying — without padding the dead time too much.
-  const REQUIRED_SILENT_TICKS = 25; // 25 × 200ms = 5s
+  // 3 SECONDS of continuous silence required before the countdown starts.
+  // Total auto-end window: 3s silence + 6s countdown = 9s after the last
+  // speech (either side). Either speaker resuming cancels everything, so
+  // a real conversation never sees the countdown unless Kev's actually
+  // walked away.
+  const REQUIRED_SILENT_TICKS = 15; // 15 × 200ms = 3s
   let silentTicks = 0;
   RT.silenceWatchTimer = setInterval(() => {
     if (rtRemoteAudioActive()){
