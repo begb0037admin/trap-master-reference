@@ -560,11 +560,14 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   pointer-events:none;
 }
 @keyframes mic-live-blink{0%,100%{opacity:1}50%{opacity:.35}}
-@keyframes mic-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.55),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 8px rgba(16,163,127,0),0 2px 8px rgba(0,0,0,.4)}}
-@keyframes mic-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.65),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 10px rgba(251,191,36,0),0 2px 8px rgba(0,0,0,.4)}}
-@keyframes mic-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.6),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 10px rgba(167,139,250,0),0 2px 8px rgba(0,0,0,.4)}}
-@keyframes mic-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.7),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 7px rgba(167,139,250,0),0 2px 8px rgba(0,0,0,.4)}}
-@keyframes mic-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,.85),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 8px rgba(217,70,239,0),0 2px 8px rgba(0,0,0,.4)}}
+/* Pulse rings — bigger spread + higher start alpha so the breathing colour is
+   easy to see in peripheral vision while Kev is looking at his chain or
+   plug-in library. Spreads roughly doubled from the prior subtle values. */
+@keyframes mic-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.85),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 18px rgba(16,163,127,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.9),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 22px rgba(251,191,36,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.9),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 22px rgba(167,139,250,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.95),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 18px rgba(167,139,250,0),0 4px 14px rgba(0,0,0,.45)}}
+@keyframes mic-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,1),0 4px 14px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 22px rgba(217,70,239,0),0 4px 14px rgba(0,0,0,.45)}}
 .toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s;z-index:200}
 .toast.show{opacity:1}.toast.err{background:#7f1d1d;color:#fecaca}
 /* GENRE RECIPE STRIP */
@@ -701,11 +704,13 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-call-btn.state-responding{background:radial-gradient(circle,#7c3aed,#4c1d95);border-color:#a78bfa;animation:rt-purple 0.8s ease-in-out infinite}
 .rt-call-btn.state-waiting{background:radial-gradient(circle,#7c3aed,#4c1d95);border-color:#a78bfa;animation:rt-countdown 0.55s ease-in-out infinite}
 .rt-call-btn.state-waiting.urgent{background:radial-gradient(circle,#9333ea,#581c87);border-color:#d8b4fe;animation:rt-countdown-urgent 0.32s ease-in-out infinite}
-@keyframes rt-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.45),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 16px rgba(16,163,127,0),0 6px 24px rgba(0,0,0,.45)}}
-@keyframes rt-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.55),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0),0 6px 24px rgba(0,0,0,.45)}}
-@keyframes rt-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.55),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 22px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
-@keyframes rt-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.65),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 14px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
-@keyframes rt-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,.85),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 16px rgba(217,70,239,0),0 6px 24px rgba(0,0,0,.45)}}
+/* Big START CALL button — pulse rings amplified to match the punchier mic.
+   Bigger button = bigger ring; spreads roughly doubled, alphas pushed up. */
+@keyframes rt-breath{0%,100%{box-shadow:0 0 0 0 rgba(16,163,127,.8),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 32px rgba(16,163,127,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.85),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 36px rgba(251,191,36,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-purple{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.85),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 40px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-countdown{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.95),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 30px rgba(167,139,250,0),0 6px 24px rgba(0,0,0,.45)}}
+@keyframes rt-countdown-urgent{0%,100%{box-shadow:0 0 0 0 rgba(217,70,239,1),0 6px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 36px rgba(217,70,239,0),0 6px 24px rgba(0,0,0,.45)}}
 .rt-call-btn .rt-call-countdown{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px}
 .rt-call-btn.state-waiting .rt-call-icon,.rt-call-btn.state-waiting .rt-call-label{display:none}
 @keyframes pulse-amber{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}50%{box-shadow:0 0 0 20px rgba(251,191,36,0)}}
