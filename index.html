@@ -4115,12 +4115,12 @@ function rtStartSilenceWatch(){
   // original behaviour and start the countdown immediately. Better than no
   // auto-end at all.
   if (!RT.audioAnalyser){ rtStartCountdown(); return; }
-  // 3 SECONDS of continuous silence required before the countdown starts.
+  // 5 SECONDS of continuous silence required before the countdown starts.
   // The 15s countdown still runs after this, so total auto-end window is
-  // 3s + 15s = 18s after Claude truly stops. 3s rides out natural breaths
-  // and inter-clause pauses without padding the dead time before the visible
-  // countdown kicks in.
-  const REQUIRED_SILENT_TICKS = 15; // 15 × 200ms = 3s
+  // 5s + 15s = 20s after Claude truly stops. 5s rides out natural breaths,
+  // inter-clause pauses, AND the small gap while Kev is thinking before he
+  // starts replying — without padding the dead time too much.
+  const REQUIRED_SILENT_TICKS = 25; // 25 × 200ms = 5s
   let silentTicks = 0;
   RT.silenceWatchTimer = setInterval(() => {
     if (rtRemoteAudioActive()){
@@ -7001,7 +7001,16 @@ async function onRtEvent(e){
       break;
     case 'input_audio_buffer.speech_stopped':rtSetStatus('live','Thinking…');break;
     case 'input_audio_buffer.committed':break;
-    case 'response.created':setVoiceState('responding');break;
+    case 'response.created':
+      // Earliest signal Claude is replying. Cancel any in-flight silence
+      // detection / countdown immediately so a slow first audio.delta packet
+      // can't let the call end mid-thought. Without this, a paused 5s + a
+      // 15s countdown - 0.5s of network jitter on response.audio.delta could
+      // race the rtEnd call, ending the session just as she starts to speak.
+      rtCancelCountdown();
+      rtCancelSilenceWatch();
+      setVoiceState('responding');
+      break;
     case 'response.output_item.added':{
       // Function-call items carry their name + call_id here (not on the arguments deltas).
       const it=msg.item;
