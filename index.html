@@ -914,11 +914,6 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <span class="rt-timer" id="rtTimer"></span>
           <span class="rt-cost" id="rtCost"></span>
         </div>
-        <div class="voice-mode-toggle" data-scope="voice" title="How the call works once you start it">
-          <span class="vmt-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg>Mode:</span>
-          <button class="vmt-btn" data-mode="ptt">Push to talk</button>
-          <button class="vmt-btn" data-mode="always-on">Always on</button>
-        </div>
       </div>
 
       <!-- RIGHT: Anthropic cost card -->
@@ -3819,10 +3814,13 @@ function loadVoiceModePrefs(){
     const raw = localStorage.getItem(VOICE_MODE_PREFS_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
-    // Chain is now locked to PTT (no user toggle). We ignore any persisted
-    // 'always-on' on chain so an old value can't slip through.
+    // -- Hard-locked modes (no user toggle) --
+    // Voice Chat tab is always-on only. The big START CALL button is the
+    // single entry point for a freeform conversation. PTT lives on every
+    // other tab, never on Voice Chat. The two are independent and cannot
+    // be flipped.
     VOICE_MODE_PREFS.chain = 'ptt';
-    if (d.voice === 'ptt' || d.voice === 'always-on') VOICE_MODE_PREFS.voice = d.voice;
+    VOICE_MODE_PREFS.voice = 'always-on';
     if (d.aichat === 'ptt' || d.aichat === 'always-on') VOICE_MODE_PREFS.aichat = d.aichat;
   } catch(_){}
 }
@@ -3832,6 +3830,11 @@ function saveVoiceModePrefs(){
 function setVoiceModePref(scope, mode){
   if (!VALID_SCOPES.has(scope)) return;
   if (mode !== 'ptt' && mode !== 'always-on') return;
+  // Hard-locked scopes: voice = always-on only, chain = ptt only. The two
+  // tabs are independent and the user can't flip either. Only AI Chat (which
+  // uses local dictation, not OpenAI Realtime) is still toggleable.
+  if (scope === 'voice' && mode !== 'always-on') return;
+  if (scope === 'chain' && mode !== 'ptt') return;
   VOICE_MODE_PREFS[scope] = mode;
   saveVoiceModePrefs();
   paintVoiceModeToggles();
