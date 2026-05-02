@@ -862,6 +862,29 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         </div>
         <div class="rt-key-status" id="rtAntKeyStatus">No key saved. Optional — without it the AI falls back to its built-in (sometimes shaky) knowledge.</div>
       </div>
+      <!-- ElevenLabs Conversational AI keys (migration in flight on voice-elevenlabs branch).
+           Two fields: an account API key (xi_...) and the Agent ID created in the ElevenLabs
+           dashboard. Both stored in localStorage like the other keys. The provider toggle
+           at the bottom of the opts column decides which voice stack is used at call time. -->
+      <div class="rt-key-wrap">
+        <label>ElevenLabs API Key <span class="rt-keylabel-hint">— Conversational AI (Hope voice + Claude Sonnet)</span></label>
+        <div class="rt-key-inputs">
+          <input type="password" id="elKey" placeholder="sk_… (from elevenlabs.io → Developers → API Keys)" autocomplete="off" spellcheck="false">
+          <button class="btn ghost sm" id="elKeyShow" title="Show/hide">👁</button>
+          <button class="btn secondary sm" id="elKeySave">Save</button>
+          <button class="btn ghost sm" id="elKeyClear" title="Remove from this browser">🗑</button>
+        </div>
+        <div class="rt-key-status" id="elKeyStatus">No key saved. Optional — only needed when Voice provider is set to ElevenLabs.</div>
+      </div>
+      <div class="rt-key-wrap">
+        <label>ElevenLabs Agent ID <span class="rt-keylabel-hint">— from your agent's dashboard URL</span></label>
+        <div class="rt-key-inputs">
+          <input type="text" id="elAgentId" placeholder="agent_… (paste from elevenlabs.io/app/agents/&lt;ID&gt;)" autocomplete="off" spellcheck="false">
+          <button class="btn secondary sm" id="elAgentSave">Save</button>
+          <button class="btn ghost sm" id="elAgentClear" title="Remove from this browser">🗑</button>
+        </div>
+        <div class="rt-key-status" id="elAgentStatus">No agent ID saved.</div>
+      </div>
     </div>
     <div class="rt-opts">
       <div><label>Voice model</label>
@@ -887,6 +910,15 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <option value="claude-opus-4-6">claude-opus-4-6 — smartest</option>
           <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6 — balanced</option>
           <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 — fastest / cheapest</option>
+        </select>
+      </div>
+      <!-- Provider toggle. Lets us swap voice stacks at call time without disturbing
+           the working OpenAI Realtime path on main. ElevenLabs path lives behind
+           this flag while we iterate on the voice-elevenlabs branch. -->
+      <div><label>Voice provider <span class="rt-keylabel-hint">— migration in flight</span></label>
+        <select id="voiceProvider">
+          <option value="openai" selected>OpenAI Realtime — current</option>
+          <option value="elevenlabs">ElevenLabs (Hope + Claude Sonnet 4.6) — new</option>
         </select>
       </div>
     </div>
@@ -3920,6 +3952,153 @@ function rtClearAntKey(){
 }
 function rtSetAntKeyStatus(msg,cls){const s=document.getElementById('rtAntKeyStatus');s.textContent=msg;s.className='rt-key-status'+(cls?' '+cls:'');}
 
+// ========== ELEVENLABS CONVERSATIONAL AI (voice-elevenlabs migration) ==========
+// Parallel voice stack to the OpenAI Realtime API path above. Selected at call
+// time via the Voice provider dropdown — until we're confident the EL path is
+// solid, OpenAI stays the default and lives on `main` as a fallback.
+//
+// ElevenLabs handles speech-in (their STT) and speech-out (their TTS, Hope
+// voice with Expressive Mode) while delegating reasoning to Claude Sonnet 4.6
+// connected through their Agents platform. Tool-calling pattern is the same
+// shape as OpenAI's (request → execute → respond), so handleToolCall stays
+// reusable across both providers.
+//
+// SDK is loaded lazily from esm.sh on the first call attempt — same external
+// dependency model as Sortable.js (the only other CDN dep in the project).
+const EL_KEY_STORAGE = 'aiMixMastersElevenKey_v1';
+const EL_AGENT_ID_STORAGE = 'aiMixMastersElevenAgent_v1';
+const VOICE_PROVIDER_STORAGE = 'aiMixMastersVoiceProvider_v1';
+const EL_SDK_URL = 'https://esm.sh/@elevenlabs/client@latest';
+// State object mirrors RT in spirit — same idle/connecting/recording/etc.
+// states drive the same UI elements via setVoiceState. Where RT.dc / RT.pc
+// live in WebRTC land, EL.conversation holds the SDK's Conversation handle.
+const EL = {
+  conversation: null,
+  active: false,
+  connecting: false,
+  startedAt: 0,
+  timer: null,
+  conversationId: null,        // assigned by the SDK on connect — used for cost lookups
+  uiState: 'idle',
+  keyVisible: false
+};
+
+// Load the ElevenLabs SDK once and cache the module on window. esm.sh ships
+// the package as ESM, so this only works inside an async context (we always
+// call from elStart). Cached because re-importing creates duplicate audio
+// contexts that can't share microphone permission state cleanly.
+async function elLoadSDK(){
+  if (window.__elSDK) return window.__elSDK;
+  try {
+    window.__elSDK = await import(EL_SDK_URL);
+    return window.__elSDK;
+  } catch (e){
+    console.error('ElevenLabs SDK load failed', e);
+    throw new Error('Failed to load ElevenLabs SDK from esm.sh — check network/CORS');
+  }
+}
+
+// -- API key persistence (mirrors rtSaveKey / rtClearKey) --
+function elLoadKey(){
+  try{
+    const k = localStorage.getItem(EL_KEY_STORAGE);
+    if (k){
+      document.getElementById('elKey').value = k;
+      elSetKeyStatus('Key loaded from this browser.', 'ok');
+    }
+  } catch(_){}
+}
+function elSaveKey(){
+  const k = document.getElementById('elKey').value.trim();
+  if (!k){ elSetKeyStatus('Paste a key first.', 'err'); return; }
+  if (!k.startsWith('sk_')){ elSetKeyStatus('That doesn\'t look like an ElevenLabs key (should start with sk_).', 'err'); return; }
+  try{
+    localStorage.setItem(EL_KEY_STORAGE, k);
+    elSetKeyStatus('Saved to this browser\'s localStorage.', 'ok');
+    toast('ElevenLabs key saved');
+  } catch(e){ elSetKeyStatus('Save failed: ' + e.message, 'err'); }
+}
+function elClearKey(){
+  try{
+    localStorage.removeItem(EL_KEY_STORAGE);
+    document.getElementById('elKey').value = '';
+    elSetKeyStatus('Key removed.', 'ok');
+  } catch(_){}
+}
+function elSetKeyStatus(msg, cls){
+  const s = document.getElementById('elKeyStatus');
+  if (!s) return;
+  s.textContent = msg;
+  s.className = 'rt-key-status' + (cls ? ' ' + cls : '');
+}
+
+// -- Agent ID persistence --
+// Plain text input (not a secret per se — agent IDs aren't authentication on
+// their own). Validated lightly to catch obvious paste mistakes.
+function elLoadAgentId(){
+  try{
+    const a = localStorage.getItem(EL_AGENT_ID_STORAGE);
+    if (a){
+      document.getElementById('elAgentId').value = a;
+      elSetAgentStatus('Agent ID loaded from this browser.', 'ok');
+    }
+  } catch(_){}
+}
+function elSaveAgentId(){
+  const raw = document.getElementById('elAgentId').value.trim();
+  if (!raw){ elSetAgentStatus('Paste an Agent ID first.', 'err'); return; }
+  // Accept either the bare ID (agent_xxx...) or a full URL — strip the URL
+  // wrapper if present so Kev can paste either form.
+  let id = raw;
+  const m = raw.match(/agent_[a-zA-Z0-9]+/);
+  if (m) id = m[0];
+  if (!id.startsWith('agent_')){
+    elSetAgentStatus('Doesn\'t look like an Agent ID (expected agent_… prefix).', 'err');
+    return;
+  }
+  try{
+    localStorage.setItem(EL_AGENT_ID_STORAGE, id);
+    document.getElementById('elAgentId').value = id;
+    elSetAgentStatus('Saved.', 'ok');
+    toast('ElevenLabs Agent ID saved');
+  } catch(e){ elSetAgentStatus('Save failed: ' + e.message, 'err'); }
+}
+function elClearAgentId(){
+  try{
+    localStorage.removeItem(EL_AGENT_ID_STORAGE);
+    document.getElementById('elAgentId').value = '';
+    elSetAgentStatus('Agent ID removed.', 'ok');
+  } catch(_){}
+}
+function elSetAgentStatus(msg, cls){
+  const s = document.getElementById('elAgentStatus');
+  if (!s) return;
+  s.textContent = msg;
+  s.className = 'rt-key-status' + (cls ? ' ' + cls : '');
+}
+
+// -- Provider toggle persistence --
+// The dropdown beside the model/voice selectors decides which stack rtCallBtn
+// triggers. Persisted across sessions so Kev doesn't have to flip it each time.
+function loadVoiceProvider(){
+  try{
+    const p = localStorage.getItem(VOICE_PROVIDER_STORAGE);
+    if (p === 'openai' || p === 'elevenlabs'){
+      document.getElementById('voiceProvider').value = p;
+    }
+  } catch(_){}
+}
+function saveVoiceProvider(){
+  try{
+    const v = document.getElementById('voiceProvider').value;
+    localStorage.setItem(VOICE_PROVIDER_STORAGE, v);
+  } catch(_){}
+}
+function getVoiceProvider(){
+  const el = document.getElementById('voiceProvider');
+  return el ? el.value : 'openai';
+}
+
 function rtLoadPrefs(){
   try{
     const raw=localStorage.getItem(RT_PREFS_STORAGE);if(!raw)return;
@@ -3949,6 +4128,23 @@ document.getElementById('rtAntKey').addEventListener('keydown',e=>{if(e.key==='E
 document.getElementById('rtModel').onchange=rtSavePrefs;
 document.getElementById('rtVoice').onchange=rtSavePrefs;
 document.getElementById('rtClaudeModel').onchange=rtSavePrefs;
+// ElevenLabs key + agent + provider toggle wiring
+document.getElementById('elKeySave').onclick = elSaveKey;
+document.getElementById('elKeyClear').onclick = elClearKey;
+document.getElementById('elKeyShow').onclick = () => {
+  const inp = document.getElementById('elKey');
+  EL.keyVisible = !EL.keyVisible;
+  inp.type = EL.keyVisible ? 'text' : 'password';
+};
+document.getElementById('elKey').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); elSaveKey(); }
+});
+document.getElementById('elAgentSave').onclick = elSaveAgentId;
+document.getElementById('elAgentClear').onclick = elClearAgentId;
+document.getElementById('elAgentId').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); elSaveAgentId(); }
+});
+document.getElementById('voiceProvider').onchange = saveVoiceProvider;
 
 // -- Status helpers --
 // rtSetStatus drives the small status pill (dot + text) in the Voice tab.
@@ -7105,6 +7301,137 @@ function rtEnd(reason){
   rtSetStatus('',reason?'Ended — '+reason:'Ended');
   document.getElementById('rtCallLabel').textContent='Start call';
 }
+
+// ========== ELEVENLABS — START / END / TRANSCRIPT ==========
+// Foundation for the voice-elevenlabs migration. This first cut wires the
+// connection lifecycle + transcript appending. Tool calling is stubbed (we'll
+// register all 13+ tools in a follow-up pass once we've confirmed the basic
+// connect/talk/disconnect cycle works end-to-end against the real account).
+async function elStart(){
+  if (EL.active || EL.connecting) return;
+  const apiKey = localStorage.getItem(EL_KEY_STORAGE);
+  const agentId = localStorage.getItem(EL_AGENT_ID_STORAGE);
+  if (!apiKey){ elSetKeyStatus('Save an ElevenLabs key first.', 'err'); return; }
+  if (!agentId){ elSetAgentStatus('Save your Agent ID first.', 'err'); return; }
+  if (!window.isSecureContext){
+    toast('Not in secure context — use http://localhost or Cowork sidebar', true);
+    return;
+  }
+
+  EL.connecting = true;
+  rtSetStatus('connecting', 'Connecting…');
+  setVoiceState('connecting');
+  document.getElementById('rtCallLabel').textContent = 'Connecting…';
+
+  try {
+    const sdk = await elLoadSDK();
+    if (!sdk || !sdk.Conversation){
+      throw new Error('SDK loaded but Conversation export missing');
+    }
+
+    // Build the system-prompt override. Same RT_INSTRUCTIONS + library digest
+    // + research notes that we feed OpenAI, so the agent's behaviour stays
+    // consistent across providers. Voice/LLM/tools are configured in the
+    // ElevenLabs dashboard for this agent — we only override the prompt at
+    // session start so we can inject the live workbench context.
+    let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
+    const research = buildResearchDigest();
+    if (research) fullInstructions += '\n\n' + research;
+
+    // Mic permission upfront — surfacing a clear error here is friendlier
+    // than letting the SDK fail mid-handshake.
+    try { await navigator.mediaDevices.getUserMedia({audio:true}); }
+    catch (e){ throw new Error('Microphone permission denied: ' + (e.message || e)); }
+
+    EL.conversation = await sdk.Conversation.startSession({
+      agentId,
+      // Browser-direct auth via xi-api-key header. Fine for personal/dev use
+      // (the key lives only in Kev's localStorage). For multi-user prod we'd
+      // mint signed conversation URLs server-side instead.
+      apiKey,
+      // Prompt override — inject the latest chain/library/research context
+      // every session start. Voice + LLM + tools are baked into the agent.
+      overrides: {
+        agent: {
+          prompt: { prompt: fullInstructions }
+        }
+      },
+      onConnect: ({ conversationId }) => {
+        EL.connecting = false;
+        EL.active = true;
+        EL.conversationId = conversationId || null;
+        EL.startedAt = Date.now();
+        EL.timer = setInterval(rtTickTimer, 1000); // reuse the OpenAI timer
+        rtSetStatus('live', 'Connected — listening');
+        document.getElementById('rtCallLabel').textContent = 'End call';
+        setVoiceState('idle');
+        const fm = document.getElementById('floatMic');
+        if (fm) fm.classList.add('in-call');
+      },
+      onDisconnect: () => {
+        elCleanup();
+        rtSetStatus('', 'Ended');
+        document.getElementById('rtCallLabel').textContent = 'Start call';
+      },
+      onError: (err) => {
+        console.error('ElevenLabs conversation error', err);
+        rtSetStatus('err', 'API error: ' + (err && err.message || 'unknown'));
+        elCleanup();
+        document.getElementById('rtCallLabel').textContent = 'Start call';
+      },
+      // mode flips between 'speaking' (Hope is talking) and 'listening' (mic
+      // is open). Maps cleanly to our existing state machine: speaking →
+      // 'responding' (purple), listening → 'idle' (green breathing).
+      onModeChange: ({ mode }) => {
+        if (mode === 'speaking'){
+          setVoiceState('responding');
+          rtSetStatus('speaking', 'AI speaking…');
+        } else if (mode === 'listening'){
+          setVoiceState('idle');
+          rtSetStatus('live', 'Listening…');
+        }
+      },
+      // message events carry final transcripts for both sides. We append
+      // to the same #rtTranscript element OpenAI uses, so the UI is shared.
+      onMessage: ({ message, source }) => {
+        if (!message) return;
+        const role = source === 'ai' ? 'ai' : 'user';
+        const id = 'el-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+        rtAppendTurnText(id, role, message, true);
+      }
+    });
+  } catch (e){
+    console.error('elStart failed', e);
+    rtSetStatus('err', 'Error: ' + (e.message || e));
+    document.getElementById('rtCallLabel').textContent = 'Start call';
+    elCleanup();
+    setVoiceState('idle');
+  }
+}
+
+async function elEnd(reason){
+  if (!EL.active && !EL.connecting) return;
+  try {
+    if (EL.conversation){
+      await EL.conversation.endSession();
+    }
+  } catch (e){ console.warn('elEnd: endSession threw', e); }
+  elCleanup();
+  rtSetStatus('', reason ? 'Ended — ' + reason : 'Ended');
+  document.getElementById('rtCallLabel').textContent = 'Start call';
+}
+
+function elCleanup(){
+  EL.active = false;
+  EL.connecting = false;
+  if (EL.timer){ clearInterval(EL.timer); EL.timer = null; }
+  EL.startedAt = 0;
+  EL.conversation = null;
+  EL.conversationId = null;
+  const fm = document.getElementById('floatMic');
+  if (fm) fm.classList.remove('in-call');
+  setVoiceState('idle');
+}
 function rtCleanup(){
   RT.active=false;RT.connecting=false;
   RT.pttHeld=false;
@@ -7136,9 +7463,19 @@ function rtCleanup(){
   setVoiceState('idle');
 }
 
-// Main call button on the Voice Chat tab. Uses the voice-scope mode preference
-// (default 'always-on'). Toggle the chip next to the call button to flip it.
+// Main call button on the Voice Chat tab. Branches by provider:
+//   • OpenAI (default, on `main`) — current Realtime API path via WebRTC
+//   • ElevenLabs (voice-elevenlabs branch) — new Conversational AI path with
+//     Hope voice + Claude Sonnet 4.6 brain
+// The provider dropdown above the cost panels picks which one fires.
 document.getElementById('rtCallBtn').addEventListener('click',()=>{
+  const provider = getVoiceProvider();
+  if (provider === 'elevenlabs'){
+    if (EL.active || EL.connecting){ elEnd(); return; }
+    elStart();
+    return;
+  }
+  // OpenAI Realtime — default path, untouched by the migration
   if(RT.active||RT.connecting){ rtEnd(); return; }
   RT.focusMode = null;
   rtStart({mode: VOICE_MODE_PREFS.voice});
@@ -7788,6 +8125,9 @@ window.addEventListener('beforeunload',()=>rtCleanup());
 rtLoadKey();
 rtLoadAntKey();
 rtLoadPrefs();
+elLoadKey();
+elLoadAgentId();
+loadVoiceProvider();
 loadVoiceModePrefs();
 paintVoiceModeToggles();
 // Kick the state machine into idle so the floating mic + START CALL button get
