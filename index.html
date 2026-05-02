@@ -869,7 +869,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <div class="rt-key-wrap">
         <label>ElevenLabs API Key <span class="rt-keylabel-hint">— Conversational AI (Hope voice + Claude Sonnet)</span></label>
         <div class="rt-key-inputs">
-          <input type="password" id="elKey" placeholder="sk_… (from elevenlabs.io → Developers → API Keys)" autocomplete="off" spellcheck="false">
+          <input type="password" id="elKey" placeholder="paste your key (from elevenlabs.io → Developers → API Keys)" autocomplete="off" spellcheck="false">
           <button class="btn ghost sm" id="elKeyShow" title="Show/hide">👁</button>
           <button class="btn secondary sm" id="elKeySave">Save</button>
           <button class="btn ghost sm" id="elKeyClear" title="Remove from this browser">🗑</button>
@@ -4011,7 +4011,10 @@ function elLoadKey(){
 function elSaveKey(){
   const k = document.getElementById('elKey').value.trim();
   if (!k){ elSetKeyStatus('Paste a key first.', 'err'); return; }
-  if (!k.startsWith('sk_')){ elSetKeyStatus('That doesn\'t look like an ElevenLabs key (should start with sk_).', 'err'); return; }
+  // ElevenLabs keys come in multiple formats — sk_… on newer accounts, plain
+  // hex on older / workspace ones. Just check it's a reasonable length token
+  // rather than gatekeeping by prefix.
+  if (k.length < 20){ elSetKeyStatus('Key looks too short — paste the full string.', 'err'); return; }
   try{
     localStorage.setItem(EL_KEY_STORAGE, k);
     elSetKeyStatus('Saved to this browser\'s localStorage.', 'ok');
@@ -7309,9 +7312,11 @@ function rtEnd(reason){
 // connect/talk/disconnect cycle works end-to-end against the real account).
 async function elStart(){
   if (EL.active || EL.connecting) return;
-  const apiKey = localStorage.getItem(EL_KEY_STORAGE);
   const agentId = localStorage.getItem(EL_AGENT_ID_STORAGE);
-  if (!apiKey){ elSetKeyStatus('Save an ElevenLabs key first.', 'err'); return; }
+  // Note: for Public agents the SDK doesn't need the API key at session
+  // start — agentId alone is enough. We still keep the key in localStorage
+  // for follow-up REST calls (cost lookups, conversation history). Don't
+  // block the start path on its absence.
   if (!agentId){ elSetAgentStatus('Save your Agent ID first.', 'err'); return; }
   if (!window.isSecureContext){
     toast('Not in secure context — use http://localhost or Cowork sidebar', true);
@@ -7334,23 +7339,28 @@ async function elStart(){
     // consistent across providers. Voice/LLM/tools are configured in the
     // ElevenLabs dashboard for this agent — we only override the prompt at
     // session start so we can inject the live workbench context.
+    //
+    // IMPORTANT: this override only takes effect if the "System prompt"
+    // toggle is enabled in the agent's Security → Overrides section in the
+    // ElevenLabs dashboard. Without that, the agent rejects the override
+    // attempt and the connection fails.
     let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
     const research = buildResearchDigest();
     if (research) fullInstructions += '\n\n' + research;
 
-    // Mic permission upfront — surfacing a clear error here is friendlier
-    // than letting the SDK fail mid-handshake.
-    try { await navigator.mediaDevices.getUserMedia({audio:true}); }
-    catch (e){ throw new Error('Microphone permission denied: ' + (e.message || e)); }
+    // NOTE: we deliberately do NOT preflight navigator.mediaDevices.getUserMedia
+    // here. An earlier version did, to surface mic-permission errors early —
+    // but that grabs a MediaStream we don't release, and the SDK then can't
+    // acquire its own clean stream. Symptoms: connection succeeds, room
+    // negotiates, audio never flows, server times out at 30s with the
+    // conversation marked "Successful, 0 messages". The SDK requests mic
+    // itself when it needs to; permission errors will surface via onError.
 
     EL.conversation = await sdk.Conversation.startSession({
       agentId,
-      // Browser-direct auth via xi-api-key header. Fine for personal/dev use
-      // (the key lives only in Kev's localStorage). For multi-user prod we'd
-      // mint signed conversation URLs server-side instead.
-      apiKey,
       // Prompt override — inject the latest chain/library/research context
       // every session start. Voice + LLM + tools are baked into the agent.
+      // Requires Security → Overrides → System prompt toggle to be ON.
       overrides: {
         agent: {
           prompt: { prompt: fullInstructions }
