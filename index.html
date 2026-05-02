@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <script type="application/json" id="cowork-artifact-meta">
 {
-  "name": "Master Mix Workbench",
+  "name": "AI Mix Masters",
   "schemaVersion": 1,
-  "description": "Master Mix Workbench — Kev's mixing & mastering hub. Loudness/TP/EQ/stereo guides, chain builder, voice + text chat with Claude, research notes, and a plugin library across his full iLok / Waves / Native Access / iZotope / NI / Plugin Alliance kit (~450+ plugins)."
+  "description": "AI Mix Masters — Kev's mixing & mastering hub. Loudness/TP/EQ/stereo guides, chain builder, voice + text chat with Claude, research notes, and a plugin library across his full iLok / Waves / Native Access / iZotope / NI / Plugin Alliance kit (~450+ plugins)."
 }
 </script>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Mix Workbench</title>
+<title>AI Mix Masters</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#111827;color:#e5e7eb;line-height:1.5;padding:20px;min-height:100vh}
@@ -751,7 +751,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 <div class="container">
 <div class="header-top">
   <div>
-    <h1>Master Mix Workbench</h1>
+    <h1>AI Mix Masters</h1>
     <div class="subtitle">Active mixing/mastering guide — Kevin's iLok + Waves + Native Access + Plugin Alliance library</div>
   </div>
   <div class="header-actions">
@@ -3328,7 +3328,7 @@ function deleteJournal(id){
 }
 function exportJournal(){
   if(!STATE.journal.length){toast('Journal is empty');return;}
-  const lines=['# Master Mix Workbench — Session Journal Export','Generated: '+new Date().toLocaleString(),`Total entries: ${STATE.journal.length}`,''];
+  const lines=['# AI Mix Masters — Session Journal Export','Generated: '+new Date().toLocaleString(),`Total entries: ${STATE.journal.length}`,''];
   STATE.journal.forEach((e,i)=>{
     lines.push('---');
     lines.push(`## Entry ${i+1} — ${new Date(e.ts).toLocaleString()}`);
@@ -3529,7 +3529,7 @@ function buildSnapshot(){
   const platform=document.getElementById('platformSelect').value;
   const platformLabel=document.getElementById('platformSelect').selectedOptions[0].textContent;
   const lines=[];
-  lines.push('# Master Mix Workbench — Session Snapshot');
+  lines.push('# AI Mix Masters — Session Snapshot');
   lines.push('Date: '+new Date().toISOString().slice(0,16).replace('T',' '));
   lines.push('Genre: '+genreLabel(STATE.genre));
   lines.push('Target: '+platformLabel);
@@ -6702,7 +6702,7 @@ async function handleToolCall(name,args){
 }
 
 // ========== SESSION INSTRUCTIONS ==========
-const RT_INSTRUCTIONS=`You are Kev's mix/master assistant embedded inside his Master Mix Workbench. You talk to him by voice while he's producing.
+const RT_INSTRUCTIONS=`You are Kev's mix/master assistant embedded inside his AI Mix Masters. You talk to him by voice while he's producing.
 
 SPECIALTY: trap / hip-hop / drill mixing and mastering. You know plugin ecosystems (Waves, iZotope, UA, Softube, SSL Native, Plugin Alliance, Native Instruments, Sonnox, Slate, Eiosis, LiquidSonics, oeksound, Soundtoys, Antares, Celemony, etc.) and you speak the producer vernacular — 808s, drill hats, vocal ad-libs, slap delay, parallel comp, bus glue, not academic mixing language.
 

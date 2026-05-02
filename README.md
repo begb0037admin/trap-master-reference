@@ -1,6 +1,10 @@
-# Trap Master Reference
+# AI Mix Masters
 
-A trap / hip-hop mixing and mastering workbench — live genre-aware plugin picks, meter targets, a troubleshooter, and a voice-chat mastering assistant powered by OpenAI's Realtime API and (optionally) Claude with live web search for niche knowledge lookups.
+> *(formerly Trap Master Reference / Master Mix Workbench — the GitHub repo slug stays the same; only the user-facing name has changed.)*
+
+A mixing and mastering workbench — live genre-aware plugin picks, meter targets, a troubleshooter, and a voice-chat mastering assistant powered by OpenAI's Realtime API and (optionally) Claude with live web search for niche knowledge lookups.
+
+**Voice migration in flight:** the voice assistant is being moved from OpenAI Realtime to ElevenLabs Conversational AI (Claude Sonnet 4.6, Hope voice, Expressive Mode) on the `voice-elevenlabs` branch. The OpenAI path on `main` stays the production fallback until the new path is solid.
 
 🔗 **Live demo**: <https://begb0037admin.github.io/trap-master-reference/>
 
