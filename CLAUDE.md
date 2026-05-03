@@ -12,6 +12,22 @@ Project context for future Claude (or Cowork) sessions. Read this first when pic
 
 ## ⚠️ HANDOVER POINT — read this first if you're picking up the voice-elevenlabs branch
 
+**Session of 2026-05-06:** Batch 5 shipped — Settings tab split. New rightmost `data-tab="settings"` button (line-art gear icon) + new `<div class="panel" id="settings">` panel with five labelled sections: API keys, Models, Costs, Session safety, Notes. The following blocks moved out of the Voice Chat panel into Settings, with every DOM ID preserved so existing handlers don't need rewiring:
+
+- **API keys section:** Anthropic key (`#rtAntKey` + show/save/clear), ElevenLabs API key (`#elKey` + show/save/clear), ElevenLabs Agent ID (`#elAgentId` + save/clear), and the dormant OpenAI key (`#rtApiKey`, kept under `<div hidden data-dormant="openai-realtime">`).
+- **Models section:** Research brain (`#rtClaudeModel`) plus the dormant OpenAI selectors (`#rtModel`, `#rtVoice`, `#voiceProvider` — all `hidden data-dormant="openai-realtime"`).
+- **Costs section:** Both cost cards (`#costCardEleven` + `#costCardAnthropic`) wrapped in a new `.settings-cost-row` 2-col grid (no START CALL button between them like the Voice Chat layout had — that grid was 1fr / auto / 1fr).
+- **Session safety section:** the `.rt-tools-panel` (cost/min, soft cap, breakdown, auto-pause, usage links) — same card markup, same IDs (`cpmValue`, `budgetCap`, `brEl`, `brResearch`, `autoPause`, `elUsageLink`, `anUsageLink`).
+- **Notes section:** the `#browserWarn` banner + the How-it-works tip-box.
+
+What stays on the Voice Chat (Conversation) panel: START CALL button + `.rt-status-row` (timer, status pill, rt-cost) + new live cost chip, profile editor, the merged Conversation block (toolbar / transcript / compose / foot), Live Voice Transcript section + clear button, Session Snapshots panel, `<audio id="rtAudio">`. The old wrapping `<div class="rt-call-row">` (which was a 3-child `1fr auto 1fr` grid sandwiching START CALL between the two cost cards) was removed entirely; the inner rt-main with the call button + status row now sits directly inside the panel as a flex-column centered.
+
+New live cost chip on the Conversation tab: `<span class="rt-live-cost-chip" id="elLiveCostChip" hidden>` next to the rt-status-row. `elRenderLiveCost` writes `Live · {0:42} · ${0.06}` to it once per second while EL.active; chip toggles `.amber` over $1, `.red` over $2; `elCleanup` hides it on call end. CSS: `.rt-live-cost-chip` styled as a small monospace pill matching the status row.
+
+CSS additions at `.section-head` neighbour: `.settings-section{margin:18px 0 28px}`, `.settings-section h3{...}`, `.settings-cost-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}` with a `@media (max-width:720px)` collapse to single-column.
+
+**All five batches shipped. OpenAI removal is complete. Voice migration done.** No active scope. Possible polish items in "Open follow-ups" below — none committed.
+
 **Session of 2026-05-05:** Batch 4 shipped — cost-panel rewire. The OpenAI cost card on the Voice Chat tab has been repurposed into an **ElevenLabs cost card** (`#costCardEleven`, `.rt-cost-card.elevenlabs` with indigo `#818cf8` accent). All `oa*` element IDs renamed to `el*` (`elSession`, `elBalance`, `elSpent`, `elLeft`, `elTopup`, `elUpdate`, `elUsageLink`). Three EL spend feeders wired:
 
 1. **Live in-call estimate.** New `elRenderLiveCost()` ticks once per second from the EL session timer (`elStart` onConnect now wraps `rtTickTimer + elRenderLiveCost` in the same setInterval). Estimate = elapsed minutes × `EL_CONVAI_RATE_PER_MIN` ($0.088/min on Creator plan; constant tweakable when ElevenLabs changes plan structure). Writes to `#elSession` + `#brEl` Session-breakdown tile + cost-per-minute tile + budget-cap watcher (`EL.budgetWarned` flag, reset on cap dropdown change).
@@ -22,7 +38,7 @@ The Session breakdown tile collapsed: 4 OpenAI-flavoured rows (audioIn/audioOut/
 
 `rtRenderCost`'s line writing to `oaSession` is now guarded with a null check — it's a dormant code path (OpenAI Realtime is unwired) but if revived it won't throw because the DOM was renamed.
 
-**All four batches shipped. OpenAI removal is complete.** **Next: Batch 5 — Settings tab split.** See "Batch 5" section below. Promoted from "polish item" to active scope: Kev's confirmed he wants the tab split done, three design questions all answered yes (rightmost Settings tab, voice-mode toggle stays on Conversation, live cost chip on Conversation).
+**All four batches shipped. OpenAI removal is complete.** Batch 5 (Settings tab split) shipped in the next session — see top entry above.
 
 **Session of 2026-05-04 (later):** Batch 3b shipped — the tab merge. AI Chat tab nav button + `<div class="panel" id="aichat">` panel both deleted; the entire AI Chat compose UI (rich transcript, textarea, screenshot attach + preview + file input, Send, quick prompts, Clear input, status pill, foot row, model selector, Web search toggle, TL;DR, Import plugins, Clear chat) relocated into `<div class="panel" id="voice">` as the merged Conversation surface. The dormant TTS dropdowns (`#aiChatTtsVoice`, `#aiChatTtsModel`) + `<audio id="aiChatTtsAudio">` and the dictation `voice-mode-toggle[data-scope="aichat"]` live in two `<div hidden data-dormant="...">` wrappers at the bottom of the panel — DOM elements stay so the dormant `aichatSpeak` / TTS state machine / DICT helpers don't need null guards. Read-aloud button retired from `aichatRender` (Hope speaks every voice reply via the EL WebSocket). EL `onMessage` now writes to `AICHAT.history` only (the `rtAppendTurnText` call into `#rtTranscript` was retired). `snapshotTranscript()` rewritten to read voice turns from `AICHAT.history` filtered by `source:'voice'` so end-of-call profile extraction keeps working — the rt-transcript DOM walk stays as a back-pocket fallback. Diagnose-tab "create troubleshooting tile" handoff now lands on the merged Voice Chat tab. Tool-handling boundary is documented near `aichatSend`: voice = EL `clientTools`, typed = Anthropic `tool_use`. **Next: Batch 4 — cost panel rewire (revised scope: TTS-per-character bucket dropped since Read-aloud retired; only conv-AI minutes + Scribe dictation feed `addSpend('el', ...)`).** See below.
 
@@ -30,11 +46,11 @@ The Session breakdown tile collapsed: 4 OpenAI-flavoured rows (audioIn/audioOut/
 
 **Session of 2026-05-03:** Batches 1 + 2 shipped in one session. Batch 1: UI sweep on Voice Chat tab — provider dropdown, OpenAI key field, voice-model + OpenAI-voice dropdowns wrapped in `<div hidden data-dormant="openai-realtime">` so DOM elements stay and the dormant `rtLoadKey` / `rtSavePrefs` / `getVoiceProvider` etc. don't need null guards. `rtCallBtn` click, `micStartFromFloat`, and the spacebar `keydown` handler are now EL-only (the dormant `rtStart` / `rtEnd` / `RT` state / `MIC_SVG_FLOAT` / focus-mode plumbing all stay in the file as the back pocket). New helper `updateCallButtonState()` gates START CALL on EL key + Agent ID. Tip-box + chain-toolbar hint copy rewritten for Hope. Batch 2: AI Chat dictation migrated from OpenAI Whisper to ElevenLabs Scribe v2 — endpoint `api.elevenlabs.io/v1/speech-to-text`, `model_id=scribe_v2`, auth `xi-api-key`, vocab biasing via `keyterms` array (replaces Whisper's `prompt`). Web Speech remains the no-key fallback. Cost rolls into a new `addSpend('el', cost)` bucket (`SPEND_KEY_EL = 'aiMixMastersSpendEleven_v1'`) — the cost-panel UI for it is Batch 4. **Next: Batch 3 (AI Chat Read aloud — OpenAI TTS → ElevenLabs TTS).** See below.
 
-**Last working state:** ElevenLabs Conversational AI is fully working end-to-end. All 25 client tools registered + wired, profile system (cross-conversation memory) landed, dual-provider overlap bug fixed. Hope can read his chain, change genre, add/remove plugins, edit knowledge notes, etc. live during a call. Tools fire, workbench updates in real time, and the profile blob auto-extracts via Haiku at end-of-call so she remembers his preferences across sessions.
+**Last working state:** ElevenLabs Conversational AI is fully working end-to-end and the Voice Chat / Settings split has shipped. All 25 client tools registered + wired, profile system (cross-conversation memory) landed, dual-provider overlap fixed, AI Chat tab merged into Voice Chat as a unified Conversation surface (Batch 3b), cost panel rewired for ElevenLabs spend (Batch 4), and now Settings tab holds keys / models / costs / safety / notes (Batch 5). Voice Chat panel is purely the conversation surface. The OpenAI Realtime path is dormant-wrapped throughout — code paths intact, UI hidden.
 
-**Where to resume — full single-vendor consolidation (OpenAI → ElevenLabs).**
+**Where to resume — no active scope.**
 
-Kev decided he doesn't want to use OpenAI any more. Batch 1 has landed (see session log above + "What's already done"). Three more batches remain, each ships independently. Important: don't delete the OpenAI code paths (rtStart, RT state, MIC_SVG_FLOAT, etc.) — Kev wants them dormant in the file as a "back pocket" if he ever needs to re-enable. Just unwire from the UI. The Batch-1 dormant-wrap pattern (`<div hidden data-dormant="openai-realtime">`) is the established convention for any UI that needs to disappear without surgery on its JS handlers.
+The voice migration is complete. The five planned batches are done. Voice Chat is ElevenLabs-only end-to-end, with full client tools, cross-conversation memory, real spend tracking, and the keys/safety plumbing tucked into a dedicated Settings tab. **Don't merge `voice-elevenlabs` → `main` yet** — give it a few real sessions on EL first to confirm stability. Kev's preference is to keep the OpenAI code paths (rtStart, RT state, MIC_SVG_FLOAT, etc.) in the file as dormant back-pocket via the `<div hidden data-dormant="openai-realtime">` convention; don't delete them.
 
 Web research from earlier in the migration:
 
@@ -73,7 +89,13 @@ See "What's already done (don't redo this)" item 13. Implementation specifics �
 
 See "What's already done" item 14 for the implementation specifics — `costCardEleven` repurposed from `costCardOpenAI`, `el*` IDs, `EL_CONVAI_RATE_PER_MIN` constant ($0.088/min), `elRenderLiveCost` live ticker, `elFetchConversationCost` post-disconnect reconcile, `updateElBalance` subscription-tier mapping, `SESSION_BREAKDOWN.el`, dormant-wrapped audioIn/Out/text Session-breakdown rows, `SPEND_KEY_OAI` kept as legacy archive but no longer rendered.
 
-#### Batch 5 — Settings tab split — **PENDING (next session)**
+#### Batch 5 — Settings tab split — ✅ shipped 2026-05-06
+
+See top session-log entry + "What's already done" item 15 for the implementation specifics — Settings tab nav button + 5-section panel, all blocks moved with DOM IDs preserved, new `.settings-cost-row` 2-col grid for the cost cards, new `#elLiveCostChip` on the Conversation tab populated by `elRenderLiveCost`.
+
+The original spec is preserved below as historical context for anyone wanting to understand the design decisions Kev made (rightmost tab, voice-mode stays on Conversation, live cost chip).
+
+##### Original Batch 5 spec (kept for context)
 
 Pull the plumbing out of Voice Chat into a dedicated **Settings** tab so the Voice Chat tab is purely the Conversation surface. Promoted from "polish" to active scope. Design decisions confirmed by Kev:
 
@@ -276,6 +298,17 @@ Mostly mechanical HTML cut-and-paste with consistent DOM IDs preserved. Estimate
     - **JS — `EL` state additions.** `lastLiveCostEstimate: 0` and `budgetWarned: false` fields on the `EL` object, both reset by `elCleanup()`. `SESSION_BREAKDOWN` gained `el: 0`. Budget-cap dropdown change handler now resets `EL.budgetWarned` alongside `RT.budgetWarned` so a new cap allows a fresh warning.
     - **`SPEND_KEY_OAI` legacy archive.** Stays defined. `addSpend('oai', delta)` still routes there if any back-pocket revival of the OpenAI Realtime path fires it. `renderCostPanels` no longer reads from it. The 30-day localStorage history is preserved untouched.
 
+15. **Batch 5 — Settings tab split.** Shipped 2026-05-06. Voice Chat panel is now purely the Conversation surface; configuration plumbing lives in a dedicated rightmost Settings tab. Specifics:
+
+    - **HTML — new tab + panel.** New `<button class="tab" data-tab="settings">` (line-art gear SVG matching the project's icon family) added at the rightmost end of `.tabs`, after Plugin Library. New `<div class="panel" id="settings">` placed after the Plugin Library panel, with five `<div class="settings-section">` blocks: API keys, Models, Costs, Session safety, Notes. Each section has an `<h3>` heading + the relocated content.
+    - **HTML — moves with IDs preserved.** Anthropic key (`#rtAntKey` + show/save/clear), ElevenLabs key (`#elKey` + show/save/clear), ElevenLabs Agent ID (`#elAgentId` + save/clear), and the dormant OpenAI key (`#rtApiKey` under `<div hidden data-dormant="openai-realtime">`) → API keys section. Research brain (`#rtClaudeModel`) + dormant `#rtModel`, `#rtVoice`, `#voiceProvider` (all `hidden data-dormant`) → Models section. Both cost cards (`#costCardEleven` + `#costCardAnthropic`) → Costs section, wrapped in `.settings-cost-row` 2-col grid. The whole `.rt-tools-panel` (cost/min, soft cap, breakdown, auto-pause, usage links) → Session safety section. `#browserWarn` + the How-it-works tip-box → Notes section. Every DOM ID survived the move so handlers (key save/load, prefs, cost rendering, click handlers) didn't need rewiring.
+    - **HTML — Voice Chat panel cleanup.** Old `<div class="rt-call-row">` (3-child grid sandwiching START CALL between the two cost cards) was removed entirely; the inner `rt-main` with the call button + status row now sits directly inside the panel as a flex-column centered. The session-tools panel, the How-it-works tip-box, and the browserWarn banner are gone from Voice Chat — the audio element (`#rtAudio`) stays as the call's audio sink.
+    - **HTML — new live cost chip on Conversation tab.** `<span class="rt-live-cost-chip" id="elLiveCostChip" hidden>` added to the rt-status-row (after `#rtCost`). Hidden by default; populated by `elRenderLiveCost` once per second while `EL.active`. Format: `Live · 0:42 · $0.06`. CSS `.rt-live-cost-chip` styled as a small monospace pill matching the row aesthetic; toggles `.amber` over $1, `.red` over $2 for cost-rage glance feedback. `elCleanup` hides it on call end (sets `hidden=true`, clears textContent, removes amber/red classes).
+    - **CSS additions.** Around the `.section-head` rule: `.settings-section{margin:18px 0 28px}`, `.settings-section h3{font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#cbd5e1;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #1f2937}`, `.settings-cost-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}` with a `@media (max-width:720px)` collapse to `1fr`. Live cost chip styling `.rt-live-cost-chip` near the dormant-wrap CSS fix.
+    - **JS — elRenderLiveCost gained chip-write block.** Inside the function, after the existing brEl write: `const chip = document.getElementById('elLiveCostChip'); if (chip){...}`. Format string `Live · ${elapsed} · $${cost.toFixed(2)}` where `elapsed = rtFmtTime(Date.now() - EL.startedAt)`. Hidden when `!EL.active || !EL.startedAt`.
+    - **JS — elCleanup added chip teardown.** After the existing `if (fm) fm.classList.remove('in-call')` line: hide chip + clear text + remove amber/red classes.
+    - **No JS handler changes** — every relocated element kept its ID, so `rtSaveAntKey`, `elSaveKey`, `elSaveAgentId`, `rtSavePrefs`, `renderCostPanels`, `rtRenderCost`, `updateBalance`, `elFetchConversationCost`, the `#budgetCap` change listener, the `#autoPause` listener, and every other handler all find their targets unchanged.
+
 ### Localstorage keys added by the migration
 
 - `aiMixMastersElevenKey_v1` — ElevenLabs API key
@@ -307,16 +340,16 @@ In `index.html` (line numbers approximate — file is ~9100 lines):
 ### Known good user flow
 
 1. `python3 -m http.server 8000` from the repo root → open <http://localhost:8000>.
-2. Voice Chat tab → ElevenLabs API key + Agent ID saved (loaded from localStorage on subsequent loads). The provider dropdown still exists (until Batch 1 lands) and should be set to **ElevenLabs** — but the agent will refuse to call OpenAI Realtime now anyway since we're not maintaining that path.
-3. Click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain.
+2. **Settings tab** (rightmost) → ElevenLabs API key + Agent ID saved + Anthropic key saved (loaded from localStorage on subsequent loads).
+3. **Voice Chat tab** → click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain. Live cost chip on the status row ticks `Live · 0:42 · $0.06` once per second during the call.
 4. Try voice tool calls: "what's on my master bus?", "add Maag EQ4 to the master", "switch genre to trap" — workbench updates in real time, DevTools console logs `[EL tool] <name> <args> → <result>` for every call.
-5. End the call → Haiku extracts profile updates (if Anthropic key saved + transcript >200 chars). The `#profileText` panel updates with new lines. Next call she remembers.
+5. End the call → Haiku extracts profile updates (if Anthropic key saved + transcript >200 chars). The `#profileText` panel updates with new lines. Next call she remembers. Behind the scenes, `elFetchConversationCost` reconciles the live estimate against ElevenLabs' exact minute figure and tops up the spend bucket if needed.
 
 ### Open follow-ups
 
-The OpenAI removal is **complete** — all four batches shipped (Batch 1 / 2 on 2026-05-03, Batches 3a / 3b on 2026-05-04, Batch 4 on 2026-05-05). No active scope. Possible future polish (not committed):
+The OpenAI removal is **complete** — all five batches shipped (Batch 1 / 2 on 2026-05-03, Batches 3a / 3b on 2026-05-04, Batch 4 on 2026-05-05, Batch 5 on 2026-05-06). No active scope. Possible future polish (not committed):
 
-- **Settings tab split.** Originally proposed during the Batch-3 redesign discussion: pull keys + cost panels + session tools + model selectors out of the Voice Chat tab into a dedicated Settings tab so the Voice Chat tab is purely the Conversation surface. Punted as a polish item — the migration's primary user-facing goal (everything works, no OpenAI mentions) is done. If picked up later it's a couple of hours of HTML reorganisation, no new APIs.
+- **Slow / slurry voice from Hope (Kev flagged 2026-05-06).** v3 conversational TTS occasionally sounds dragged-out. Voice settings sliders are not customizable on v3 models — pacing comes from the model's interpretation of the text, the Expressive Mode toggle in the dashboard, and the system-prompt + contextual-update content. Suspected cause: the auto-extracted profile blob contains language that the model reads as a "speak slowly" cue. Kev punted: "We'll come back to it if it persists." Diagnostic path if revisited: clear `STATE.profile`, refresh, test a call. If she perks up → it was the profile content. If still slow → toggle Expressive Mode off in the agent dashboard and Publish.
 - **EL TTS character budget.** The `updateElBalance` toast surfaces `character_limit - character_count` from the subscription endpoint as supplementary info. It's not a separately-tracked spend bucket because TTS-per-character spend was retired in Batch 3b. If you ever revive a separate Read-aloud feature, this is where character-spend would re-enter.
 - **`/v1/convai/conversations/{id}` field-name verification.** `elFetchConversationCost` tries seven plausible response paths because the exact field name has shifted over ElevenLabs API versions. Worth confirming the canonical path with a real call + simplifying the helper once the schema is locked in.
 - **Live history bars tile.** The `historyBars` DOM is null right now (the tile was removed pre-EL-migration). If you ever re-add it, `renderHistoryBars` is already EL-aware — just drop the early-return null check on `wrap`.
