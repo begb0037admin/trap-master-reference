@@ -19,3 +19,4 @@ versions/
 
 # Node (not used, but in case a tool adds it)
 node_modules/
+__pycache__/
