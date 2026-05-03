@@ -669,6 +669,20 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-tools-panel{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:14px 16px;margin-top:14px}
 .rt-tools-panel h4{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .rt-tools-panel h4 .badge{font-size:10px;color:#9ca3af;font-weight:500;text-transform:none;letter-spacing:0}
+/* Profile panel — Hope's cross-conversation memory of Kev. Same visual
+   language as the session-tools panel above it; sits between session tools
+   and the live transcript. */
+.profile-panel{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:14px 16px;margin-top:14px}
+.profile-panel h4{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.profile-panel h4 .badge{font-size:10px;color:#9ca3af;font-weight:500;text-transform:none;letter-spacing:0}
+.profile-panel textarea{width:100%;background:#0b1220;color:#e5e7eb;border:1px solid #374151;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.55;resize:vertical;font-family:inherit;min-height:110px}
+.profile-panel textarea:focus{outline:none;border-color:#7c3aed}
+.profile-actions{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.profile-actions .profile-status{color:#9ca3af;font-size:11px;font-style:italic}
+.profile-actions .profile-status.ok{color:#34d399;font-style:normal}
+.profile-actions .profile-status.busy{color:#fbbf24;font-style:normal}
+.profile-actions .profile-status.err{color:#fb7185;font-style:normal}
+.profile-actions .profile-len{margin-left:auto;color:#6b7280;font-size:11px;font-variant-numeric:tabular-nums}
 .rt-tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .rt-tool-card{background:#111827;border:1px solid #374151;border-radius:8px;padding:11px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px}
 .rt-tool-card .label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
@@ -1011,6 +1025,20 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         <div class="sub">Real numbers live on the providers' sites.</div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- PROFILE — Hope's cross-conversation memory of Kev. Free-form dossier
+       injected at session start, auto-extracted by Haiku at end-of-call,
+       hand-editable. Persisted in STATE.profile under trapMasterState_v1. -->
+  <div class="profile-panel">
+    <h4>🧠 Profile <span class="badge">Hope's memory across calls — auto-extracted, hand-editable</span></h4>
+    <textarea id="profileText" rows="6" placeholder="What Hope should know about you across sessions: your taste, recurring techniques, plugin preferences, reference tracks, mixing habits, things you're tired of being told. Auto-updated at end of each voice call via Haiku — edit by hand any time."></textarea>
+    <div class="profile-actions">
+      <button class="btn ghost sm" id="profileSave">Save</button>
+      <button class="btn ghost sm" id="profileClear">Clear</button>
+      <span class="profile-status" id="profileStatus"></span>
+      <span class="profile-len" id="profileLen"></span>
     </div>
   </div>
 
@@ -1912,8 +1940,10 @@ const STATE = {
   journal: [],
   userPresets: [], // user-saved chain presets (per-bus). Same shape as built-in PRESETS plus user:true marker.
   pluginStageOverrides: {}, // {pluginName: stageId} — set by drag-drop in Plugin Library
-  topPicksOverride: null   // {trap:[...], hiphop:[...], ...} — when set, replaces TOP_PICKS for that genre. Populated by the AI re-rank button.
+  topPicksOverride: null,   // {trap:[...], hiphop:[...], ...} — when set, replaces TOP_PICKS for that genre. Populated by the AI re-rank button.
+  profile: ''  // Cross-conversation memory. Free-form dossier injected at session start so Hope/the OpenAI agent recall Kev's preferences across calls. Auto-extracted at end-of-call by Haiku; hand-editable on the Voice Chat tab. Capped at ~2 KB.
 };
+const PROFILE_MAX_LEN = 2000;
 
 // Resolve a plugin's display stage — applies any user override from drag-drop,
 // otherwise falls back to the built-in stage.
@@ -1962,7 +1992,8 @@ function saveState(){
         knowledge:(STATE.knowledge||[]).slice(0,200),
         userPresets:(STATE.userPresets||[]).slice(0,100),
         pluginStageOverrides:STATE.pluginStageOverrides||{},
-        topPicksOverride:STATE.topPicksOverride||null
+        topPicksOverride:STATE.topPicksOverride||null,
+        profile:(STATE.profile||'').slice(0, PROFILE_MAX_LEN)
       };
       localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     }catch(e){console.warn('saveState failed',e);}
@@ -1991,6 +2022,7 @@ function loadState(){
     if(Array.isArray(d.userPresets))STATE.userPresets=d.userPresets.slice(0,100);
     if(d.pluginStageOverrides && typeof d.pluginStageOverrides==='object') STATE.pluginStageOverrides=d.pluginStageOverrides;
     if(d.topPicksOverride && typeof d.topPicksOverride==='object') STATE.topPicksOverride=d.topPicksOverride;
+    if(typeof d.profile === 'string') STATE.profile = d.profile.slice(0, PROFILE_MAX_LEN);
   }catch(e){console.warn('loadState failed',e);}
   // One-time migration: any custom plugin saved with p:'other' + a pLabel that
   // matches a known publisher alias (Plugin Alliance, NI, UA, etc.) gets
@@ -2013,6 +2045,195 @@ function loadState(){
       if (migrated > 0){ saveState(); console.log(`Migrated ${migrated} custom plugin label(s) to canonical publisher keys.`); }
     }
   }catch(e){ console.warn('publisher migration failed', e); }
+}
+
+// ========== PROFILE — cross-conversation memory ==========
+// Hope (and the OpenAI Realtime agent) get the profile blob injected at the
+// start of every call, so they recall Kev's preferences across sessions
+// without him repeating himself. Auto-extracted by a Haiku call at end-of-
+// call from the transcript; hand-editable from the Voice Chat tab.
+//
+// Storage: STATE.profile (string, max PROFILE_MAX_LEN bytes), persisted via
+// the main saveState() in trapMasterState_v1.
+
+// Returns the profile formatted as a system-prompt block, or empty string if
+// the profile hasn't been written yet. Caller appends to whatever instructions
+// it's already building.
+function buildProfileDigest(){
+  const p = (STATE.profile || '').trim();
+  if (!p) return '';
+  return 'KEV\'S PROFILE — what you know about him from previous calls. ' +
+         'Use this to skip ground he\'s already covered and tailor suggestions ' +
+         'to his taste. If something here is wrong, he\'ll tell you; don\'t ' +
+         'second-guess every line. Don\'t recite this back at him verbatim.\n\n' +
+         p;
+}
+
+// Push STATE.profile into the textarea + update the byte count + reset status.
+function renderProfileEditor(){
+  const ta = document.getElementById('profileText');
+  if (!ta) return;
+  ta.value = STATE.profile || '';
+  const lenEl = document.getElementById('profileLen');
+  if (lenEl) lenEl.textContent = `${ta.value.length} / ${PROFILE_MAX_LEN}`;
+}
+
+function setProfileStatus(msg, cls){
+  const el = document.getElementById('profileStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = 'profile-status' + (cls ? (' ' + cls) : '');
+  if (msg){
+    // Clear status after a beat so the row doesn't stay loud.
+    clearTimeout(setProfileStatus._t);
+    setProfileStatus._t = setTimeout(() => {
+      if (el.textContent === msg) setProfileStatus('', '');
+    }, 3500);
+  }
+}
+
+function profileSaveFromUI(){
+  const ta = document.getElementById('profileText');
+  if (!ta) return;
+  const v = ta.value.slice(0, PROFILE_MAX_LEN);
+  STATE.profile = v;
+  saveState();
+  renderProfileEditor();
+  setProfileStatus('Saved', 'ok');
+}
+function profileClearFromUI(){
+  if (!STATE.profile){ setProfileStatus('Already empty', ''); return; }
+  if (!confirm('Clear Kev\'s profile? Hope will lose her memory of you across sessions until it builds up again.')) return;
+  STATE.profile = '';
+  saveState();
+  renderProfileEditor();
+  setProfileStatus('Cleared', 'ok');
+}
+
+// Snapshot the live transcript as a plain-text blob. Both OpenAI and EL paths
+// funnel turns through rtAppendTurnText which populates RT.transcriptIndex
+// (each entry has {el, role, text}). We use DOM children for chronological
+// order and the index for clean role + text. MUST run BEFORE rtCleanup wipes
+// transcriptIndex.
+function snapshotTranscript(){
+  const root = document.getElementById('rtTranscript');
+  if (!root) return '';
+  const idx = RT.transcriptIndex || {};
+  const elToRec = new Map();
+  for (const k in idx){
+    const r = idx[k];
+    if (r && r.el) elToRec.set(r.el, r);
+  }
+  const turns = [];
+  for (const el of root.children){
+    const r = elToRec.get(el);
+    if (!r) continue;
+    const txt = (r.text || '').trim();
+    if (!txt) continue;
+    turns.push((r.role === 'user' ? 'Kev' : 'Hope') + ': ' + txt);
+  }
+  return turns.join('\n\n');
+}
+
+// Run the Haiku extraction. Resolves with the updated profile text (already
+// trimmed to PROFILE_MAX_LEN) or null if the call was a no-op.
+async function extractProfile(transcript, currentProfile){
+  const antKey = localStorage.getItem(RT_ANT_KEY_STORAGE);
+  if (!antKey) throw new Error('No Anthropic key saved — profile extraction needs one.');
+
+  const sysPrompt =
+`You maintain a brief dossier on Kev, a music producer who works with Hope (his AI mix/mastering assistant). Below is the current dossier and the transcript of his most recent voice call.
+
+Update the dossier to reflect DURABLE preferences and facts revealed in the call. Add what is new; refine what is outdated; preserve what is still right; drop anything contradicted.
+
+CAPTURE ONLY:
+- Mixing/mastering preferences ("hates pumping on master", "always Pultec on vocals")
+- Plugin habits and go-to chains
+- Reference tracks, favourite producers, signature techniques he likes
+- Workflow constants ("starts with the kick", "mixes at low volume")
+- Things he has expressed annoyance about being told repeatedly
+
+SKIP:
+- One-off opinions tied to a single session
+- Specific session details ("vocal he did Friday")
+- Greeting / chit-chat fluff
+- Personal/non-mixing facts
+
+FORMAT: terse bullet list. Plain text. No preamble, no JSON, no quotation, no headings — output ONLY the updated dossier text. Maximum 1800 characters total.
+
+If the transcript reveals nothing worth capturing, return the existing dossier unchanged.`;
+
+  const userMsg =
+`Current dossier:
+
+${(currentProfile || '').trim() || '(empty — first call)'}
+
+---
+
+Transcript:
+
+${transcript}`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': antKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1500,
+      system: sysPrompt,
+      messages: [{role: 'user', content: userMsg}]
+    })
+  });
+  if (!resp.ok){
+    const errTxt = await resp.text().catch(() => '(no body)');
+    throw new Error(`Haiku ${resp.status}: ${errTxt.slice(0, 200)}`);
+  }
+  const data = await resp.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  // Track spend so the dashboard reflects extraction cost.
+  try {
+    const u = data.usage || {};
+    const pp = ANT_PRICING && ANT_PRICING['claude-haiku-4-5-20251001'];
+    if (pp){
+      const inTok = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+      const outTok = u.output_tokens || 0;
+      const cost = (inTok * pp.in + outTok * pp.out) / 1e6;
+      if (cost > 0) addSpend('an', cost);
+    }
+  } catch (_) {}
+  return text.slice(0, PROFILE_MAX_LEN);
+}
+
+// Orchestrator: at end of every call, if the transcript is substantial enough
+// to be worth extracting from and an Anthropic key is saved, fire-and-forget a
+// Haiku extraction. Resolves quietly on success/failure so callers don't have
+// to await it (callbacks like onDisconnect should not block on the network).
+async function maybeExtractProfile(){
+  // Capture before cleanup wipes the transcript.
+  const transcript = snapshotTranscript();
+  if (!transcript || transcript.length < 200) return; // too short to bother
+  if (!localStorage.getItem(RT_ANT_KEY_STORAGE)) return; // no key, no extraction
+  setProfileStatus('Extracting profile from call…', 'busy');
+  try {
+    const updated = await extractProfile(transcript, STATE.profile);
+    if (updated && updated.trim() && updated.trim() !== (STATE.profile || '').trim()){
+      STATE.profile = updated.trim();
+      saveState();
+      renderProfileEditor();
+      setProfileStatus('Profile updated from call', 'ok');
+      console.log('[profile] updated from end-of-call extraction, ' + updated.length + ' chars');
+    } else {
+      setProfileStatus('No new learnings from this call', '');
+    }
+  } catch (e){
+    console.warn('[profile] extraction failed:', e);
+    setProfileStatus('Profile extraction failed — see console', 'err');
+  }
 }
 
 // ========== CLIPBOARD (with fallback chain) ==========
@@ -7080,6 +7301,9 @@ async function rtStart(opts){
       let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
       const research = buildResearchDigest();
       if (research) fullInstructions += '\n\n' + research;
+      // Cross-conversation memory — Kev's profile dossier built up over time.
+      const profile = buildProfileDigest();
+      if (profile) fullInstructions += '\n\n' + profile;
       // Tab-aware focus mode: addendum tells the model what Kev is looking at,
       // so it leads with concrete observations instead of a generic intro. Each
       // mode is set by micStartFromFloat based on the active tab.
@@ -7314,6 +7538,9 @@ async function onRtEvent(e){
 
 function rtEnd(reason){
   if(!RT.active&&!RT.connecting)return;
+  // Fire-and-forget profile extraction BEFORE cleanup — rtCleanup wipes
+  // RT.transcriptIndex which we need to read the call's turns from.
+  try { maybeExtractProfile(); } catch(_) {}
   rtCleanup();
   rtSetStatus('',reason?'Ended — '+reason:'Ended');
   document.getElementById('rtCallLabel').textContent='Start call';
@@ -7369,6 +7596,10 @@ async function elStart(){
     let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
     const research = buildResearchDigest();
     if (research) fullInstructions += '\n\n' + research;
+    // Profile injection — same dossier the OpenAI path uses, so Hope's
+    // memory carries across sessions regardless of which provider is active.
+    const profile = buildProfileDigest();
+    if (profile) fullInstructions += '\n\n' + profile;
     EL.pendingContext = fullInstructions;
 
     // NOTE: we deliberately do NOT preflight navigator.mediaDevices.getUserMedia
@@ -7455,6 +7686,9 @@ async function elStart(){
             console.warn('[EL] close code:', ctx.code, 'reason:', ctx.reason || '(empty)');
           }
         }
+        // Profile extraction BEFORE cleanup so the transcript is still in
+        // RT.transcriptIndex. Fire-and-forget; the call resolves asynchronously.
+        try { maybeExtractProfile(); } catch(_) {}
         const closeMsg = (details && details.message) ? details.message : (details && details.reason) || 'unknown';
         elCleanup();
         rtSetStatus('', 'Ended — ' + closeMsg);
@@ -8712,6 +8946,19 @@ renderJournal();
 aichatInit();
 knowledgeInit();
 importInit();
+// Profile editor — populate from STATE.profile and wire Save / Clear buttons.
+renderProfileEditor();
+{
+  const ta = document.getElementById('profileText');
+  if (ta) ta.addEventListener('input', () => {
+    const lenEl = document.getElementById('profileLen');
+    if (lenEl) lenEl.textContent = `${ta.value.length} / ${PROFILE_MAX_LEN}`;
+  });
+  const saveBtn = document.getElementById('profileSave');
+  const clearBtn = document.getElementById('profileClear');
+  if (saveBtn) saveBtn.onclick = profileSaveFromUI;
+  if (clearBtn) clearBtn.onclick = profileClearFromUI;
+}
 
 // ========== TILE PICKERS (genre + platform) ==========
 // Pure-white SVG silhouettes for the genre tiles + Simple Icons CDN for the
