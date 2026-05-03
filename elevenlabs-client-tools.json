@@ -1,0 +1,565 @@
+[
+  {
+    "name": "get_context",
+    "description": "Get the current workbench state: genre, loudness target, each bus's chain, meter readings, flagged symptoms, favorite count, custom plugin count. Call this before advising so you know what the producer is actually looking at.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "set_genre",
+    "description": "Switch the active genre (changes which plugins are starred as top picks).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "genre": {
+          "type": "string",
+          "enum": [
+            "hiphop",
+            "rnb",
+            "pop",
+            "afrobeats",
+            "trap",
+            "lofi"
+          ]
+        }
+      },
+      "required": [
+        "genre"
+      ]
+    }
+  },
+  {
+    "name": "set_platform",
+    "description": "Change the loudness target / platform (master bus reference).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": [
+            "trap",
+            "spotify",
+            "apple",
+            "soundcloud"
+          ]
+        }
+      },
+      "required": [
+        "platform"
+      ]
+    }
+  },
+  {
+    "name": "add_plugin_to_bus",
+    "description": "Add a plugin to a bus. The plugin name MUST match something in Kev's library (see the library digest in your session instructions). If the name doesn't match, this fails — call add_custom_plugin first if it's a new plugin he's named. Position is 1-indexed; omit to append at end.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        },
+        "plugin": {
+          "type": "string",
+          "description": "Plugin name — must be one Kev owns. Fuzzy match is fine but pick a name from his library digest."
+        },
+        "position": {
+          "type": "integer",
+          "description": "1-indexed insertion point; omit to append"
+        }
+      },
+      "required": [
+        "bus",
+        "plugin"
+      ]
+    }
+  },
+  {
+    "name": "remove_plugin_from_bus",
+    "description": "Remove a plugin from a bus by its 1-indexed position.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        },
+        "position": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bus",
+        "position"
+      ]
+    }
+  },
+  {
+    "name": "move_plugin",
+    "description": "Reorder a plugin within a bus. Positions are 1-indexed.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        },
+        "from": {
+          "type": "integer"
+        },
+        "to": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bus",
+        "from",
+        "to"
+      ]
+    }
+  },
+  {
+    "name": "clear_bus",
+    "description": "Remove all plugins from a bus.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        }
+      },
+      "required": [
+        "bus"
+      ]
+    }
+  },
+  {
+    "name": "toggle_symptom",
+    "description": "Toggle a flagged mix symptom in the Troubleshooter. Use the symptom id from list_symptoms.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "symptom": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "symptom"
+      ]
+    }
+  },
+  {
+    "name": "list_symptoms",
+    "description": "List available symptom ids and their labels.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "toggle_favorite",
+    "description": "Heart / un-heart a plugin in the library (fuzzy name match).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "plugin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "plugin"
+      ]
+    }
+  },
+  {
+    "name": "record_meter",
+    "description": "Record a meter reading. meter is one of: iLufs, tp, lra, corr, crest.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "meter": {
+          "type": "string",
+          "enum": [
+            "iLufs",
+            "tp",
+            "lra",
+            "corr",
+            "crest"
+          ]
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "meter",
+        "value"
+      ]
+    }
+  },
+  {
+    "name": "add_custom_plugin",
+    "description": "Add a plugin to the library that isn't already built in. stage must be one of the known stage ids.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string",
+          "description": "slate, ssl, ua, softube, sonnox, sonible, sndtoys, izotope, eiosis, weiss, oek, waves, ni, pa, ant, cele, liq, or other"
+        },
+        "publisher_label": {
+          "type": "string",
+          "description": "If publisher is \"other\", supply a label like \"FabFilter\""
+        },
+        "stage": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "publisher",
+        "stage"
+      ]
+    }
+  },
+  {
+    "name": "remove_custom_plugin",
+    "description": "Remove a CUSTOM plugin from Kev's library. Built-in plugins cannot be removed — only ones added via add_custom_plugin. Match by name (fuzzy match supported). Use this from the Plugin Library tab when Kev says things like \"drop X\" or \"I never use Y, get rid of it\".",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Plugin name. Fuzzy match — but only custom plugins are eligible."
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "list_plugins",
+    "description": "Search the plugin library. Pass stage_id or search text.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "get_library",
+    "description": "Return the full current plugin library grouped by stage. The library was inlined in your session start instructions, but call this if Kev mentions he just added plugins or you want a fresh dump.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "set_plugin_settings",
+    "description": "Pin concrete setting notes to a specific plugin on a bus so they appear directly under the plugin in the chain view. USE THIS EVERY TIME you give specific parameter values (drive/threshold/Q/freq/attack/release/mix%/etc.) — the notes persist in the UI so Kev doesn't have to scroll the transcript. Replaces existing notes for that plugin. Target by plugin name (fuzzy match) OR by 1-indexed position.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        },
+        "plugin": {
+          "type": "string",
+          "description": "Plugin name — fuzzy match. Use this OR position."
+        },
+        "position": {
+          "type": "integer",
+          "description": "1-indexed position on the bus. Use this OR plugin."
+        },
+        "settings": {
+          "type": "string",
+          "description": "Terse, actionable notes. Prefer one parameter per line like \"Drive: 3–4\" or \"HPF: 80 Hz, 12 dB/oct\". Include mix% if parallel. Max ~6 lines."
+        }
+      },
+      "required": [
+        "bus",
+        "settings"
+      ]
+    }
+  },
+  {
+    "name": "clear_plugin_settings",
+    "description": "Remove settings notes from a plugin on a bus.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx"
+          ]
+        },
+        "plugin": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bus"
+      ]
+    }
+  },
+  {
+    "name": "research",
+    "description": "Look up specific knowledge using Claude with live web search. USE THIS when you might bluff: specific producer/engineer techniques (Jaycen Joshua, Mike Dean, Murda Beatz, Wheezy, Cubeatz, Metro Boomin, etc.), exact plugin parameters/control names, current 2024–2026 plugin releases or trends, signature chains documented online, gear interviews. Returns a grounded answer with citations. Brief Kev with \"hold on, let me check…\" before calling. Do NOT use for stuff you obviously know (basic mixing concepts, his workbench state, common plugin features).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "Focused, specific question. \"What is Jaycen Joshua's vocal bus chain?\" beats \"How do I mix vocals?\". Include specific names/plugins where relevant."
+        },
+        "context": {
+          "type": "string",
+          "description": "Optional: 1-2 sentences of conversation context that help narrow the answer (genre, what Kev is trying to achieve, plugins he has)."
+        }
+      },
+      "required": [
+        "question"
+      ]
+    }
+  },
+  {
+    "name": "list_eq_tiles",
+    "description": "List the cards on the Mastering Reference tab, optionally filtered by section. Returns built-in tile slugs and any user-added custom tiles. Use this before adding to know what's already there.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "section": {
+          "type": "string",
+          "enum": [
+            "freqMap",
+            "loudness",
+            "truePeak",
+            "stereoWidth"
+          ],
+          "description": "Optional section filter — freqMap (frequency map), loudness (loudness targets), truePeak (true peak ceilings), stereoWidth (stereo width by band)."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "add_eq_tile",
+    "description": "Add a custom reference tile to the Mastering Reference tab. Use this when Kev wants to capture a frequency/loudness/peak/stereo-width insight as a permanent reference card.\n\nCRITICAL: lead with your audio mastering knowledge. When Kev says \"add a tile about <topic>\", suggest the right SECTION (freqMap, loudness, truePeak, stereoWidth) and propose a concrete title + body grounded in real ranges (e.g. \"Spotify -14 LUFS integrated, -1 dBTP\" / \"Sub-bass = 20–60 Hz, mono below 100 Hz\"). Don't ask Kev to spec the body — offer one, then refine.\n\nbody: short and scannable. One key fact per line; up to 6 lines. Plain text — bullets become a list automatically.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "section": {
+          "type": "string",
+          "enum": [
+            "freqMap",
+            "loudness",
+            "truePeak",
+            "stereoWidth"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "description": "Short title shown as the card heading. Max 80 chars."
+        },
+        "body": {
+          "type": "string",
+          "description": "1–6 lines of notes. Newline-separated lines render as bullets. Max ~600 chars."
+        }
+      },
+      "required": [
+        "section",
+        "title",
+        "body"
+      ]
+    }
+  },
+  {
+    "name": "remove_eq_tile",
+    "description": "Remove a custom Mastering Reference tile by title or id (fuzzy match on title supported). Built-in tiles cannot be deleted via this tool.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "section": {
+          "type": "string",
+          "enum": [
+            "freqMap",
+            "loudness",
+            "truePeak",
+            "stereoWidth"
+          ],
+          "description": "Optional — narrows the search."
+        },
+        "title": {
+          "type": "string",
+          "description": "Tile title to remove (fuzzy match). Either title or id required."
+        },
+        "id": {
+          "type": "string",
+          "description": "Tile id (e.g. custom-l3a1bc). Either title or id required."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "list_knowledge_notes",
+    "description": "List Knowledge Base notes — id, title, source, tags, ts, active flag. Use to find an existing note before adding/exporting.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "active_only": {
+          "type": "boolean",
+          "description": "If true, only notes currently injected into session context are returned."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "add_knowledge_note",
+    "description": "Add a research/technique note to Kev's Knowledge Base. Use when Kev dictates a takeaway from a producer interview, a plugin technique, a meter reading habit, or anything mix-related he wants to keep.\n\nKeep titles concise (under 80 chars) and content focused — Kev reviews these later, not real-time. If Kev rambles, condense his words into a clean note rather than transcribing verbatim.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "description": "The note body — what he wants to remember. Plain text, can be multi-line."
+        },
+        "source": {
+          "type": "string",
+          "description": "Optional citation — producer name, interview URL, video timestamp, etc."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional tags like [\"vocals\",\"jaycen joshua\",\"saturation\"]."
+        },
+        "activate": {
+          "type": "boolean",
+          "description": "If true, the note becomes part of the voice session context immediately. Default false — Kev usually activates manually."
+        }
+      },
+      "required": [
+        "title",
+        "content"
+      ]
+    }
+  },
+  {
+    "name": "export_knowledge_note",
+    "description": "Export a Knowledge Base note to disk (file download) or to the system clipboard. Use after Kev says \"download that note\" / \"copy that one to clipboard\". Identify the target by id or by fuzzy title match.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Note title — fuzzy match. Either title or id required."
+        },
+        "id": {
+          "type": "string",
+          "description": "Note id. Either title or id required."
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "download",
+            "clipboard"
+          ],
+          "description": "download = save a .md file. clipboard = copy text to system clipboard."
+        }
+      },
+      "required": [
+        "target"
+      ]
+    }
+  },
+  {
+    "name": "save_preset",
+    "description": "Save the current chain as a named user preset that Kev can reload later from the Load Preset modal. Use this whenever Kev says \"save this\", \"save this as a preset\", \"save this chain\", \"save this as my master chain\", etc. If he doesn't specify which bus, default to \"all\" (saves every non-empty bus as a single multi-bus preset — best for when you've been collaborating on a full session).\n\nCRITICAL: if Kev has NOT said what to call the preset, DO NOT call this tool yet. Ask him out loud first — something natural like \"What would you like to call this preset?\" or \"Sure, what should I name it?\" — then wait for his answer and use what he says as the name. Never invent a name yourself, never use a date as a fallback. Only call this tool once you have an actual name from him.\n\nOnce saved, quote the name back so he knows it landed.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The exact name Kev told you to use, e.g. \"Jaycen Joshua master\", \"My trap vocal\", \"Friday session\". Required — never auto-generate; ask Kev first."
+        },
+        "bus": {
+          "type": "string",
+          "enum": [
+            "master",
+            "vocal",
+            "808",
+            "drums",
+            "fx",
+            "all"
+          ],
+          "description": "Which bus to save. Default \"all\" saves every non-empty bus together. Single-bus values save just that one bus."
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  }
+]

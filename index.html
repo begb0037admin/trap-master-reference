@@ -7379,8 +7379,36 @@ async function elStart(){
     // conversation marked "Successful, 0 messages". The SDK requests mic
     // itself when it needs to; permission errors will surface via onError.
 
+    // -- Client tools --
+    // Every tool from TOOL_DEFS gets a clientTools handler that funnels into
+    // the same handleToolCall(name, args) the OpenAI Realtime path uses. The
+    // ElevenLabs SDK passes already-parsed args to these handlers (no streamed
+    // JSON like OpenAI), so we just forward them. SDK expects string / number /
+    // void return — we JSON.stringify the result so the agent receives the full
+    // structured payload (chain state, ok flags, error reasons, etc.).
+    //
+    // For these to actually be callable by Hope, the matching tool definitions
+    // must also be registered in the agent's Client Tools section in the
+    // ElevenLabs dashboard. Schemas dumped to elevenlabs-client-tools.json in
+    // the workbench folder for copy-paste.
+    const clientTools = {};
+    for (const def of TOOL_DEFS){
+      const toolName = def.name;
+      clientTools[toolName] = async (args) => {
+        try {
+          const result = await handleToolCall(toolName, args || {});
+          console.log('[EL tool]', toolName, args || {}, '→', result);
+          return JSON.stringify(result == null ? {ok:true} : result);
+        } catch (e){
+          console.warn('[EL tool error]', toolName, e);
+          return JSON.stringify({error: e.message || String(e)});
+        }
+      };
+    }
+
     EL.conversation = await sdk.Conversation.startSession({
       agentId,
+      clientTools,
       // NOTE: prompt override deliberately omitted. ElevenLabs' server
       // rejects it with close code 1008 even when the dashboard's "System
       // prompt" override toggle is ON — likely a field-name / schema
