@@ -153,8 +153,26 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 /* Cost row variant for the Settings tab — two cards side by side, no START
    CALL button between them like the Voice Chat layout. Stays grid-based for
    responsive collapse on narrower viewports. */
-.settings-cost-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width: 720px){ .settings-cost-row{grid-template-columns:1fr} }
+/* Settings costs row — collapsed to single column so each cost card
+   stretches the full width of the Settings panel. Was 1fr 1fr; the bigger
+   cards make session / balance / spent / left numbers far more legible at
+   a glance. Fonts inside Settings cost cards bumped up to fill the new
+   width, see .settings-cost-row .rt-cost-card overrides below. */
+.settings-cost-row{display:grid;grid-template-columns:1fr;gap:14px}
+.settings-cost-row .rt-cost-card{max-width:none;padding:18px 22px;gap:10px;font-size:14px}
+.settings-cost-row .rt-cost-card h5{font-size:14px;letter-spacing:.5px;margin-bottom:10px;gap:8px}
+.settings-cost-row .rt-cost-card h5 > span[style]{font-size:12px !important}
+.settings-cost-row .rt-cost-card .elevenlabs-dot,
+.settings-cost-row .rt-cost-card .anthropic-dot,
+.settings-cost-row .rt-cost-card .openai-dot{width:10px;height:10px}
+.settings-cost-row .rt-cost-card .row{font-size:14px;padding:4px 0}
+.settings-cost-row .rt-cost-card .row .v{font-size:18px;font-weight:700;letter-spacing:.3px}
+.settings-cost-row .rt-cost-card .row.session .v,
+.settings-cost-row .rt-cost-card .row.balance .v,
+.settings-cost-row .rt-cost-card .row.spent .v,
+.settings-cost-row .rt-cost-card .row.left .v{font-size:18px}
+.settings-cost-row .rt-cost-card .actions{gap:10px;margin-top:14px}
+.settings-cost-row .rt-cost-card .actions button{font-size:12px;padding:8px 14px;letter-spacing:.4px}
 /* Live cost chip — small pill on the Conversation tab's status row. Shows
    "Live · 0:42 · $0.06" while a call is active so spend is glanceable
    without tab-switching to Settings. elRenderLiveCost writes to it. */
@@ -361,6 +379,12 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .aichat-empty{color:#6b7280;font-style:italic;text-align:center;padding:60px 20px}
 .aichat-compose{display:flex;gap:10px;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:10px;align-items:stretch}
 .aichat-compose textarea{flex:1;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:14px 16px;font-size:15px;line-height:1.55;resize:vertical;min-height:380px;max-height:640px;font-family:inherit}
+/* Compact compose — used after the Quick Prompts column was retired in this
+   batch. Textarea shrinks to ~3 visible rows so Session Snapshots can take
+   the dominant lower-half real estate. The send-col still holds Send +
+   Attach + Clear input. */
+.aichat-compose-compact textarea{min-height:96px;max-height:280px}
+.aichat-compose-compact .send-col{min-width:180px}
 .aichat-compose textarea:focus{outline:none;border-color:#7c3aed}
 .aichat-compose .send-col{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:210px}
 .aichat-compose button{width:100%}
@@ -619,7 +643,16 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .preset-card-genres span.match{color:#a78bfa;border-color:#4338ca}
 /* JOURNAL */
 .journal-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 10px;background:#111827;border:1px solid #374151;border-radius:8px}
-.journal-list{display:flex;flex-direction:column;gap:8px}
+/* Session Snapshots — grown in this batch to fill space freed by the compose
+   shrink. Min-height keeps the panel substantial even with few entries; max-
+   height with internal scroll keeps the page bounded on long lists. */
+.journal-list{display:flex;flex-direction:column;gap:8px;min-height:320px;max-height:560px;overflow-y:auto;padding:6px;background:#0b1220;border:1px solid #1f2937;border-radius:8px}
+/* Star button on each Session Snapshots row — toggles favourite (which
+   controls whether the entry shows as a pill next to START CALL). */
+.journal-star{padding:4px 8px;font-size:13px;line-height:1;color:#6b7280;background:transparent;border:1px solid transparent}
+.journal-star:hover{color:#fbbf24}
+.journal-star.on{color:#fbbf24}
+.journal-star.on:hover{color:#fcd34d}
 .journal-empty{padding:30px 20px;text-align:center;color:#6b7280;font-size:13px;background:#111827;border:1px dashed #374151;border-radius:8px}
 .journal-entry{background:#111827;border:1px solid #374151;border-radius:8px;overflow:hidden}
 .journal-entry-head{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
@@ -658,6 +691,31 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .rt-opts select{width:100%;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:8px 10px;font-size:12px}
 .rt-dot.researching{background:#f59e0b;animation:blink .7s infinite}
 .rt-main{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px 16px 18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
+/* Favourite snapshot pills flanking START CALL. 3-col layout: pills-col
+   (1fr) | call button (auto) | pills-col (1fr). Pills are stacked vertically,
+   max 4 per side. Click a pill to recall the snapshot — mid-call sends a
+   sendContextualUpdate to Hope; otherwise drops into the compose textarea. */
+.rt-call-flank{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin-bottom:18px}
+.rt-main-wrap{display:flex;justify-content:center}
+.rt-pills-col{display:flex;flex-direction:column;gap:8px;align-self:center}
+.rt-pills-col[data-side="left"]{align-items:flex-end}
+.rt-pills-col[data-side="right"]{align-items:flex-start}
+.rt-pill{position:relative;background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:18px;padding:8px 14px;font-size:12px;line-height:1.3;cursor:pointer;font-family:inherit;text-align:left;max-width:240px;min-width:160px;transition:background .12s,border-color .12s,color .12s;display:flex;align-items:center;gap:8px}
+.rt-pill:hover{background:#283449;border-color:#4b5563;color:#fff}
+.rt-pill .rt-pill-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-pill .rt-pill-x{flex:none;width:18px;height:18px;border-radius:50%;background:transparent;border:none;color:#6b7280;font-size:14px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
+.rt-pill:hover .rt-pill-x{display:inline-flex}
+.rt-pill .rt-pill-x:hover{background:#7f1d1d;color:#fecaca}
+.rt-pill.empty{cursor:default;opacity:.45;border-style:dashed;color:#6b7280;background:transparent}
+.rt-pill.empty:hover{background:transparent;border-color:#374151;color:#6b7280}
+.rt-pills-empty-hint{font-size:10px;color:#6b7280;text-align:center;font-style:italic;padding:6px 0}
+@media (max-width:880px){
+  .rt-call-flank{grid-template-columns:1fr;gap:14px}
+  .rt-pills-col{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center}
+  .rt-pills-col[data-side="left"]{align-items:center}
+  .rt-pills-col[data-side="right"]{align-items:center}
+  .rt-pill{min-width:auto}
+}
 .rt-call-row{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:center;width:100%}
 .rt-cost-card{background:#111827;border:1px solid #374151;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;font-size:11px;min-width:0;max-width:380px;width:100%}
 /* Cards stay anchored to the OUTER edges of the row. Bumping max-width above
@@ -817,7 +875,14 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
       <button class="cs-btn" type="button"><span class="cs-icon"></span><span class="cs-label">Target</span><svg class="cs-caret" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="cs-pop"></div>
     </div>
-    <button class="btn" id="snapshotBtn">📋 Snapshot → Claude</button>
+    <!-- DORMANT post-snapshot-rename: workbench-state snapshot button rarely
+         used. Dormant-wrapped so its click handler (around the document.
+         getElementById('snapshotBtn').onclick = ... block) keeps finding the
+         element without null guards. The chat-summary path on the Voice Chat
+         tab (#aiChatToJournal — "Snapshot → Claude chat") is the active flow
+         that produces favourite pills. To revive: drop the `hidden` attribute
+         on the wrapper. -->
+    <span hidden data-dormant="workbench-snapshot"><button class="btn" id="snapshotBtn">📋 Snapshot session → Claude</button></span>
     <button class="btn secondary sm" id="resetBtn">Reset</button>
   </div>
 </div>
@@ -855,7 +920,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span class="chain-toolbar-hint">Per-source templates: 808, vocals, drums, master, FX returns. Tap the floating mic to start a live call with Hope — she reads and edits the chain in real time.</span>
   </div>
   <div class="bus-grid" id="busGrid"></div>
-  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Hit "Snapshot → Claude" when dialed in — every snapshot is auto-saved as a Session Snapshot under the Voice Chat tab.</div>
+  <div class="tip-box alt"><strong>How to use:</strong> click "+ Add plugin" on any bus, search, click to add. ↑/↓ to reorder, × to remove. Bring the chain into a chat with Claude on the Voice Chat tab, then hit <strong>📋 Snapshot → Claude chat</strong> to save the discussion as a Session Snapshot pill next to START CALL.</div>
 </div>
 
 <div class="panel" id="meter">
@@ -895,40 +960,42 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
        and the dormant OpenAI rtApiKey/rtModel/rtVoice/voiceProvider) survived
        the move so existing handlers don't need rewiring. -->
 
-  <!-- Cost cards relocated to the Settings tab in Batch 5. The call button +
-       status row stay here as the Conversation tab's primary affordance. -->
-  <div class="rt-main rt-main-call" style="background:transparent;border:none;padding:0;margin:0;gap:12px;display:flex;flex-direction:column;align-items:center;">
-    <button class="rt-call-btn" id="rtCallBtn" disabled>
-      <span class="rt-call-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="44" height="44"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span>
-      <span class="rt-call-label" id="rtCallLabel">Save EL key + Agent ID</span>
-    </button>
-    <div class="rt-status-row">
-      <span class="rt-dot" id="rtDot"></span>
-      <span class="rt-status" id="rtStatus">Idle</span>
-      <span class="rt-timer" id="rtTimer"></span>
-      <span class="rt-cost" id="rtCost"></span>
-      <!-- Live cost chip — populated by elRenderLiveCost once per second
-           during an EL call. Hidden by default; shown when EL.active.
-           Glanceable spend without tab-switching to Settings. -->
-      <span class="rt-live-cost-chip" id="elLiveCostChip" hidden></span>
-    </div>
-  </div>
-
+  <!-- Cost cards relocated to the Settings tab in Batch 5. -->
   <!-- Session tools panel (cost/min, soft budget cap, breakdown, auto-pause,
        usage links) relocated to the Settings tab in Batch 5. -->
 
-  <!-- PROFILE — Hope's cross-conversation memory of Kev. Free-form dossier
-       injected at session start, auto-extracted by Haiku at end-of-call,
-       hand-editable. Persisted in STATE.profile under trapMasterState_v1. -->
-  <div class="profile-panel">
-    <h4>🧠 Profile <span class="badge">Hope's memory across calls — auto-extracted, hand-editable</span></h4>
-    <textarea id="profileText" rows="6" placeholder="What Hope should know about you across sessions: your taste, recurring techniques, plugin preferences, reference tracks, mixing habits, things you're tired of being told. Auto-updated at end of each voice call via Haiku — edit by hand any time."></textarea>
-    <div class="profile-actions">
-      <button class="btn ghost sm" id="profileSave">Save</button>
-      <button class="btn ghost sm" id="profileClear">Clear</button>
-      <span class="profile-status" id="profileStatus"></span>
-      <span class="profile-len" id="profileLen"></span>
+  <!-- PROFILE — relocated to the Knowledge tab in this batch. The block lives at
+       the bottom of <div class="panel" id="knowledge"> as "Hope's memory". DOM
+       IDs (profileText / profileSave / profileClear / profileStatus /
+       profileLen) all preserved so renderProfileEditor / setProfileStatus /
+       maybeExtractProfile keep finding their targets unchanged. -->
+  <!-- FAVOURITE SNAPSHOTS — pills flanking the START CALL button. Populated
+       from STATE.journal entries with favourite:true (auto-set by
+       aichatToJournal). Click pills to recall: mid-call sends a
+       sendContextualUpdate to Hope; otherwise drops into the compose textarea
+       as a draft. Hover × to unfavourite. -->
+  <div class="rt-call-flank">
+    <div class="rt-pills-col" id="rtPillsLeft" data-side="left"></div>
+    <div class="rt-main-wrap">
+      <!-- The original .rt-main-call block lives here, unchanged structurally. -->
+      <div class="rt-main rt-main-call" style="background:transparent;border:none;padding:0;margin:0;gap:12px;display:flex;flex-direction:column;align-items:center;">
+        <button class="rt-call-btn" id="rtCallBtn" disabled>
+          <span class="rt-call-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="44" height="44"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span>
+          <span class="rt-call-label" id="rtCallLabel">Save EL key + Agent ID</span>
+        </button>
+        <div class="rt-status-row">
+          <span class="rt-dot" id="rtDot"></span>
+          <span class="rt-status" id="rtStatus">Idle</span>
+          <span class="rt-timer" id="rtTimer"></span>
+          <span class="rt-cost" id="rtCost"></span>
+          <!-- Live cost chip — populated by elRenderLiveCost once per second
+               during an EL call. Hidden by default; shown when EL.active.
+               Glanceable spend without tab-switching to Settings. -->
+          <span class="rt-live-cost-chip" id="elLiveCostChip" hidden></span>
+        </div>
+      </div>
     </div>
+    <div class="rt-pills-col" id="rtPillsRight" data-side="right"></div>
   </div>
 
   <!-- CONVERSATION — Batch 3b folded the AI Chat tab in here. One transcript
@@ -951,7 +1018,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
         <option value="claude-haiku-4-5-20251001">Haiku 4.5 — fastest / cheapest</option>
       </select>
       <label class="toggle"><input type="checkbox" id="aiChatWebSearch" checked> 🌐 Web search</label>
-      <button class="btn green sm" id="aiChatToJournal" title="Generate a TL;DR of this chat and save it as a Session Snapshot below">📜 TL;DR → Snapshot</button>
+      <button class="btn purple sm" id="aiChatToJournal" title="Summarise this chat with Claude into a Session Snapshot below — auto-favourites the new entry as a pill next to START CALL.">📋 Snapshot → Claude chat</button>
       <button class="btn purple sm" id="aiChatImportPlugins" title="Paste a messy plugin list — Claude parses + normalises and adds them to your library">✨ Import plugins</button>
       <button class="btn ghost sm" id="aiChatClear" title="Wipe conversation history (typed + voice turns)">🗑 Clear chat</button>
     </div>
@@ -960,21 +1027,26 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     </div>
     <div id="aiChatImagePreview" style="display:none"></div>
     <input type="file" id="aiChatImageInput" accept="image/*" style="display:none">
-    <div class="aichat-compose">
-      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click Attach screenshot →" rows="9"></textarea>
+    <div class="aichat-compose aichat-compose-compact">
+      <textarea id="aiChatInput" placeholder="Type a message — Cmd/Ctrl+Enter to send. Paste a screenshot (Cmd-V), drop one onto the box, or click Attach screenshot →" rows="3"></textarea>
       <div class="send-col">
         <button id="aiChatSend" type="button">Send ↵</button>
         <button id="aiChatImageBtn" type="button" title="Attach a screenshot — Claude can read meters, plugin settings, transcripts, anything visible">📷 Attach screenshot</button>
-        <div class="aichat-quick-prompts">
-          <div class="aichat-quick-prompts-label">Quick prompts</div>
-          <button type="button" class="aichat-quick-prompt" data-prompt="What's wrong with my current chain? Diagnose it from the workbench state.">▶ What's wrong with this chain?</button>
-          <button type="button" class="aichat-quick-prompt" data-prompt="Suggest 3 specific improvements to my current chain — name plugins from my library and exact starting settings.">▶ Suggest 3 improvements</button>
-          <button type="button" class="aichat-quick-prompt" data-prompt="Reference track sounds like ">▶ Reference track sounds like…</button>
-          <button type="button" class="aichat-quick-prompt" data-prompt="Translate this for the voice tab — give me a short prompt I can read aloud to the voice assistant.">▶ Translate this for the voice tab</button>
-          <button type="button" class="aichat-quick-prompt" data-prompt="Explain the controls on ">▶ Explain this plugin's controls</button>
-        </div>
         <button id="aiChatClearInput" type="button" title="Clear just the typing box — does not erase chat history">🧹 Clear input</button>
         <span class="aichat-status" id="aiChatStatus">&nbsp;</span>
+      </div>
+      <!-- DORMANT post-this-batch: the Quick Prompts column was retired since
+           the compose area shrank and the Snapshots panel grew. The buttons
+           are kept in a hidden wrapper so the document.querySelectorAll
+           binding in init still finds zero or more — no null-guard needed,
+           just an empty NodeList. Revival path: drop the `hidden` attribute. -->
+      <div hidden data-dormant="aichat-quickprompts" class="aichat-quick-prompts">
+        <div class="aichat-quick-prompts-label">Quick prompts</div>
+        <button type="button" class="aichat-quick-prompt" data-prompt="What's wrong with my current chain? Diagnose it from the workbench state.">▶ What's wrong with this chain?</button>
+        <button type="button" class="aichat-quick-prompt" data-prompt="Suggest 3 specific improvements to my current chain — name plugins from my library and exact starting settings.">▶ Suggest 3 improvements</button>
+        <button type="button" class="aichat-quick-prompt" data-prompt="Reference track sounds like ">▶ Reference track sounds like…</button>
+        <button type="button" class="aichat-quick-prompt" data-prompt="Translate this for the voice tab — give me a short prompt I can read aloud to the voice assistant.">▶ Translate this for the voice tab</button>
+        <button type="button" class="aichat-quick-prompt" data-prompt="Explain the controls on ">▶ Explain this plugin's controls</button>
       </div>
     </div>
     <div class="aichat-foot">
@@ -1019,7 +1091,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <button class="btn ghost sm" id="journalExport">⬇ Export all</button>
     <button class="btn ghost sm" id="journalClear" title="Delete every saved snapshot below.">🗑 Clear snapshots</button>
   </div>
-  <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — hit <strong>Snapshot → Claude</strong> to start your session log.</div></div>
+  <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — chat with Claude above and hit <strong>📋 Snapshot → Claude chat</strong> to save the discussion. Saved entries auto-favourite as pills next to START CALL.</div></div>
 
   <!-- The "How it works" tip-box and the secure-context browser warning were
        relocated to the Settings tab in Batch 5. The audio element below
@@ -1049,6 +1121,28 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <span class="kb-stats" id="kbStats">No notes yet.</span>
   </div>
   <div class="kb-list" id="kbList"></div>
+
+  <!-- HOPE'S MEMORY — Profile editor relocated from the Voice Chat tab in this
+       batch. Same DOM IDs (profileText / profileSave / profileClear /
+       profileStatus / profileLen) so renderProfileEditor / setProfileStatus /
+       maybeExtractProfile keep finding their targets unchanged. The profile
+       blob is auto-extracted by Haiku at end-of-call from the voice transcript;
+       feel free to hand-edit any time. Persisted in STATE.profile under
+       trapMasterState_v1. -->
+  <div class="section-head" style="margin-top:28px;">
+    <h2><span class="sec-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C7.5 2 4 5.5 4 10c0 1.8.5 3.4 1.5 4.8C5.2 15.6 5 16.5 5 17.5 5 19.4 6.6 21 8.5 21c1 0 2-.4 2.7-1.1.3.1.5.1.8.1s.5 0 .8-.1c.7.7 1.7 1.1 2.7 1.1 1.9 0 3.5-1.6 3.5-3.5 0-1-.2-1.9-.5-2.7C19.5 13.4 20 11.8 20 10c0-4.5-3.5-8-8-8z"/><path d="M9 11.5c.5 0 1-.5 1-1s-.5-1-1-1-1 .5-1 1 .5 1 1 1zM15 11.5c.5 0 1-.5 1-1s-.5-1-1-1-1 .5-1 1 .5 1 1 1z"/></svg></span>Hope's memory</h2>
+    <span class="blurb">Cross-conversation profile of you. Auto-extracted at end-of-call via Haiku, hand-editable. Injected into every Hope conversation so she remembers across sessions.</span>
+  </div>
+  <div class="profile-panel">
+    <h4>🧠 Profile <span class="badge">Hope's memory across calls — auto-extracted, hand-editable</span></h4>
+    <textarea id="profileText" rows="6" placeholder="What Hope should know about you across sessions: your taste, recurring techniques, plugin preferences, reference tracks, mixing habits, things you're tired of being told. Auto-updated at end of each voice call via Haiku — edit by hand any time."></textarea>
+    <div class="profile-actions">
+      <button class="btn ghost sm" id="profileSave">Save</button>
+      <button class="btn ghost sm" id="profileClear">Clear</button>
+      <span class="profile-status" id="profileStatus"></span>
+      <span class="profile-len" id="profileLen"></span>
+    </div>
+  </div>
 </div>
 
 <div class="panel" id="eq">
@@ -3646,7 +3740,7 @@ function journalAdd(text){
 }
 function renderJournal(){
   const list=document.getElementById('journalList'); if(!list) return;
-  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — hit <strong>Snapshot → Claude</strong> from the Chain Builder to log a session, or use <strong>TL;DR → Snapshot</strong> on the Chat with Claude tab to save a chat summary.</div>';return;}
+  if(!STATE.journal||!STATE.journal.length){list.innerHTML='<div class="journal-empty">No snapshots yet — chat with Claude on the Voice Chat tab and hit <strong>📋 Snapshot → Claude chat</strong> to save the discussion. Saved entries auto-favourite as pills next to START CALL.</div>';return;}
   list.innerHTML=STATE.journal.map(e=>{
     const type = e.type || 'snapshot';
     const time = new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -3656,20 +3750,24 @@ function renderJournal(){
 
     let middle = '';
     let actions = '';
+    // Star button — favourite/unfavourite to control which entries become
+    // pills flanking START CALL. Filled gold when favourite:true.
+    const isFav = e.favourite === true;
+    const starBtn = `<button class="btn ghost sm journal-star${isFav?' on':''}" onclick="event.stopPropagation();toggleFavourite('${e.id}')" title="${isFav?'Unfavourite — keeps the snapshot, removes the pill':'Favourite — adds as a pill next to START CALL'}">${isFav?'★':'☆'}</button>`;
     if (type === 'aichat'){
       // Chat TL;DR — show subject as the headline; no chain restore
       const subject = e.subject || 'Chat with Claude';
       const msgs = (e.messageCount!=null) ? `${e.messageCount} msgs` : '';
       const preview = msgs ? `· ${msgs}` : '';
       middle = `<span class="journal-subject" title="${escapeHtml(subject)}">${escapeHtml(subject)}</span><span class="journal-preview">${escapeHtml(preview)}</span>`;
-      actions = `<div class="journal-actions"><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
+      actions = `<div class="journal-actions">${starBtn}<button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
     } else {
       // Workbench snapshot — keep restore button
       const chainCount = BUSES.reduce((n,b)=>n+(e.chain&&e.chain[b.id]?e.chain[b.id].length:0),0);
       const subject = e.subject || `Session snapshot — ${chainCount} plugin${chainCount===1?'':'s'}`;
       const preview = `${chainCount} plugins · ${Object.keys(e.meters||{}).length} meters · ${e.symptoms?e.symptoms.length:0} flags`;
       middle = `<span class="journal-subject" title="${escapeHtml(subject)}">${escapeHtml(subject)}</span><span class="journal-preview">${escapeHtml(preview)}</span>`;
-      actions = `<div class="journal-actions"><button class="btn ghost sm" onclick="event.stopPropagation();restoreFromJournal('${e.id}')" title="Restore this state">↩</button><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
+      actions = `<div class="journal-actions">${starBtn}<button class="btn ghost sm" onclick="event.stopPropagation();restoreFromJournal('${e.id}')" title="Restore this state">↩</button><button class="btn ghost sm" onclick="event.stopPropagation();copyJournal('${e.id}')" title="Re-copy to clipboard">📋</button><button class="btn ghost sm" onclick="event.stopPropagation();deleteJournal('${e.id}')" title="Delete">×</button></div>`;
     }
 
     return `<div class="journal-entry" data-id="${e.id}"><div class="journal-entry-head"><span class="journal-time">${escapeHtml(time)}</span>${typeBadge}${genrePill}${platformPill}${middle}${actions}</div><div class="journal-body"><pre>${escapeHtml(e.text||'')}</pre></div></div>`;
@@ -3684,13 +3782,121 @@ function restoreFromJournal(id){
   if(!confirm('Restore this snapshot? Overwrites current chain, meters, and flags.')) return;
   applyCapturedSnap(e); toast('Restored from journal');
 }
+
+// ----- Favourite snapshot pills -----
+// 8 pills max (4 each side) flanking START CALL. Sourced from STATE.journal
+// entries with favourite:true (auto-set by aichatToJournal; manual ★ toggle
+// available on each Session Snapshots row). Pill click is context-aware:
+// mid-call -> EL.conversation.sendContextualUpdate; pre-call -> compose draft.
+const FAV_PILLS_MAX = 8;
+const FAV_PILLS_PER_SIDE = 4;
+
+function getFavouriteEntries(){
+  if (!STATE.journal) return [];
+  // Most-recent-first by ts. Cap at FAV_PILLS_MAX.
+  return STATE.journal
+    .filter(e => e && e.favourite === true)
+    .sort((a,b) => (b.ts||0) - (a.ts||0))
+    .slice(0, FAV_PILLS_MAX);
+}
+
+function renderFavouritePills(){
+  const left = document.getElementById('rtPillsLeft');
+  const right = document.getElementById('rtPillsRight');
+  if (!left || !right) return;
+  const favs = getFavouriteEntries();
+  const leftEntries = favs.slice(0, FAV_PILLS_PER_SIDE);
+  const rightEntries = favs.slice(FAV_PILLS_PER_SIDE, FAV_PILLS_MAX);
+  function pillHtml(e){
+    const subject = e.subject || 'Untitled snapshot';
+    const labelTrunc = subject.length > 30 ? subject.slice(0,28) + '…' : subject;
+    const tooltip = (e.tldr ? (subject + ' — ' + e.tldr) : subject).slice(0, 240);
+    return `<button class="rt-pill" data-id="${escapeHtml(e.id)}" title="${escapeHtml(tooltip)}" onclick="recallFavourite('${escapeJs(e.id)}')"><span class="rt-pill-label">${escapeHtml(labelTrunc)}</span><span class="rt-pill-x" title="Unfavourite — keeps the snapshot, removes the pill" onclick="event.stopPropagation();toggleFavourite('${escapeJs(e.id)}')">×</span></button>`;
+  }
+  function emptyHtml(){
+    return `<button class="rt-pill empty" disabled title="Click the 📋 Snapshot → Claude chat button on the conversation toolbar to populate this pill"><span class="rt-pill-label">+ snapshot a chat</span></button>`;
+  }
+  function fill(col, entries){
+    const slots = [];
+    for (let i = 0; i < FAV_PILLS_PER_SIDE; i++){
+      slots.push(entries[i] ? pillHtml(entries[i]) : emptyHtml());
+    }
+    col.innerHTML = slots.join('');
+  }
+  fill(left, leftEntries);
+  fill(right, rightEntries);
+}
+
+function recallFavourite(id){
+  const e = STATE.journal.find(x => x.id === id);
+  if (!e){ toast('Snapshot not found', true); return; }
+  const subject = e.subject || 'Untitled snapshot';
+  const body = e.text || e.tldr || '';
+  const recallText = `Recalling: ${subject}\n\n${body}`;
+  // Mid-call -> contextual update to Hope. Pre-call -> compose draft.
+  const inCall = (typeof EL !== 'undefined' && EL && EL.active && EL.conversation && typeof EL.conversation.sendContextualUpdate === 'function');
+  if (inCall){
+    try {
+      EL.conversation.sendContextualUpdate(recallText);
+      toast(`Sent to Hope: "${subject}"`);
+    } catch (err) {
+      console.warn('[fav-pill] sendContextualUpdate failed', err);
+      toast('Send to Hope failed — see console', true);
+    }
+    return;
+  }
+  // Compose draft path. Switch to Voice Chat tab, fill the textarea, focus.
+  const ta = document.getElementById('aiChatInput');
+  if (!ta){ toast('Compose box not found', true); return; }
+  // Don't blow away an in-progress draft; prepend a separator if needed.
+  if (ta.value && ta.value.trim()){
+    ta.value = recallText + '\n\n---\n\n' + ta.value;
+  } else {
+    ta.value = recallText;
+  }
+  // Resize textarea so the content is visible without scroll-juggling.
+  try {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 400) + 'px';
+  } catch(_){}
+  // Make sure we're on the Voice Chat tab. The tab handler is on a button
+  // with data-tab="voice"; click it to switch (renders panel + focuses).
+  const voiceTabBtn = document.querySelector('button.tab[data-tab="voice"]');
+  if (voiceTabBtn) voiceTabBtn.click();
+  ta.focus();
+  // Drop the cursor at the end so Kev can keep typing his follow-up.
+  try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch(_){}
+  toast(`Recalled: "${subject}"`);
+}
+
+function toggleFavourite(id){
+  const e = STATE.journal.find(x => x.id === id);
+  if (!e) return;
+  if (e.favourite){
+    // Unfavourite — easy.
+    e.favourite = false;
+  } else {
+    // Favourite — enforce the FAV_PILLS_MAX cap by FIFO-dropping the oldest.
+    const currentFavs = STATE.journal.filter(x => x.favourite === true);
+    if (currentFavs.length >= FAV_PILLS_MAX){
+      const oldest = currentFavs.sort((a,b) => (a.ts||0) - (b.ts||0))[0];
+      if (oldest) oldest.favourite = false;
+    }
+    e.favourite = true;
+  }
+  saveState();
+  renderJournal();
+  renderFavouritePills();
+}
 function copyJournal(id){
   const e=STATE.journal.find(x=>x.id===id); if(!e) return;
   copyToClipboard(e.text||'','Snapshot copied');
 }
 function deleteJournal(id){
   STATE.journal=STATE.journal.filter(x=>x.id!==id);
-  renderJournal(); saveState();
+  renderJournal();
+  try { renderFavouritePills(); } catch(_){}
+  saveState();
 }
 function exportJournal(){
   if(!STATE.journal.length){toast('Journal is empty');return;}
@@ -3706,7 +3912,11 @@ function exportJournal(){
 }
 document.getElementById('journalClear').onclick=()=>{
   if(!confirm('Clear all session snapshots? This cannot be undone.')) return;
-  STATE.journal=[]; renderJournal(); saveState(); toast('Snapshots cleared');
+  STATE.journal=[];
+  renderJournal();
+  try { renderFavouritePills(); } catch(_){}
+  saveState();
+  toast('Snapshots cleared');
 };
 // Clear the on-screen Live Voice Transcript. Doesn't touch saved snapshots
 // (those live in STATE.journal). Restores the placeholder so the panel still
@@ -7119,11 +7329,26 @@ Be concise. Pull only what's actually in the transcript — don't invent recomme
       key_points: Array.isArray(parsed.key_points) ? parsed.key_points : [],
       recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
       open_questions: Array.isArray(parsed.open_questions) ? parsed.open_questions : [],
-      text: body.join('\n')
+      text: body.join('\n'),
+      // Auto-favourite chats summarised via TL;DR -> Snapshot. They become
+      // pills flanking START CALL, recallable mid-call as a contextual
+      // update to Hope or as a draft into the compose textarea.
+      favourite: true
     };
+    // Enforce the FAV_PILLS_MAX cap before unshift — FIFO-drop the oldest
+    // favourite if we'd exceed the cap. The dropped entry stays in
+    // STATE.journal as favourite:false.
+    try {
+      const currentFavs = STATE.journal.filter(x => x.favourite === true);
+      if (currentFavs.length >= FAV_PILLS_MAX){
+        const oldest = currentFavs.sort((a,b) => (a.ts||0) - (b.ts||0))[0];
+        if (oldest) oldest.favourite = false;
+      }
+    } catch(_){}
     STATE.journal.unshift(entry);
     if (STATE.journal.length>50) STATE.journal = STATE.journal.slice(0,50);
     renderJournal();
+    try { renderFavouritePills(); } catch(_){}
     saveState();
     aichatStatus(`Saved to Journal — "${entry.subject}"`, 'ok');
     toast('Chat summary saved to Journal');
@@ -9428,6 +9653,10 @@ renderLibrary();
 troubleInit();
 renderRecipes();
 renderJournal();
+// Render the favourite snapshot pills flanking START CALL. Reads from
+// STATE.journal (already loaded above by loadState). Safe to call before
+// renderProfileEditor / aichatInit since it only touches DOM under #voice.
+try { renderFavouritePills(); } catch(e){ console.warn('[fav-pill] init render failed', e); }
 aichatInit();
 knowledgeInit();
 importInit();
