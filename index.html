@@ -7228,6 +7228,13 @@ DON'T:
 // on the floating mic / START CALL button set it before calling here).
 async function rtStart(opts){
   if(RT.active||RT.connecting)return;
+  // Defensive cross-provider cleanup: if an ElevenLabs session is in flight
+  // (started from Start Call while OpenAI is the dropdown selection, or any
+  // other dual-start race), tear it down before opening a Realtime session.
+  // Two providers playing into the same #rtAudio element is the bug Kev hit.
+  if (typeof EL !== 'undefined' && (EL.active || EL.connecting)){
+    try { await elEnd('Switching to OpenAI'); } catch(_) {}
+  }
   if (opts && (opts.mode === 'ptt' || opts.mode === 'always-on')) RT.mode = opts.mode;
   const apiKey=localStorage.getItem(RT_KEY_STORAGE);
   if(!apiKey){rtSetKeyStatus('Save a key first.','err');return;}
@@ -7553,6 +7560,12 @@ function rtEnd(reason){
 // connect/talk/disconnect cycle works end-to-end against the real account).
 async function elStart(){
   if (EL.active || EL.connecting) return;
+  // Defensive cross-provider cleanup: end any in-flight OpenAI Realtime
+  // session first so we don't have two providers playing audio over each
+  // other into the shared #rtAudio element.
+  if (typeof RT !== 'undefined' && (RT.active || RT.connecting)){
+    try { rtEnd('Switching to ElevenLabs'); } catch(_) {}
+  }
   const agentId = localStorage.getItem(EL_AGENT_ID_STORAGE);
   // Note: for Public agents the SDK doesn't need the API key at session
   // start — agentId alone is enough. We still keep the key in localStorage
@@ -7796,14 +7809,23 @@ function rtCleanup(){
 //     Hope voice + Claude Sonnet 4.6 brain
 // The provider dropdown above the cost panels picks which one fires.
 document.getElementById('rtCallBtn').addEventListener('click',()=>{
+  // End-anything-active first. If Kev flipped the provider dropdown mid-call,
+  // the active session might NOT match the current dropdown — clicking End
+  // Call should still kill it, otherwise we leak a hot session in the
+  // background. Both end functions are idempotent + cleanup-safe.
+  const anyActive = RT.active || RT.connecting || EL.active || EL.connecting;
+  if (anyActive){
+    if (RT.active || RT.connecting) rtEnd();
+    if (EL.active || EL.connecting) elEnd();
+    return;
+  }
+  // No session running — start the selected provider.
   const provider = getVoiceProvider();
   if (provider === 'elevenlabs'){
-    if (EL.active || EL.connecting){ elEnd(); return; }
     elStart();
     return;
   }
-  // OpenAI Realtime — default path, untouched by the migration
-  if(RT.active||RT.connecting){ rtEnd(); return; }
+  // OpenAI Realtime — default path
   RT.focusMode = null;
   rtStart({mode: VOICE_MODE_PREFS.voice});
 });
@@ -8126,6 +8148,25 @@ function micScopeAndMode(){
   return {scope:'voice', mode:VOICE_MODE_PREFS.voice};
 }
 function micStartFromFloat(){
+  // Branch by provider so the float mic and the Start Call button can never
+  // run two providers at once. ElevenLabs is the simpler path: no PTT, no
+  // focus-mode addendums (system prompt is dashboard-fixed), so we just open
+  // the conversation and jump to the Voice Chat tab where End Call is visible.
+  const provider = getVoiceProvider();
+  if (provider === 'elevenlabs'){
+    if (!localStorage.getItem(EL_AGENT_ID_STORAGE)){
+      toast('Save your ElevenLabs Agent ID on the Voice Chat tab first', true);
+      return;
+    }
+    elStart();
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('.tab[data-tab="voice"]').classList.add('active');
+    document.getElementById('voice').classList.add('active');
+    applyFloatMicVisibility();
+    return;
+  }
+  // OpenAI Realtime path — full focus-mode + PTT support.
   if (!localStorage.getItem(RT_KEY_STORAGE)){
     toast('Save an OpenAI key on the Voice Chat tab first', true);
     return;
@@ -8269,6 +8310,9 @@ floatMicEl.addEventListener('mousedown', e=>{
     return;
   }
   RT.mouseHeldOnMic = true;
+  // EL session active: mousedown is a no-op; mouseup handles end-call. EL
+  // doesn't have PTT semantics — the SDK runs always-on once started.
+  if (EL.active || EL.connecting) return;
   if (!RT.active && !RT.connecting){
     micStartFromFloat();
     return;
@@ -8286,6 +8330,12 @@ floatMicEl.addEventListener('mouseup', ()=>{
   if (activeTabId() === 'aichat'){
     RT.mouseHeldOnMic = false;
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
+    return;
+  }
+  // EL active: a click on the float mic ends the call (mirror of always-on RT).
+  if (EL.active || EL.connecting){
+    RT.mouseHeldOnMic = false;
+    elEnd();
     return;
   }
   // Released BEFORE the session finished connecting — abort the session
@@ -8330,6 +8380,7 @@ floatMicEl.addEventListener('touchstart', e=>{
     return;
   }
   RT.mouseHeldOnMic = true;
+  if (EL.active || EL.connecting) return;
   if (!RT.active && !RT.connecting){ micStartFromFloat(); return; }
   if (RT.mode === 'ptt') rtPttDown();
 }, {passive:false});
@@ -8342,6 +8393,7 @@ floatMicEl.addEventListener('touchend', e=>{
     if (VOICE_MODE_PREFS.aichat === 'ptt' && DICT.recording) dictPttUp();
     return;
   }
+  if (EL.active || EL.connecting){ RT.mouseHeldOnMic = false; elEnd(); return; }
   if (RT.connecting && RT.pttQueuedFromMouse){
     RT.pttQueuedFromMouse = false;
     RT.mouseHeldOnMic = false;
@@ -8377,6 +8429,7 @@ window.addEventListener('keydown', e=>{
   e.preventDefault();
   RT.spaceHeld = true;
   const tab = activeTabId();
+  const provider = getVoiceProvider();
 
   // ---- AI Chat: dictation only (no Realtime sessions). PTT mode only —
   // always-on stays on the mic-button click so a stray spacebar can't toggle
@@ -8386,7 +8439,23 @@ window.addEventListener('keydown', e=>{
     return;
   }
 
-  // ---- Voice Chat: space toggles the call.
+  // ---- ElevenLabs path: spacebar toggles the call (start / end). EL has no
+  // PTT semantics — once the conversation starts, it runs always-on. Branching
+  // here also means we never accidentally fire rtStart while Hope is active
+  // (which would have two providers playing into the same audio element).
+  if (provider === 'elevenlabs'){
+    if (EL.active || EL.connecting){ elEnd(); return; }
+    if (!localStorage.getItem(EL_AGENT_ID_STORAGE)){
+      toast('Save your ElevenLabs Agent ID on the Voice Chat tab first', true);
+      return;
+    }
+    elStart();
+    return;
+  }
+
+  // ---- OpenAI path from here on. ----
+
+  // Voice Chat tab: space toggles the call.
   if (tab === 'voice'){
     if (RT.active){
       if (RT.mode === 'ptt') rtPttDown();
@@ -8402,8 +8471,8 @@ window.addEventListener('keydown', e=>{
     return;
   }
 
-  // ---- Focus tabs (chain / library / eq / knowledge): pressing space starts
-  // a PTT session. On connect we'll fire rtPttDown if the space is still held.
+  // Focus tabs (chain / library / eq / knowledge): pressing space starts a
+  // PTT session. On connect we'll fire rtPttDown if the space is still held.
   if (FOCUS_TAB_SCOPES[tab]){
     if (RT.active){
       if (RT.mode === 'ptt') rtPttDown();
@@ -8419,8 +8488,8 @@ window.addEventListener('keydown', e=>{
     return;
   }
 
-  // ---- Other tabs (Diagnose): PTT during an active session, otherwise no-op
-  // — we don't auto-start sessions from random tabs to keep credit cost
+  // Other tabs (Diagnose): PTT during an active session, otherwise no-op —
+  // we don't auto-start sessions from random tabs to keep credit cost
   // predictable. Kev can still click the mic to start.
   if (RT.active && RT.mode === 'ptt') rtPttDown();
 });

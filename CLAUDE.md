@@ -12,14 +12,68 @@ Project context for future Claude (or Cowork) sessions. Read this first when pic
 
 ## ⚠️ HANDOVER POINT — read this first if you're picking up the voice-elevenlabs branch
 
-**Last working state:** ElevenLabs Conversational AI is **fully working including client tools**. Hope greets Kev in-character, voice flows both ways, the system prompt is published in the dashboard, AND all 25 client tools are registered + wired — she can read his chain, add/remove plugins, change genre/platform, edit knowledge notes, etc. live during a call. Tested live; tool calls fire and the workbench updates in real time.
+**Last working state (as of session ending May 2026):** ElevenLabs Conversational AI is fully working end-to-end. All 25 client tools registered + wired, profile system (cross-conversation memory) landed, dual-provider overlap bug fixed. Hope can read his chain, change genre, add/remove plugins, edit knowledge notes, etc. live during a call. Tools fire, workbench updates in real time, and the profile blob auto-extracts via Haiku at end-of-call so she remembers his preferences across sessions.
 
-**Where to resume:** the migration's next two follow-ups are open. Pick whichever Kev wants to tackle first:
+**Where to resume — full single-vendor consolidation (OpenAI → ElevenLabs).**
 
-1. **Profile system** — cross-conversation memory. `STATE.profile` blob persisted to localStorage, Haiku-extracts learnings at end-of-call, injected via `sendContextualUpdate` at session start, with a small editor UI on the Voice Chat tab. JSON synced to repo for cross-machine portability.
-2. **Cost tracking** — pull minute-cost from `/v1/convai/conversations/{conversation_id}` after disconnect, stream into the existing OpenAI-style spend panel.
+Kev decided he doesn't want to use OpenAI any more. The Voice Chat tab still has the dual-provider plumbing from the migration phase (provider dropdown, OpenAI Realtime path, OpenAI cost card). He wants ALL of that ripped out and replaced with ElevenLabs equivalents. We confirmed via web research that:
 
-The OpenAI path on `main` stays as production fallback until Kev's run a few real sessions on EL and confirms it holds up. **Don't merge `voice-elevenlabs` → `main` yet.**
+- **STT:** ElevenLabs Scribe v2 batch transcription is $0.22/hr ≈ $0.0037/min — about 40% cheaper than OpenAI Whisper ($0.36/hr). Same use case (POST audio, get text back). Perfect for the AI Chat dictation flow that currently uses Whisper.
+- **TTS:** ElevenLabs has their own TTS API (it's their core product). Replaces the OpenAI TTS dropdown on the AI Chat "Read aloud" feature.
+- **LLM-side voice:** Already on ElevenLabs Conversational AI with Claude Sonnet 4.6 brain. Done.
+
+This is staged into **four batches** so each can ship + test independently. Important: don't delete the OpenAI code paths (rtStart, RT state, MIC_SVG_FLOAT, etc.) — Kev wants them dormant in the file as a "back pocket" if he ever needs to re-enable. Just unwire from the UI.
+
+#### Batch 1 — UI sweep on Voice Chat tab
+
+- Remove the **provider dropdown** (`#voiceProvider`) and its label / help text. Voice Chat is ElevenLabs-only now.
+- Remove the **OpenAI API key field + Save / Show / Clear buttons** from the Voice Chat tab. The `RT_KEY_STORAGE` localStorage key can stay (legacy data), but the UI is gone.
+- Remove the **voice model dropdown** (`#rtModel`) and **OpenAI Voice dropdown** (`#rtVoice`) — both are OpenAI Realtime concerns.
+- The Anthropic API key field STAYS — it powers Claude research, profile extraction, AI Chat itself. Move/relabel as needed but keep it functional.
+- The Mic-mode toggle (PTT / Always-on) on the Voice Chat tab can stay or go — EL's SDK runs always-on so PTT is a no-op for it. Suggest hiding it on Voice Chat (chain/library/eq/knowledge tabs still use it for the OpenAI path which won't run any more anyway, so the chain-toolbar pill becomes vestigial too — hide everywhere).
+- Update the rtCallBtn click handler: drop the provider check, just call `elStart` / `elEnd`. Same for `micStartFromFloat`, the float-mic mouse handlers, and the spacebar handler — drop all the `getVoiceProvider()` branching, route everything to EL.
+- Update the title-bar "How it works" tip-box copy on the Voice Chat tab — currently mentions "your API key talks to OpenAI's Realtime API directly". Rewrite for EL (mentions Hope, Claude Sonnet 4.6 brain, etc.).
+
+Files to touch: `index.html` only. No external deps to add.
+
+#### Batch 2 — AI Chat dictation: Whisper → Scribe v2
+
+The DICT module (search `// DICTATION (DICT)` in index.html) currently calls `https://api.openai.com/v1/audio/transcriptions` with `model: 'whisper-1'`. Migrate to `https://api.elevenlabs.io/v1/speech-to-text` with the appropriate Scribe model id (web-fetch the docs to confirm — last known: `scribe_v1` or `scribe_v2`, multipart form-data with `file` and `model_id`, returns JSON with `.text`).
+
+- Same MediaRecorder capture path; just swap the fetch target + auth header (`xi-api-key` instead of `Authorization: Bearer`).
+- Use the existing `aiMixMastersElevenKey_v1` key (already saved on every call setup). Drop the `RT_KEY_STORAGE` check.
+- Web Speech API stays as the no-key fallback. PTT vs always-on logic on the AI Chat tab is unchanged.
+- Roll the cost into a new `addSpend('elevenlabs', cost)` bucket — see Batch 4.
+- Update the prompt-priming context (the "Pultec, FabFilter, Soothe2..." plugin-name dictionary) — Scribe likely takes this as a `language_code` or `prompt` field; check the API.
+
+#### Batch 3 — AI Chat "Read aloud": OpenAI TTS → ElevenLabs TTS
+
+The TTS module (search `aichatSpeak` / `aichatTtsAudioEl` in index.html) currently posts to `https://api.openai.com/v1/audio/speech` with `model: 'tts-1' | 'tts-1-hd' | 'gpt-4o-mini-tts'` and a `voice` from the OpenAI voice list (alloy, ash, ballad, etc.). Migrate to:
+
+- Endpoint: `https://api.elevenlabs.io/v1/text-to-speech/{voice_id}` (or the streaming variant if word-level highlighting needs it)
+- Auth: `xi-api-key` header
+- Body: `{text, model_id, voice_settings}` — model probably `eleven_multilingual_v2` or `eleven_turbo_v2_5` for cheaper
+- Replace the voice dropdown options on the AI Chat toolbar with ElevenLabs voice IDs. Suggest defaulting to Hope (`WAhoMTNdLdMoq1j3wf3I`) so Read aloud sounds like Hope mid-conversation. Add a few other ElevenLabs library voices for variety.
+- Word-level TTS highlight (`aichatTtsHighlightTick`, `aichatInstallWordSpans`) currently sweeps through tokenised words at audio playback time — this should still work as long as the new audio source plays in the same `<audio>` element. The highlight algorithm doesn't depend on per-word timestamps.
+- Roll cost into the EL spend bucket.
+
+#### Batch 4 — Cost panel rewire (the originally-deferred follow-up)
+
+Replace the OpenAI cost card on the Voice Chat tab with an ElevenLabs cost card. Three sources of EL spend now:
+
+1. **Conversational AI minutes** — pull from `GET /v1/convai/conversations/{conversationId}` after each `onDisconnect` fires. Response includes `metadata.charging.minutes_used` (or similar — verify with a real call). Kev's on Creator plan: $22/mo / 250 min ≈ $0.088/min. Live during the call: estimate from `EL.startedAt` * rate; reconcile after disconnect with the API's exact number.
+2. **Scribe v2 dictation** — count duration of each MediaRecorder capture, multiply by $0.0037/min.
+3. **TTS** — ElevenLabs bills per character; each Read-aloud call multiplies the text length × rate (~$0.30/1000 chars on Creator plan; verify).
+
+UI side:
+- Rename the `oaSession` / `oaBalance` / `oaSpent` / `oaLeft` element IDs and all references to neutral / EL names. Keep `aiMixMastersSpendOpenAI_v1` legacy key for archive purposes but use a fresh `aiMixMastersSpendEleven_v1` for new spend.
+- The `cpmValue` "cost / minute" tile — point at the EL minute rate.
+- The Anthropic side of the panel stays exactly as-is.
+- Add a small "Update balance" button that pulls the user's remaining ElevenLabs subscription minutes via `GET /v1/user/subscription` so Kev can see plan headroom.
+
+Files to touch: `index.html`. New helper: `elFetchConversationCost(conversationId)`. Hook into `onDisconnect` after `maybeExtractProfile()` (don't block one on the other).
+
+### What's already done (don't redo this)
 
 ### What's already done (don't redo this)
 
@@ -48,6 +102,10 @@ The OpenAI path on `main` stays as production fallback until Kev's run a few rea
 
 8. **Schema-validation quirk handled in the Python script.** ElevenLabs requires every leaf parameter — string/number/integer/boolean properties AND array `items` schemas — to declare one of: `description`, `dynamic_variable`, `is_system_provided`, or `constant_value`. Our `TOOL_DEFS` omits descriptions on enum-only fields and array-item types because OpenAI doesn't need them. The `ensure_param_descriptions` function in the Python script walks each schema and injects a sensible default description before POSTing. If you ever extend `TOOL_DEFS` and re-run the script, the same normalisation handles your new fields automatically.
 
+9. **Profile system — cross-conversation memory.** `STATE.profile` (string, capped at 2 KB by `PROFILE_MAX_LEN`) is persisted in `trapMasterState_v1`. `buildProfileDigest()` formats it as a system-prompt block; both `rtStart` and `elStart` append it to their session instructions (OpenAI via `session.update`, EL via `sendContextualUpdate` in the pendingContext bundle). `maybeExtractProfile()` runs at end-of-call (hooked from `rtEnd` AND `onDisconnect`, BEFORE cleanup wipes the transcript) — `snapshotTranscript()` reads from `RT.transcriptIndex`, then `extractProfile()` fires a Haiku call (`claude-haiku-4-5-20251001`) with a focused system prompt that captures durable preferences only. UI panel between session tools and live transcript: `#profileText` textarea + Save / Clear / status / byte counter. Spend is rolled into the existing `addSpend('an', cost)` Anthropic bucket.
+
+10. **Dual-provider overlap fix.** Earlier the float mic and spacebar always called `rtStart` regardless of the provider dropdown — so pressing PTT while Hope was running started a parallel OpenAI session and both providers played audio into the shared `#rtAudio` element. Five surgical fixes landed: `micStartFromFloat` branches by provider, `rtStart` and `elStart` defensively cross-end any other-provider session at top, the rtCallBtn handler ends ANY active session (not just the matching-provider one), and the float-mic + spacebar handlers became EL-aware (mousedown is a no-op when EL is active; mouseup ends the call; spacebar tap toggles EL start/end since it has no PTT semantics). All this is moot once Batch 1 above ships and removes the dropdown — but the cross-end guards in `rtStart`/`elStart` should stay as belt-and-braces.
+
 ### Localstorage keys added by the migration
 
 - `aiMixMastersElevenKey_v1` — ElevenLabs API key
@@ -56,50 +114,31 @@ The OpenAI path on `main` stays as production fallback until Kev's run a few rea
 
 ### Files / sections to read before touching the EL code
 
-In `index.html`:
-- **`const EL_SDK_URL`** — ~line 3955. The SDK pin and the rationale comment for it. Read the comment before changing.
+In `index.html` (line numbers approximate — file is ~9100 lines):
+
+- **`const EL_SDK_URL`** — the SDK pin and the rationale comment. Read the comment before changing.
 - **`const EL = {...}`** — the state object. Mirrors `RT` in spirit.
-- **`elLoadKey / elSaveKey / elLoadAgentId / elSaveAgentId / loadVoiceProvider`** — persistence helpers.
-- **`async function elStart()`** — the main connect path. Two key blocks: (a) the `clientTools` dict built programmatically from `TOOL_DEFS` just above the `Conversation.startSession({...})` call (each tool becomes an async wrapper around `handleToolCall` that JSON.stringifies its return), and (b) the `EL.pendingContext` flow that injects workbench state via `sendContextualUpdate` from `onConnect`.
+- **`elLoadKey / elSaveKey / elLoadAgentId / elSaveAgentId / loadVoiceProvider`** — persistence helpers. `loadVoiceProvider` becomes vestigial after Batch 1.
+- **`async function elStart()`** — the main connect path. Two key blocks: (a) the `clientTools` dict built programmatically from `TOOL_DEFS` just above the `Conversation.startSession({...})` call (each tool becomes an async wrapper around `handleToolCall` that JSON.stringifies its return), and (b) the `EL.pendingContext` flow that injects workbench state via `sendContextualUpdate` from `onConnect`. `pendingContext` already includes `buildLibraryDigest()`, `buildResearchDigest()`, AND `buildProfileDigest()` — append the focus-mode addendum here too if Batch 1 wants to fold the focus-tab system prompts into EL.
 - **`async function elEnd() / function elCleanup()`** — disconnect + state reset.
-- **`document.getElementById('rtCallBtn').addEventListener('click', ...)`** — the START CALL button now branches by `getVoiceProvider()` to pick OpenAI or ElevenLabs.
+- **`document.getElementById('rtCallBtn').addEventListener('click', ...)`** — the START CALL button. Currently branches by `getVoiceProvider()` and ends-anything-active; after Batch 1, drop the branch and just route to elStart/elEnd.
+- **`function micStartFromFloat()`** — the float-mic click entry point. Currently branches by provider; Batch 1 simplifies to EL-only.
+- **Spacebar handler `window.addEventListener('keydown', ...)`** — same provider branching, same simplification.
+- **`async function maybeExtractProfile()` + `extractProfile()` + `snapshotTranscript()`** — profile extraction pipeline. Hooked from both `rtEnd` AND EL `onDisconnect` BEFORE cleanup wipes `RT.transcriptIndex`. Don't move the hook order or the transcript snapshot returns empty.
+- **DICTATION (DICT) module** — search `// DICTATION (DICT)`. Currently uses Whisper. Batch 2 swaps to Scribe.
+- **AI Chat TTS** — search `aichatSpeak`. Currently OpenAI TTS. Batch 3 swaps to ElevenLabs TTS.
 
 ### Known good user flow
 
-1. Kev opens `localhost:8000` (or the Cowork-served folder)
-2. Voice Chat tab → Voice provider dropdown set to **ElevenLabs**
-3. ElevenLabs API key + Agent ID saved (loaded from localStorage on subsequent loads)
-4. Click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain
-5. He says things like "what's on my master bus?" or "add Maag EQ4 to the master" — Hope calls the right tool, the workbench updates in real time, and DevTools console logs `[EL tool] <name> <args> → <result>` for every tool call.
+1. `python3 -m http.server 8000` from the repo root → open <http://localhost:8000>.
+2. Voice Chat tab → ElevenLabs API key + Agent ID saved (loaded from localStorage on subsequent loads). The provider dropdown still exists (until Batch 1 lands) and should be set to **ElevenLabs** — but the agent will refuse to call OpenAI Realtime now anyway since we're not maintaining that path.
+3. Click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain.
+4. Try voice tool calls: "what's on my master bus?", "add Maag EQ4 to the master", "switch genre to trap" — workbench updates in real time, DevTools console logs `[EL tool] <name> <args> → <result>` for every call.
+5. End the call → Haiku extracts profile updates (if Anthropic key saved + transcript >200 chars). The `#profileText` panel updates with new lines. Next call she remembers.
 
-### Open follow-ups (pick one when resuming)
+### Open follow-ups
 
-Both build on top of working tool calls. Either is a clean standalone feature; doesn't matter which order.
-
-**1. Profile system — cross-conversation memory.**
-
-Goal: Hope remembers facts about Kev's preferences, taste, and recurring techniques across sessions. "Kev hates pumping on the master bus", "he uses Pultec EQs on every vocal chain", "his reference track for trap is Sicko Mode". She picks up where she left off instead of starting from scratch every call.
-
-Sketch:
-- New `STATE.profile` blob (free-form text) persisted to `trapMasterState_v1` so it lives alongside the chain/library/etc.
-- At session start, append the profile blob to `EL.pendingContext` so it gets injected via `sendContextualUpdate` alongside the library digest. Same trick as the existing context injection — no prompt-override needed.
-- At session end (`onDisconnect`), fire a Haiku call against the call's transcript to extract any new "learnings" worth keeping. Append to `STATE.profile`. Cap the blob at ~2 KB so it doesn't balloon.
-- Small editor UI on the Voice Chat tab — textarea + "Save profile" + "Clear profile" buttons. Kev can hand-edit when the auto-extraction is wrong.
-- Sync to repo so it's portable across machines: keep the blob inside `trapMasterState_v1` localStorage, and (separately) auto-export `profile.txt` after each edit so it can be committed if Kev wants.
-
-Watch out for: keeping the extraction prompt VERY focused (model-of-mix-engineer-only, not full transcript regurgitation), and rate-limiting the Haiku call so a quick test session doesn't burn cents.
-
-**2. Cost tracking — wire EL spend into the existing panel.**
-
-Goal: the OpenAI path streams session cost into `oaSession` / `oaSpent` etc. as audio tokens accumulate. EL doesn't expose token counts via the SDK at all; cost is per-minute, queryable only after disconnect via `GET /v1/convai/conversations/{conversationId}`.
-
-Sketch:
-- After `onDisconnect`, if we have an `EL.conversationId`, fire an authed GET to `https://api.elevenlabs.io/v1/convai/conversations/{conversationId}` using `xi-api-key`.
-- Response includes `metadata.charging.minutes_used` (or similar — verify with a real call) and the dollar charge.
-- Convert to dollars (verify against Kev's plan rate; Creator plan is $22/mo for ~250 minutes ≈ $0.088/min). Stream into `addSpend('elevenlabs', delta)` — needs a third spend bucket alongside `oai` / `ant`.
-- Or simpler v1: estimate cost during the call from `EL.startedAt` (minutes elapsed × known per-minute rate) and reconcile after disconnect with the API's exact number.
-
-Watch out for: the spend panel's cost cards (`oaSession`, `oaBalance`, etc.) are OpenAI-named; either rename them to be provider-neutral or add a third pair for EL. The `cpmValue` "cost / minute" tile already exists — just point it at the EL rate when provider === 'elevenlabs'.
+The OpenAI removal is the active scope (4 batches in the HANDOVER POINT section above). Beyond that, no other open threads.
 
 ### Non-obvious gotchas
 
