@@ -146,6 +146,21 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .tile-toolbar-inline .eq-tool-btn{padding:5px 10px;font-size:11px}
 .tile-toolbar-inline .eq-edit-hint{font-size:10px}
 .section-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #374151}
+/* Batch 5 — Settings tab section grouping. Each .settings-section is a
+   labelled block that groups related controls (keys, models, costs, etc.). */
+.settings-section{margin:18px 0 28px}
+.settings-section h3{font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#cbd5e1;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #1f2937}
+/* Cost row variant for the Settings tab — two cards side by side, no START
+   CALL button between them like the Voice Chat layout. Stays grid-based for
+   responsive collapse on narrower viewports. */
+.settings-cost-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width: 720px){ .settings-cost-row{grid-template-columns:1fr} }
+/* Live cost chip — small pill on the Conversation tab's status row. Shows
+   "Live · 0:42 · $0.06" while a call is active so spend is glanceable
+   without tab-switching to Settings. elRenderLiveCost writes to it. */
+.rt-live-cost-chip{display:inline-flex;align-items:center;gap:4px;background:#0b1220;border:1px solid #374151;color:#cbd5e1;font-size:11px;font-variant-numeric:tabular-nums;padding:3px 9px;border-radius:999px;letter-spacing:.2px}
+.rt-live-cost-chip.amber{color:#fbbf24;border-color:#92400e}
+.rt-live-cost-chip.red{color:#fb7185;border-color:#7f1d1d}
 .section-head:first-child{margin-top:0}
 .section-head h2{font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e5e7eb;margin:0;display:flex;align-items:center;gap:10px}
 .section-head .blurb{color:#9ca3af;font-size:12px;flex:1}
@@ -818,6 +833,11 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   <button class="tab" data-tab="knowledge" style="color:#fbbf24;"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z"/><line x1="7" y1="8" x2="9.5" y2="8"/><line x1="7" y1="11" x2="9.5" y2="11"/><line x1="14.5" y1="8" x2="17" y2="8"/><line x1="14.5" y1="11" x2="17" y2="11"/></svg></span> Knowledge</button>
   <button class="tab" data-tab="eq"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="14" x2="6" y2="14"/><line x1="6" y1="14" x2="9" y2="6"/><line x1="9" y1="6" x2="12" y2="20"/><line x1="12" y1="20" x2="15" y2="9"/><line x1="15" y1="9" x2="18" y2="13"/><line x1="18" y1="13" x2="21" y2="13"/></svg></span> Mastering Reference</button>
   <button class="tab" data-tab="library"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/><circle cx="7" cy="7" r="1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="1" fill="#fff" stroke="none"/></svg></span> Plugin Library</button>
+  <!-- Settings tab — Batch 5 (2026-05-XX). Holds keys / models / cost panels /
+       session tools / browser warning. Voice Chat panel becomes the pure
+       Conversation surface. Rightmost so the conversation flow tabs stay
+       grouped on the left. -->
+  <button class="tab" data-tab="settings"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span> Settings</button>
 </div>
 <!-- Floating Start Call button — tap-to-toggle always-on call with Hope.
      Hidden on the Voice Chat tab where the embedded START CALL is the primary
@@ -870,211 +890,32 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 </div>
 
 <div class="panel" id="voice">
-  <div class="rt-settings-row">
-    <div class="rt-keys-col">
-      <!-- DORMANT post-Batch-1 (OpenAI removal): hidden but kept in the DOM so
-           rtLoadKey/rtSaveKey/rtClearKey + rtSetKeyStatus still work without
-           guards. RT_KEY_STORAGE legacy data stays readable. To revive, drop
-           the `hidden` attribute on the wrapper. -->
-      <div hidden data-dormant="openai-realtime">
-        <div class="rt-key-wrap">
-          <label>OpenAI API Key <span class="rt-keylabel-hint">— voice (Realtime API)</span></label>
-          <div class="rt-key-inputs">
-            <input type="password" id="rtApiKey" placeholder="sk-proj-… (stored only in this browser)" autocomplete="off" spellcheck="false">
-            <button class="btn ghost sm" id="rtKeyShow" title="Show/hide">👁</button>
-            <button class="btn secondary sm" id="rtKeySave">Save</button>
-            <button class="btn ghost sm" id="rtKeyClear" title="Remove from this browser">🗑</button>
-          </div>
-          <div class="rt-key-status" id="rtKeyStatus">No key saved. Paste and Save.</div>
-        </div>
-      </div>
-      <div class="rt-key-wrap">
-        <label>Anthropic API Key <span class="rt-keylabel-hint">— deep research / Claude (optional)</span></label>
-        <div class="rt-key-inputs">
-          <input type="password" id="rtAntKey" placeholder="sk-ant-… (optional — enables web-search research)" autocomplete="off" spellcheck="false">
-          <button class="btn ghost sm" id="rtAntKeyShow" title="Show/hide">👁</button>
-          <button class="btn secondary sm" id="rtAntKeySave">Save</button>
-          <button class="btn ghost sm" id="rtAntKeyClear" title="Remove from this browser">🗑</button>
-        </div>
-        <div class="rt-key-status" id="rtAntKeyStatus">No key saved. Optional — without it the AI falls back to its built-in (sometimes shaky) knowledge.</div>
-      </div>
-      <!-- ElevenLabs Conversational AI keys. Two fields: an account API key
-           (xi_...) and the Agent ID created in the ElevenLabs dashboard. Both
-           stored in localStorage like the other keys. Post Batch-1 these are
-           the only credentials Voice Chat uses — START CALL is gated on both
-           being saved (see updateCallButtonState). -->
-      <div class="rt-key-wrap">
-        <label>ElevenLabs API Key <span class="rt-keylabel-hint">— Conversational AI (Hope voice + Claude Sonnet)</span></label>
-        <div class="rt-key-inputs">
-          <input type="password" id="elKey" placeholder="paste your key (from elevenlabs.io → Developers → API Keys)" autocomplete="off" spellcheck="false">
-          <button class="btn ghost sm" id="elKeyShow" title="Show/hide">👁</button>
-          <button class="btn secondary sm" id="elKeySave">Save</button>
-          <button class="btn ghost sm" id="elKeyClear" title="Remove from this browser">🗑</button>
-        </div>
-        <div class="rt-key-status" id="elKeyStatus">No key saved. Required — Voice Chat needs your EL key + Agent ID.</div>
-      </div>
-    </div>
-    <div class="rt-opts">
-      <!-- DORMANT post-Batch-1: OpenAI Realtime model + voice selectors. Hidden
-           but in the DOM so rtSavePrefs/rtLoadPrefs (#rtModel / #rtVoice
-           lookups) keep working without null guards. -->
-      <div hidden data-dormant="openai-realtime"><label>Voice model</label>
-        <select id="rtModel">
-          <option value="gpt-4o-realtime-preview">gpt-4o-realtime — best</option>
-          <option value="gpt-4o-mini-realtime-preview" selected>gpt-4o-mini-realtime — ~10× cheaper</option>
-        </select>
-      </div>
-      <div hidden data-dormant="openai-realtime"><label>Voice</label>
-        <select id="rtVoice">
-          <option value="alloy">alloy (neutral)</option>
-          <option value="ash">ash (warm)</option>
-          <option value="ballad">ballad (soft)</option>
-          <option value="coral">coral (bright)</option>
-          <option value="echo" selected>echo (male, clear)</option>
-          <option value="sage">sage (mellow)</option>
-          <option value="shimmer">shimmer (female, crisp)</option>
-          <option value="verse">verse (expressive)</option>
-        </select>
-      </div>
-      <div><label>Research brain (Claude)</label>
-        <select id="rtClaudeModel">
-          <option value="claude-opus-4-6">claude-opus-4-6 — smartest</option>
-          <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6 — balanced</option>
-          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 — fastest / cheapest</option>
-        </select>
-      </div>
-      <!-- ElevenLabs Agent ID lives in the right column for layout balance —
-           two visible items left (Anthropic + EL key), two visible items right
-           (Research brain + Agent ID). All four dormant-wrapped OpenAI dropdowns
-           below stay hidden. -->
-      <div class="rt-key-wrap">
-        <label>ElevenLabs Agent ID <span class="rt-keylabel-hint">— from your agent's dashboard URL</span></label>
-        <div class="rt-key-inputs">
-          <input type="text" id="elAgentId" placeholder="agent_… (paste from elevenlabs.io/app/agents/&lt;ID&gt;)" autocomplete="off" spellcheck="false">
-          <button class="btn secondary sm" id="elAgentSave">Save</button>
-          <button class="btn ghost sm" id="elAgentClear" title="Remove from this browser">🗑</button>
-        </div>
-        <div class="rt-key-status" id="elAgentStatus">No agent ID saved.</div>
-      </div>
-      <!-- DORMANT post-Batch-1: provider toggle. Voice Chat is ElevenLabs-only
-           now. Kept in the DOM so loadVoiceProvider / saveVoiceProvider /
-           getVoiceProvider don't need null guards if they ever get reached
-           (e.g. via a back-pocket revival of the OpenAI path). -->
-      <div hidden data-dormant="openai-realtime"><label>Voice provider <span class="rt-keylabel-hint">— migration in flight</span></label>
-        <select id="voiceProvider">
-          <option value="openai">OpenAI Realtime — dormant</option>
-          <option value="elevenlabs" selected>ElevenLabs (Hope + Claude Sonnet 4.6)</option>
-        </select>
-      </div>
+  <!-- The keys + models row was relocated to the Settings tab in Batch 5
+       (2026-05-XX). All DOM IDs (rtAntKey, elKey, elAgentId, rtClaudeModel,
+       and the dormant OpenAI rtApiKey/rtModel/rtVoice/voiceProvider) survived
+       the move so existing handlers don't need rewiring. -->
+
+  <!-- Cost cards relocated to the Settings tab in Batch 5. The call button +
+       status row stay here as the Conversation tab's primary affordance. -->
+  <div class="rt-main rt-main-call" style="background:transparent;border:none;padding:0;margin:0;gap:12px;display:flex;flex-direction:column;align-items:center;">
+    <button class="rt-call-btn" id="rtCallBtn" disabled>
+      <span class="rt-call-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="44" height="44"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span>
+      <span class="rt-call-label" id="rtCallLabel">Save EL key + Agent ID</span>
+    </button>
+    <div class="rt-status-row">
+      <span class="rt-dot" id="rtDot"></span>
+      <span class="rt-status" id="rtStatus">Idle</span>
+      <span class="rt-timer" id="rtTimer"></span>
+      <span class="rt-cost" id="rtCost"></span>
+      <!-- Live cost chip — populated by elRenderLiveCost once per second
+           during an EL call. Hidden by default; shown when EL.active.
+           Glanceable spend without tab-switching to Settings. -->
+      <span class="rt-live-cost-chip" id="elLiveCostChip" hidden></span>
     </div>
   </div>
 
-  <div class="rt-main">
-    <div class="rt-call-row">
-      <!-- LEFT: ElevenLabs cost card. Replaces the OpenAI cost card after Batch
-           4. Three sources of EL spend feed addSpend('el', cost):
-             • Conversational AI minutes — pulled exactly from
-               GET /v1/convai/conversations/{conversationId} via
-               elFetchConversationCost() right after onDisconnect, AFTER
-               maybeExtractProfile() runs (don't block one on the other). A
-               live estimate (EL.startedAt × Creator-plan minute rate) ticks
-               on the Session line during the call; reconciliation after
-               disconnect overwrites with the exact figure.
-             • Scribe v2 dictation — already wired from Batch 2; dormant in
-               3b but still writes to SPEND_KEY_EL if revived.
-             • TTS per-character — DROPPED. Read-aloud retired in 3b.
-           Balance is updated from GET /v1/user/subscription via the Update
-           balance button — plan headroom rather than a manual dollar figure.
-           Legacy aiMixMastersSpendOpenAI_v1 stays in localStorage as archive
-           but no longer drives any visible UI; use addSpend('oai', …) only
-           if you ever revive the dormant OpenAI Realtime path. -->
-      <div class="rt-cost-card elevenlabs" id="costCardEleven">
-        <h5><span class="elevenlabs-dot"></span>ElevenLabs <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Conversational AI</span></h5>
-        <div class="row session"><span>Session</span><span class="v" id="elSession">$0.000</span></div>
-        <div class="row balance"><span>Balance</span><span class="v" id="elBalance" title="Click to fetch your subscription headroom from the ElevenLabs API">— set —</span></div>
-        <div class="row spent"><span>Spent</span><span class="v" id="elSpent">$0.000</span></div>
-        <div class="row left"><span>Left</span><span class="v" id="elLeft">—</span></div>
-        <div class="actions">
-          <button class="topup" id="elTopup" title="Open your ElevenLabs subscription in a new tab">Top up ↗</button>
-          <button id="elUpdate" title="Fetch your subscription headroom from /v1/user/subscription">Update balance</button>
-        </div>
-      </div>
-
-      <!-- CENTER: Call button + status row -->
-      <div class="rt-main" style="background:transparent;border:none;padding:0;margin:0;gap:12px;">
-        <button class="rt-call-btn" id="rtCallBtn" disabled>
-          <span class="rt-call-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="44" height="44"><rect x="9" y="2.5" width="6" height="11" rx="3"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="9" x2="14" y2="9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg></span>
-          <span class="rt-call-label" id="rtCallLabel">Save EL key + Agent ID</span>
-        </button>
-        <div class="rt-status-row">
-          <span class="rt-dot" id="rtDot"></span>
-          <span class="rt-status" id="rtStatus">Idle</span>
-          <span class="rt-timer" id="rtTimer"></span>
-          <span class="rt-cost" id="rtCost"></span>
-        </div>
-      </div>
-
-      <!-- RIGHT: Anthropic cost card -->
-      <div class="rt-cost-card anthropic" id="costCardAnthropic">
-        <h5><span class="anthropic-dot"></span>Anthropic <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Research</span></h5>
-        <div class="row session"><span>Session</span><span class="v" id="anSession">$0.000</span></div>
-        <div class="row balance"><span>Balance</span><span class="v" id="anBalance" title="Click to update — read this from console.anthropic.com">— set —</span></div>
-        <div class="row spent"><span>Spent</span><span class="v" id="anSpent">$0.000</span></div>
-        <div class="row left"><span>Left</span><span class="v" id="anLeft">—</span></div>
-        <div class="actions">
-          <button class="topup" id="anTopup" title="Open Anthropic billing in a new tab">Top up ↗</button>
-          <button id="anUpdate" title="Enter your current balance from the website">Update balance</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SESSION TOOLS — replaces the old Live actions log -->
-  <div class="rt-tools-panel">
-    <h4>🛠 Session tools <span class="badge">cost &amp; safety</span></h4>
-    <div class="rt-tools-grid">
-      <div class="rt-tool-card">
-        <div class="label">Cost / minute</div>
-        <div class="v" id="cpmValue">—</div>
-        <div class="sub" id="cpmHint">Live during call. Amber over $0.10/min.</div>
-      </div>
-
-      <div class="rt-tool-card">
-        <div class="label">Soft budget cap</div>
-        <select id="budgetCap">
-          <option value="0">No limit</option>
-          <option value="0.5">$0.50 per call</option>
-          <option value="1">$1 per call</option>
-          <option value="2">$2 per call</option>
-          <option value="5">$5 per call</option>
-        </select>
-        <div class="sub" id="budgetSub">Voice warning + amber pulse when crossed.</div>
-      </div>
-
-      <div class="rt-tool-card breakdown">
-        <div class="label">Session breakdown</div>
-        <div class="br-line"><span>Voice (EL minutes)</span><span class="br-v" id="brEl">$0.000</span></div>
-        <div class="br-line"><span>Research (Anthropic)</span><span class="br-v" id="brResearch">$0.000</span></div>
-        <div class="br-line" hidden data-dormant="openai-realtime"><span>Audio in</span><span class="br-v" id="brAudioIn">$0.000</span></div>
-        <div class="br-line" hidden data-dormant="openai-realtime"><span>Audio out</span><span class="br-v" id="brAudioOut">$0.000</span></div>
-        <div class="br-line" hidden data-dormant="openai-realtime"><span>Text in/out</span><span class="br-v" id="brText">$0.000</span></div>
-      </div>
-
-      <div class="rt-tool-card">
-        <div class="label">Auto-pause if stuck</div>
-        <label class="tog"><input type="checkbox" id="autoPause" /> End call after 30s silence</label>
-        <div class="sub">Saves you from a runaway session if the model hangs.</div>
-      </div>
-
-      <div class="rt-tool-card">
-        <div class="label">Usage dashboards</div>
-        <button class="linkbtn" id="elUsageLink">📊 ElevenLabs usage ↗</button>
-        <button class="linkbtn" id="anUsageLink">📊 Anthropic usage ↗</button>
-        <div class="sub">Real numbers live on the providers' sites.</div>
-      </div>
-
-    </div>
-  </div>
+  <!-- Session tools panel (cost/min, soft budget cap, breakdown, auto-pause,
+       usage links) relocated to the Settings tab in Batch 5. -->
 
   <!-- PROFILE — Hope's cross-conversation memory of Kev. Free-form dossier
        injected at session start, auto-extracted by Haiku at end-of-call,
@@ -1180,9 +1021,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
   </div>
   <div class="journal-list" id="journalList"><div class="journal-empty">No snapshots yet — hit <strong>Snapshot → Claude</strong> to start your session log.</div></div>
 
-  <div class="tip-box alt"><strong>How it works:</strong> your ElevenLabs key + Agent ID open a live conversation with <strong>Hope</strong> — ElevenLabs voice, Claude Sonnet 4.6 brain. She has tools for your chain, library, meters, knowledge notes, and flags, so she reads and edits the workbench while you talk. Try: <em>"what's on my master bus?"</em>, <em>"add Maag EQ4 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em> &nbsp;At end of call your profile auto-extracts via Haiku so she remembers across sessions. Live transcript and snapshots below.</div>
-
-  <div class="tip-box warn" id="browserWarn" style="display:none;"><strong>Heads up:</strong> voice needs a secure context (HTTPS or localhost). Chrome blocks the mic on <code>file://</code> URLs — open this artifact via the Cowork sidebar, or serve the folder with <code>python3 -m http.server</code> and open <code>http://localhost:8000</code>. Safari is more forgiving but still needs mic permission.</div>
+  <!-- The "How it works" tip-box and the secure-context browser warning were
+       relocated to the Settings tab in Batch 5. The audio element below
+       stays — it's the call's audio sink and lives in the Conversation surface. -->
 
   <audio id="rtAudio" autoplay playsinline></audio>
 </div>
@@ -1301,6 +1142,219 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
     <div class="lib-pubs" id="libPubFilter"></div>
   </div>
   <div class="stage-grid" id="libraryGrid"></div>
+</div>
+
+<!-- SETTINGS — Batch 5 (2026-05-XX). Holds API keys, models, cost panels,
+     session-tools panel (cost/min, soft cap, breakdown, auto-pause, usage
+     dashboards), and the browser-warning + How-it-works tip-box. The Voice
+     Chat panel above keeps only the conversation flow (START CALL +
+     status + live cost chip, profile editor, transcript, compose, snapshots).
+     All DOM IDs preserved on the move so existing handlers find their targets. -->
+<div class="panel" id="settings">
+  <div class="section-head">
+    <h2>⚙ Settings</h2>
+    <span class="blurb">Keys, models, costs, session safety. Voice Chat handles the actual conversation; this tab is the plumbing.</span>
+  </div>
+  <div class="settings-section" id="settingsKeys">
+    <h3>API keys</h3>
+    <div class="rt-keys-col">
+      <div class="rt-key-wrap">
+        <label>Anthropic API Key <span class="rt-keylabel-hint">— deep research / Claude (optional)</span></label>
+        <div class="rt-key-inputs">
+          <input type="password" id="rtAntKey" placeholder="sk-ant-… (optional — enables web-search research)" autocomplete="off" spellcheck="false">
+          <button class="btn ghost sm" id="rtAntKeyShow" title="Show/hide">👁</button>
+          <button class="btn secondary sm" id="rtAntKeySave">Save</button>
+          <button class="btn ghost sm" id="rtAntKeyClear" title="Remove from this browser">🗑</button>
+        </div>
+        <div class="rt-key-status" id="rtAntKeyStatus">No key saved. Optional — without it the AI falls back to its built-in (sometimes shaky) knowledge.</div>
+      </div>
+      <!-- ElevenLabs Conversational AI keys. Two fields: an account API key
+           (xi_...) and the Agent ID created in the ElevenLabs dashboard. START
+           CALL is gated on both being saved (see updateCallButtonState). -->
+      <div class="rt-key-wrap">
+        <label>ElevenLabs API Key <span class="rt-keylabel-hint">— Conversational AI (Hope voice + Claude Sonnet)</span></label>
+        <div class="rt-key-inputs">
+          <input type="password" id="elKey" placeholder="paste your key (from elevenlabs.io → Developers → API Keys)" autocomplete="off" spellcheck="false">
+          <button class="btn ghost sm" id="elKeyShow" title="Show/hide">👁</button>
+          <button class="btn secondary sm" id="elKeySave">Save</button>
+          <button class="btn ghost sm" id="elKeyClear" title="Remove from this browser">🗑</button>
+        </div>
+        <div class="rt-key-status" id="elKeyStatus">No key saved. Required — Voice Chat needs your EL key + Agent ID.</div>
+      </div>
+      <div class="rt-key-wrap">
+        <label>ElevenLabs Agent ID <span class="rt-keylabel-hint">— from your agent's dashboard URL</span></label>
+        <div class="rt-key-inputs">
+          <input type="text" id="elAgentId" placeholder="agent_… (paste from elevenlabs.io/app/agents/&lt;ID&gt;)" autocomplete="off" spellcheck="false">
+          <button class="btn secondary sm" id="elAgentSave">Save</button>
+          <button class="btn ghost sm" id="elAgentClear" title="Remove from this browser">🗑</button>
+        </div>
+        <div class="rt-key-status" id="elAgentStatus">No agent ID saved.</div>
+      </div>
+      <!-- DORMANT post-Batch-1 (OpenAI removal): OpenAI key UI hidden but kept
+           in the DOM so rtLoadKey/rtSaveKey/rtClearKey + rtSetKeyStatus still
+           work without guards. RT_KEY_STORAGE legacy data stays readable. To
+           revive, drop the `hidden` attribute on the wrapper. -->
+      <div hidden data-dormant="openai-realtime">
+        <div class="rt-key-wrap">
+          <label>OpenAI API Key <span class="rt-keylabel-hint">— voice (Realtime API)</span></label>
+          <div class="rt-key-inputs">
+            <input type="password" id="rtApiKey" placeholder="sk-proj-… (stored only in this browser)" autocomplete="off" spellcheck="false">
+            <button class="btn ghost sm" id="rtKeyShow" title="Show/hide">👁</button>
+            <button class="btn secondary sm" id="rtKeySave">Save</button>
+            <button class="btn ghost sm" id="rtKeyClear" title="Remove from this browser">🗑</button>
+          </div>
+          <div class="rt-key-status" id="rtKeyStatus">No key saved. Paste and Save.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="settings-section" id="settingsModels">
+    <h3>Models</h3>
+    <div class="rt-opts">
+      <div><label>Research brain (Claude)</label>
+        <select id="rtClaudeModel">
+          <option value="claude-opus-4-6">claude-opus-4-6 — smartest</option>
+          <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6 — balanced</option>
+          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 — fastest / cheapest</option>
+        </select>
+      </div>
+      <!-- DORMANT post-Batch-1: OpenAI Realtime model + voice selectors. Hidden
+           but in the DOM so rtSavePrefs/rtLoadPrefs keep working without null
+           guards. Same for the provider toggle below. -->
+      <div hidden data-dormant="openai-realtime"><label>Voice model</label>
+        <select id="rtModel">
+          <option value="gpt-4o-realtime-preview">gpt-4o-realtime — best</option>
+          <option value="gpt-4o-mini-realtime-preview" selected>gpt-4o-mini-realtime — ~10× cheaper</option>
+        </select>
+      </div>
+      <div hidden data-dormant="openai-realtime"><label>Voice</label>
+        <select id="rtVoice">
+          <option value="alloy">alloy (neutral)</option>
+          <option value="ash">ash (warm)</option>
+          <option value="ballad">ballad (soft)</option>
+          <option value="coral">coral (bright)</option>
+          <option value="echo" selected>echo (male, clear)</option>
+          <option value="sage">sage (mellow)</option>
+          <option value="shimmer">shimmer (female, crisp)</option>
+          <option value="verse">verse (expressive)</option>
+        </select>
+      </div>
+      <div hidden data-dormant="openai-realtime"><label>Voice provider <span class="rt-keylabel-hint">— migration in flight</span></label>
+        <select id="voiceProvider">
+          <option value="openai">OpenAI Realtime — dormant</option>
+          <option value="elevenlabs" selected>ElevenLabs (Hope + Claude Sonnet 4.6)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="settings-section" id="settingsCosts">
+    <h3>Costs</h3>
+    <!-- Two cost cards side by side. .settings-cost-row is the simpler 2-col
+         grid (no START CALL button between them like the Voice Chat layout
+         once had). The card markup is unchanged from Batch 4 — same IDs
+         (elSession / elBalance / elSpent / elLeft / anSession etc.) so
+         renderCostPanels and elRenderLiveCost still find their targets. -->
+    <div class="settings-cost-row">
+      <!-- LEFT: ElevenLabs cost card. Replaces the OpenAI cost card after
+           Batch 4. Three sources of EL spend feed addSpend('el', cost):
+             • Conversational AI minutes — pulled exactly from
+               GET /v1/convai/conversations/{conversationId} via
+               elFetchConversationCost() right after onDisconnect, AFTER
+               maybeExtractProfile() runs (don't block one on the other). A
+               live estimate (EL.startedAt × Creator-plan minute rate) ticks
+               on the Session line during the call; reconciliation after
+               disconnect overwrites with the exact figure.
+             • Scribe v2 dictation — already wired from Batch 2; dormant in
+               3b but still writes to SPEND_KEY_EL if revived.
+             • TTS per-character — DROPPED. Read-aloud retired in 3b.
+           Balance is updated from GET /v1/user/subscription via the Update
+           balance button — plan headroom rather than a manual dollar figure. -->
+      <div class="rt-cost-card elevenlabs" id="costCardEleven">
+        <h5><span class="elevenlabs-dot"></span>ElevenLabs <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Conversational AI</span></h5>
+        <div class="row session"><span>Session</span><span class="v" id="elSession">$0.000</span></div>
+        <div class="row balance"><span>Balance</span><span class="v" id="elBalance" title="Click to fetch your subscription headroom from the ElevenLabs API">— set —</span></div>
+        <div class="row spent"><span>Spent</span><span class="v" id="elSpent">$0.000</span></div>
+        <div class="row left"><span>Left</span><span class="v" id="elLeft">—</span></div>
+        <div class="actions">
+          <button class="topup" id="elTopup" title="Open your ElevenLabs subscription in a new tab">Top up ↗</button>
+          <button id="elUpdate" title="Fetch your subscription headroom from /v1/user/subscription">Update balance</button>
+        </div>
+      </div>
+      <!-- RIGHT: Anthropic cost card -->
+      <div class="rt-cost-card anthropic" id="costCardAnthropic">
+        <h5><span class="anthropic-dot"></span>Anthropic <span style="margin-left:auto;color:#9ca3af;font-weight:500;font-size:10px;">Research</span></h5>
+        <div class="row session"><span>Session</span><span class="v" id="anSession">$0.000</span></div>
+        <div class="row balance"><span>Balance</span><span class="v" id="anBalance" title="Click to update — read this from console.anthropic.com">— set —</span></div>
+        <div class="row spent"><span>Spent</span><span class="v" id="anSpent">$0.000</span></div>
+        <div class="row left"><span>Left</span><span class="v" id="anLeft">—</span></div>
+        <div class="actions">
+          <button class="topup" id="anTopup" title="Open Anthropic billing in a new tab">Top up ↗</button>
+          <button id="anUpdate" title="Enter your current balance from the website">Update balance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="settings-section" id="settingsSafety">
+    <h3>Session safety</h3>
+    <!-- Cost/min, soft budget cap, session breakdown, auto-pause, usage links.
+         Card markup unchanged from the Voice Chat layout — same IDs (cpmValue,
+         budgetCap, brEl, brResearch, autoPause, elUsageLink, anUsageLink) so
+         rtRenderCost / elRenderLiveCost / budget watchers still find them. -->
+    <div class="rt-tools-panel">
+      <h4>🛠 Session tools <span class="badge">cost &amp; safety</span></h4>
+      <div class="rt-tools-grid">
+        <div class="rt-tool-card">
+          <div class="label">Cost / minute</div>
+          <div class="v" id="cpmValue">—</div>
+          <div class="sub" id="cpmHint">Live during call. Amber over $0.10/min.</div>
+        </div>
+
+        <div class="rt-tool-card">
+          <div class="label">Soft budget cap</div>
+          <select id="budgetCap">
+            <option value="0">No limit</option>
+            <option value="0.5">$0.50 per call</option>
+            <option value="1">$1 per call</option>
+            <option value="2">$2 per call</option>
+            <option value="5">$5 per call</option>
+          </select>
+          <div class="sub" id="budgetSub">Voice warning + amber pulse when crossed.</div>
+        </div>
+
+        <div class="rt-tool-card breakdown">
+          <div class="label">Session breakdown</div>
+          <div class="br-line"><span>Voice (EL minutes)</span><span class="br-v" id="brEl">$0.000</span></div>
+          <div class="br-line"><span>Research (Anthropic)</span><span class="br-v" id="brResearch">$0.000</span></div>
+          <div class="br-line" hidden data-dormant="openai-realtime"><span>Audio in</span><span class="br-v" id="brAudioIn">$0.000</span></div>
+          <div class="br-line" hidden data-dormant="openai-realtime"><span>Audio out</span><span class="br-v" id="brAudioOut">$0.000</span></div>
+          <div class="br-line" hidden data-dormant="openai-realtime"><span>Text in/out</span><span class="br-v" id="brText">$0.000</span></div>
+        </div>
+
+        <div class="rt-tool-card">
+          <div class="label">Auto-pause if stuck</div>
+          <label class="tog"><input type="checkbox" id="autoPause" /> End call after 30s silence</label>
+          <div class="sub">Saves you from a runaway session if the model hangs.</div>
+        </div>
+
+        <div class="rt-tool-card">
+          <div class="label">Usage dashboards</div>
+          <button class="linkbtn" id="elUsageLink">📊 ElevenLabs usage ↗</button>
+          <button class="linkbtn" id="anUsageLink">📊 Anthropic usage ↗</button>
+          <div class="sub">Real numbers live on the providers' sites.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="settings-section" id="settingsNotes">
+    <h3>Notes</h3>
+    <!-- browserWarn surfaces from rtStart/elStart when !window.isSecureContext —
+         lives here as the canonical warning. The Conversation tab also pulls
+         attention to this banner when you click Start Call in a non-secure
+         context. -->
+    <div class="tip-box warn" id="browserWarn" style="display:none;"><strong>Heads up:</strong> voice needs a secure context (HTTPS or localhost). Chrome blocks the mic on <code>file://</code> URLs — open this artifact via the Cowork sidebar, or serve the folder with <code>python3 -m http.server</code> and open <code>http://localhost:8000</code>. Safari is more forgiving but still needs mic permission.</div>
+
+    <div class="tip-box alt"><strong>How it works:</strong> your ElevenLabs key + Agent ID open a live conversation with <strong>Hope</strong> — ElevenLabs voice, Claude Sonnet 4.6 brain. She has tools for your chain, library, meters, knowledge notes, and flags, so she reads and edits the workbench while you talk. Try: <em>"what's on my master bus?"</em>, <em>"add Maag EQ4 after Ozone"</em>, <em>"switch genre to R&amp;B"</em>, or <em>"I'm hearing pumping on the master."</em> &nbsp;At end of call your profile auto-extracts via Haiku so she remembers across sessions. Live transcript and snapshots show on the Voice Chat tab.</div>
+  </div>
 </div>
 </div>
 
@@ -5035,6 +5089,20 @@ function elRenderLiveCost(){
   // Mirror into the Session breakdown tile.
   const brEl = document.getElementById('brEl');
   if (brEl) brEl.textContent = '$' + cost.toFixed(3);
+  // Live cost chip on the Conversation tab — Batch 5. Format
+  // "Live · 0:42 · $0.06". Hidden when no call is active; shown otherwise.
+  const chip = document.getElementById('elLiveCostChip');
+  if (chip){
+    if (EL.active && EL.startedAt){
+      const elapsed = rtFmtTime(Date.now() - EL.startedAt);
+      chip.textContent = `Live · ${elapsed} · $${cost.toFixed(2)}`;
+      chip.hidden = false;
+      chip.classList.toggle('amber', cost >= 1 && cost < 2);
+      chip.classList.toggle('red', cost >= 2);
+    } else {
+      chip.hidden = true;
+    }
+  }
   // Cost-per-minute tile mirrors the OpenAI-era live readout — point it at
   // the EL rate while a call is active.
   const cpm = document.getElementById('cpmValue');
@@ -8131,6 +8199,9 @@ function elCleanup(){
   EL.budgetWarned = false;
   const fm = document.getElementById('floatMic');
   if (fm) fm.classList.remove('in-call');
+  // Hide the live cost chip — call's over.
+  const chip = document.getElementById('elLiveCostChip');
+  if (chip){ chip.hidden = true; chip.textContent = ''; chip.classList.remove('amber','red'); }
   setVoiceState('idle');
 }
 function rtCleanup(){
