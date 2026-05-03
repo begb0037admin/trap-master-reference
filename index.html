@@ -3968,7 +3968,21 @@ function rtSetAntKeyStatus(msg,cls){const s=document.getElementById('rtAntKeySta
 const EL_KEY_STORAGE = 'aiMixMastersElevenKey_v1';
 const EL_AGENT_ID_STORAGE = 'aiMixMastersElevenAgent_v1';
 const VOICE_PROVIDER_STORAGE = 'aiMixMastersVoiceProvider_v1';
-const EL_SDK_URL = 'https://esm.sh/@elevenlabs/client@latest';
+// Pinned to 0.1.7 — the last SDK release before they switched to LiveKit
+// v2 in 0.2.0 (2025-07-01). Versions 0.1.5–0.1.7 have ZERO runtime
+// dependencies (no livekit-client at all), using a direct WebSocket transport
+// that ElevenLabs' production server still supports. Versions 0.2.0+ pull in
+// livekit-client@^2.x and rely on the new /v1/rtc endpoints, which their
+// LiveKit Server (still on 1.9.0) doesn't have — causing the WebRTC peer
+// negotiation to time out at 30s. Confirmed via the npm registry's reported
+// dependencies for each release.
+//
+// API surface in 0.1.7 matches what we use here (Conversation.startSession,
+// overrides.agent.prompt.prompt, onConnect/onDisconnect/onMessage/onModeChange,
+// endSession), so it's a drop-in pin. When ElevenLabs eventually upgrades
+// their LiveKit server to a 2.x-compatible version, we can flip back to
+// @latest and pick up bug fixes / new features.
+const EL_SDK_URL = 'https://esm.sh/@elevenlabs/client@0.1.7';
 // State object mirrors RT in spirit — same idle/connecting/recording/etc.
 // states drive the same UI elements via setVoiceState. Where RT.dc / RT.pc
 // live in WebRTC land, EL.conversation holds the SDK's Conversation handle.
@@ -7344,9 +7358,18 @@ async function elStart(){
     // toggle is enabled in the agent's Security → Overrides section in the
     // ElevenLabs dashboard. Without that, the agent rejects the override
     // attempt and the connection fails.
+    // Build the workbench-context blob we WANT the agent to know about. We
+    // used to inject this as overrides.agent.prompt.prompt at session start,
+    // but ElevenLabs' server consistently rejected that with close code 1008
+    // ("Override for field 'prompt' is not allowed by config") even with the
+    // System prompt override toggle on. So instead we let the agent use its
+    // dashboard-configured prompt (currently default "You are a helpful
+    // assistant") and inject the live workbench context as a contextual
+    // update via sendContextualUpdate() right after onConnect fires.
     let fullInstructions = RT_INSTRUCTIONS + '\n\n' + buildLibraryDigest();
     const research = buildResearchDigest();
     if (research) fullInstructions += '\n\n' + research;
+    EL.pendingContext = fullInstructions;
 
     // NOTE: we deliberately do NOT preflight navigator.mediaDevices.getUserMedia
     // here. An earlier version did, to surface mic-permission errors early —
@@ -7358,15 +7381,13 @@ async function elStart(){
 
     EL.conversation = await sdk.Conversation.startSession({
       agentId,
-      // Prompt override — inject the latest chain/library/research context
-      // every session start. Voice + LLM + tools are baked into the agent.
-      // Requires Security → Overrides → System prompt toggle to be ON.
-      overrides: {
-        agent: {
-          prompt: { prompt: fullInstructions }
-        }
-      },
+      // NOTE: prompt override deliberately omitted. ElevenLabs' server
+      // rejects it with close code 1008 even when the dashboard's "System
+      // prompt" override toggle is ON — likely a field-name / schema
+      // mismatch on their side. Workbench context is injected via
+      // sendContextualUpdate after onConnect fires (see below).
       onConnect: ({ conversationId }) => {
+        console.log('[EL] onConnect — conversationId:', conversationId);
         EL.connecting = false;
         EL.active = true;
         EL.conversationId = conversationId || null;
@@ -7377,17 +7398,51 @@ async function elStart(){
         setVoiceState('idle');
         const fm = document.getElementById('floatMic');
         if (fm) fm.classList.add('in-call');
+        // Inject the workbench context (chain, library digest, research notes)
+        // as a contextual update — gets fed to the model alongside the system
+        // prompt without needing the prompt-override allowlist.
+        if (EL.pendingContext && EL.conversation && typeof EL.conversation.sendContextualUpdate === 'function'){
+          try {
+            EL.conversation.sendContextualUpdate('Live workbench state for this session:\n\n' + EL.pendingContext);
+            console.log('[EL] sent contextual update, ' + EL.pendingContext.length + ' chars');
+          } catch (e){
+            console.warn('[EL] sendContextualUpdate failed', e);
+          }
+          EL.pendingContext = null;
+        }
       },
-      onDisconnect: () => {
+      // Log the full DisconnectionDetails so we can see WHY the server (or
+      // client) closed. Common reasons we surface here:
+      //   • {reason:'agent', context:CloseEvent} — server-side close, the
+      //     CloseEvent has .code and .reason that explain (1000=normal,
+      //     1006=abnormal, 4xxx=app-defined). Override-rejection or auth-
+      //     failure typically lands here with a non-1000 code.
+      //   • {reason:'error', context:Event, message} — protocol error
+      //   • {reason:'user'} — client-initiated disconnect
+      onDisconnect: (details) => {
+        console.warn('[EL] onDisconnect — details:', details);
+        if (details && details.context){
+          const ctx = details.context;
+          if (ctx.code !== undefined){
+            console.warn('[EL] close code:', ctx.code, 'reason:', ctx.reason || '(empty)');
+          }
+        }
+        const closeMsg = (details && details.message) ? details.message : (details && details.reason) || 'unknown';
         elCleanup();
-        rtSetStatus('', 'Ended');
+        rtSetStatus('', 'Ended — ' + closeMsg);
         document.getElementById('rtCallLabel').textContent = 'Start call';
       },
-      onError: (err) => {
-        console.error('ElevenLabs conversation error', err);
-        rtSetStatus('err', 'API error: ' + (err && err.message || 'unknown'));
+      onError: (msg, ctx) => {
+        console.error('[EL] onError —', msg, ctx);
+        rtSetStatus('err', 'API error: ' + (msg || 'unknown'));
         elCleanup();
         document.getElementById('rtCallLabel').textContent = 'Start call';
+      },
+      onStatusChange: ({status}) => {
+        console.log('[EL] status:', status);
+      },
+      onDebug: (info) => {
+        console.log('[EL] debug:', info);
       },
       // mode flips between 'speaking' (Hope is talking) and 'listening' (mic
       // is open). Maps cleanly to our existing state machine: speaking →
