@@ -10,6 +10,107 @@ Project context for future Claude (or Cowork) sessions. Read this first when pic
 
 > **Voice migration in flight:** the project is being migrated from OpenAI Realtime to ElevenLabs Conversational AI (Claude Sonnet 4.6 brain, Hope voice, Expressive Mode on). Work happens on the `voice-elevenlabs` branch. The OpenAI path on `main` stays as the production fallback until the new path is solid.
 
+## ⚠️ HANDOVER POINT — read this first if you're picking up the voice-elevenlabs branch
+
+**Last working state:** ElevenLabs Conversational AI is **working end-to-end**. Hope greets Kev in-character, voice flows both ways, system prompt is set + published in the dashboard. The basic conversation loop works.
+
+**Where to resume:** wiring **client tools** so Hope can actually modify Kev's workbench when asked ("add Maag EQ4 to the master bus", "switch genre to drill", etc.). This is the next task. Voice without tools is just a chat — voice WITH tools is the workbench actually transformed. See the "Next task" section at the very bottom of this file for the exact step-by-step.
+
+### What's already done (don't redo this)
+
+1. **Scaffolding in `index.html`** — keys + agent ID UI on the Voice Chat tab, provider toggle (OpenAI / ElevenLabs), `EL` state object parallel to `RT`, `elStart()` / `elEnd()` / `elCleanup()`, transcript hookup. Search for `========== ELEVENLABS` to find the section.
+
+2. **SDK pin: `@elevenlabs/client@0.1.7`** loaded from `https://esm.sh/@elevenlabs/client@0.1.7`. **Do not change this to @latest.** All 0.2.0+ versions pull in livekit-client v2 which expects `/v1/rtc` endpoints, but ElevenLabs' production server is still on LiveKit Server 1.9.0. We hit `NegotiationError: negotiation timed out` for hours before finding this. 0.1.5–0.1.7 use a direct WebSocket transport with zero runtime deps and connect cleanly. When ElevenLabs upgrades their LiveKit server, we can revisit; until then, leave the pin alone.
+
+3. **Prompt override deliberately omitted from `Conversation.startSession()`.** The server rejects `overrides.agent.prompt.prompt` with WebSocket close code 1008 ("Override for field 'prompt' is not allowed by config") **even when** the dashboard's Security → Overrides → System prompt toggle is ON. Likely a field-name / schema mismatch on their side. Workaround: workbench context (RT_INSTRUCTIONS + buildLibraryDigest + buildResearchDigest) is injected via `EL.conversation.sendContextualUpdate(...)` from the `onConnect` callback. See `EL.pendingContext` in elStart for the wiring.
+
+4. **System prompt + first message + Hope voice** are configured directly in the ElevenLabs agent dashboard and Published. The system prompt is the producer-coach version that includes Hope's identity ("Your name is Hope"). If you need to tweak it, edit in the dashboard, then click Publish (top-right of the agent page) — changes don't propagate until published.
+
+5. **Agent config:**
+   - Agent ID: `agent_2601kqm4g7txfsvv0pkvpe02389p`
+   - URL: `https://elevenlabs.io/app/agents/agents/agent_2601kqm4g7txfsvv0pkvpe02389p`
+   - Voice: **Hope** (`WAhoMTNdLdMoq1j3wf3I`)
+   - LLM: **Claude Sonnet 4.6**
+   - TTS model: **eleven_v3_conversational** with Expressive Mode ON
+   - Security: Public, no auth, no allowlist (System prompt override toggle is ON but server rejects anyway — see point 3)
+   - First message: "Hey Kev, it's Hope. What are we working on?"
+
+### Localstorage keys added by the migration
+
+- `aiMixMastersElevenKey_v1` — ElevenLabs API key
+- `aiMixMastersElevenAgent_v1` — Agent ID (validated to start with `agent_`)
+- `aiMixMastersVoiceProvider_v1` — `'openai'` or `'elevenlabs'` (the dropdown on the Voice Chat tab)
+
+### Files / sections to read before touching the EL code
+
+In `index.html`:
+- **`const EL_SDK_URL`** — ~line 3955. The SDK pin and the rationale comment for it. Read the comment before changing.
+- **`const EL = {...}`** — the state object. Mirrors `RT` in spirit.
+- **`elLoadKey / elSaveKey / elLoadAgentId / elSaveAgentId / loadVoiceProvider`** — persistence helpers.
+- **`async function elStart()`** — the main connect path. Note the `EL.pendingContext` flow that injects workbench state via `sendContextualUpdate` in `onConnect`.
+- **`async function elEnd() / function elCleanup()`** — disconnect + state reset.
+- **`document.getElementById('rtCallBtn').addEventListener('click', ...)`** — the START CALL button now branches by `getVoiceProvider()` to pick OpenAI or ElevenLabs.
+
+### Known good user flow
+
+1. Kev opens `localhost:8000` (or the Cowork-served folder)
+2. Voice Chat tab → Voice provider dropdown set to **ElevenLabs**
+3. ElevenLabs API key + Agent ID saved (loaded from localStorage on subsequent loads)
+4. Click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain
+5. He talks, she replies. Tools haven't been wired yet so she can't change the chain — that's the next task.
+
+### Next task — wire client tools
+
+ElevenLabs' SDK supports a `clientTools` parameter in `Conversation.startSession()`. It's a dict of `{ tool_name: handler_function }`. When the agent decides to call a tool, our handler runs locally in the browser and the return value goes back to the agent.
+
+Two-part wiring:
+
+**Part A — Register tools in the ElevenLabs agent dashboard.** Each tool needs a JSON schema describing its name, description, and parameters. The 13+ tool definitions are already written for OpenAI in the existing code (search `TOOL_DEFS` in `index.html`). They translate cleanly to ElevenLabs' format — same name, same parameter schema, slightly different wrapper.
+
+The tools to register (names + brief purpose):
+- `get_context` — read current chain, genre, target, meters, flags
+- `set_genre` — switch active genre (hiphop, trap, drill, etc.)
+- `set_platform` — switch loudness target (Spotify, YouTube, Tidal, etc.)
+- `add_plugin_to_bus` — add a plugin to a specific bus (master / vocal / 808 / drums / fx)
+- `remove_plugin_from_bus` — remove by index
+- `move_plugin` — reorder
+- `clear_bus` — wipe a bus
+- `set_plugin_settings` — pin settings text under a plugin in the chain
+- `clear_plugin_settings` — wipe pinned settings
+- `toggle_symptom` / `list_symptoms` — flag/unflag mix issues from the Diagnose tab
+- `toggle_favorite` — heart a plugin in the library
+- `record_meter` — capture a meter reading (LUFS / TP / etc.)
+- `list_plugins` / `get_library` — list / digest the plugin library
+- `claude_research` — call Anthropic with web search for niche-knowledge lookups (requires Anthropic API key in the workbench)
+
+**Part B — Wire client-side handlers in `elStart()`.** Add a `clientTools` field to the `Conversation.startSession()` call:
+
+```js
+clientTools: {
+  get_context: () => buildContextSummary(),
+  set_genre: ({genre}) => handleToolCall('set_genre', {genre}),
+  add_plugin_to_bus: ({bus, name, position}) => handleToolCall('add_plugin_to_bus', {bus, name, position}),
+  // ... and so on for every tool
+}
+```
+
+The existing `handleToolCall(name, args)` function already routes to the right local handler — same one OpenAI uses. Reuse it. Most handlers return a JSON string; ElevenLabs' SDK expects either a string, number, or void return.
+
+**Important:** the OpenAI path in `onRtEvent` parses tool-call argument JSON manually (because OpenAI streams them). ElevenLabs already passes parsed args directly to the handler. So our handler signatures might need wrapping — check `handleToolCall` to see if it expects already-parsed objects (it does — the parsing happens in `onRtEvent` before calling).
+
+### Other in-flight work (not yet started)
+
+- **Profile system (Task #89).** Cross-conversation memory. STATE.profile blob in localStorage, Haiku-extracts learnings at call end, injected via sendContextualUpdate at session start, visible editor UI in Voice Chat tab, JSON synced to repo for cross-machine portability. Build AFTER tools are working.
+- **Cost tracking (Task #91).** Pull minute-cost from `/v1/convai/conversations/{conversation_id}` after disconnect, stream into the spend panel.
+
+### Non-obvious gotchas
+
+- **`.git/index.lock` permission issue** — Kev runs git commands in his real Terminal, not via the agent. Don't try to commit/push from inside Claude — generate the commands and have him paste them.
+- **Free tier** — Conversational AI requires Creator plan ($22/mo). Kev is now on Creator. Don't suggest free tier for testing — it'll silently fail.
+- **Mic permission** — never call `navigator.mediaDevices.getUserMedia()` before `Conversation.startSession()`. The SDK acquires the mic itself; pre-acquiring it causes the SDK to fail silently and you get a 30s "Successful, 0 messages" timeout pattern in the Conversations log. We learned this the hard way.
+- **System prompt override** — toggle in the agent's Security → Overrides is ON, but the server still rejects the override. Don't waste time re-debugging this; we use `sendContextualUpdate` instead.
+- **Drafts vs Live** — agent dashboard changes show as "Draft" until you click **Publish** in the top-right corner of the agent page. Without publishing, the live agent still uses the previous config. Burned an hour on this when Hope wasn't applying.
+
 - Live: <https://begb0037admin.github.io/trap-master-reference/>
 - Repo: <https://github.com/begb0037admin/trap-master-reference> (branch `main` is what GitHub Pages serves)
 - Local source: `~/Documents/Claude/Artifacts/trap-master-reference/`
