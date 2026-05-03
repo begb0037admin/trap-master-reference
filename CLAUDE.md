@@ -12,9 +12,14 @@ Project context for future Claude (or Cowork) sessions. Read this first when pic
 
 ## ⚠️ HANDOVER POINT — read this first if you're picking up the voice-elevenlabs branch
 
-**Last working state:** ElevenLabs Conversational AI is **working end-to-end**. Hope greets Kev in-character, voice flows both ways, system prompt is set + published in the dashboard. The basic conversation loop works.
+**Last working state:** ElevenLabs Conversational AI is **fully working including client tools**. Hope greets Kev in-character, voice flows both ways, the system prompt is published in the dashboard, AND all 25 client tools are registered + wired — she can read his chain, add/remove plugins, change genre/platform, edit knowledge notes, etc. live during a call. Tested live; tool calls fire and the workbench updates in real time.
 
-**Where to resume:** wiring **client tools** so Hope can actually modify Kev's workbench when asked ("add Maag EQ4 to the master bus", "switch genre to drill", etc.). This is the next task. Voice without tools is just a chat — voice WITH tools is the workbench actually transformed. See the "Next task" section at the very bottom of this file for the exact step-by-step.
+**Where to resume:** the migration's next two follow-ups are open. Pick whichever Kev wants to tackle first:
+
+1. **Profile system** — cross-conversation memory. `STATE.profile` blob persisted to localStorage, Haiku-extracts learnings at end-of-call, injected via `sendContextualUpdate` at session start, with a small editor UI on the Voice Chat tab. JSON synced to repo for cross-machine portability.
+2. **Cost tracking** — pull minute-cost from `/v1/convai/conversations/{conversation_id}` after disconnect, stream into the existing OpenAI-style spend panel.
+
+The OpenAI path on `main` stays as production fallback until Kev's run a few real sessions on EL and confirms it holds up. **Don't merge `voice-elevenlabs` → `main` yet.**
 
 ### What's already done (don't redo this)
 
@@ -35,6 +40,14 @@ Project context for future Claude (or Cowork) sessions. Read this first when pic
    - Security: Public, no auth, no allowlist (System prompt override toggle is ON but server rejects anyway — see point 3)
    - First message: "Hey Kev, it's Hope. What are we working on?"
 
+6. **Client tools wired end-to-end.** `clientTools` field on `Conversation.startSession()` is built programmatically from `TOOL_DEFS` — each tool name maps to an async wrapper that funnels into the same `handleToolCall(name, args)` the OpenAI path uses. Returns are `JSON.stringify`-ed because the SDK expects string/number/void. Every tool call is console-logged as `[EL tool] <name> <args> → <result>` so we can watch them fire. See `elStart` in `index.html` — the `clientTools` block sits just above the `Conversation.startSession({...})` call.
+
+7. **Tool registration script + schema dump.** Two new files at the repo root:
+   - `elevenlabs-client-tools.json` — the 25 tool schemas extracted from `TOOL_DEFS` (name + description + parameters JSON Schema for each).
+   - `register_elevenlabs_tools.py` — pure-Python (stdlib only, runs on macOS's built-in `python3`) bulk-register script. POSTs each tool to `/v1/convai/tools`, collects IDs, then PATCHes the agent's `prompt.tool_ids` list. Run with `EL_API_KEY=... python3 register_elevenlabs_tools.py`. The agent ID is hardcoded as the production agent. Idempotent in a destructive sense: re-running creates fresh tools and re-attaches them; old workspace tools become orphaned and need manual cleanup from the dashboard's Tools list.
+
+8. **Schema-validation quirk handled in the Python script.** ElevenLabs requires every leaf parameter — string/number/integer/boolean properties AND array `items` schemas — to declare one of: `description`, `dynamic_variable`, `is_system_provided`, or `constant_value`. Our `TOOL_DEFS` omits descriptions on enum-only fields and array-item types because OpenAI doesn't need them. The `ensure_param_descriptions` function in the Python script walks each schema and injects a sensible default description before POSTing. If you ever extend `TOOL_DEFS` and re-run the script, the same normalisation handles your new fields automatically.
+
 ### Localstorage keys added by the migration
 
 - `aiMixMastersElevenKey_v1` — ElevenLabs API key
@@ -47,7 +60,7 @@ In `index.html`:
 - **`const EL_SDK_URL`** — ~line 3955. The SDK pin and the rationale comment for it. Read the comment before changing.
 - **`const EL = {...}`** — the state object. Mirrors `RT` in spirit.
 - **`elLoadKey / elSaveKey / elLoadAgentId / elSaveAgentId / loadVoiceProvider`** — persistence helpers.
-- **`async function elStart()`** — the main connect path. Note the `EL.pendingContext` flow that injects workbench state via `sendContextualUpdate` in `onConnect`.
+- **`async function elStart()`** — the main connect path. Two key blocks: (a) the `clientTools` dict built programmatically from `TOOL_DEFS` just above the `Conversation.startSession({...})` call (each tool becomes an async wrapper around `handleToolCall` that JSON.stringifies its return), and (b) the `EL.pendingContext` flow that injects workbench state via `sendContextualUpdate` from `onConnect`.
 - **`async function elEnd() / function elCleanup()`** — disconnect + state reset.
 - **`document.getElementById('rtCallBtn').addEventListener('click', ...)`** — the START CALL button now branches by `getVoiceProvider()` to pick OpenAI or ElevenLabs.
 
@@ -57,51 +70,36 @@ In `index.html`:
 2. Voice Chat tab → Voice provider dropdown set to **ElevenLabs**
 3. ElevenLabs API key + Agent ID saved (loaded from localStorage on subsequent loads)
 4. Click **START CALL** → Hope greets him in her voice with Claude Sonnet 4.6 brain
-5. He talks, she replies. Tools haven't been wired yet so she can't change the chain — that's the next task.
+5. He says things like "what's on my master bus?" or "add Maag EQ4 to the master" — Hope calls the right tool, the workbench updates in real time, and DevTools console logs `[EL tool] <name> <args> → <result>` for every tool call.
 
-### Next task — wire client tools
+### Open follow-ups (pick one when resuming)
 
-ElevenLabs' SDK supports a `clientTools` parameter in `Conversation.startSession()`. It's a dict of `{ tool_name: handler_function }`. When the agent decides to call a tool, our handler runs locally in the browser and the return value goes back to the agent.
+Both build on top of working tool calls. Either is a clean standalone feature; doesn't matter which order.
 
-Two-part wiring:
+**1. Profile system — cross-conversation memory.**
 
-**Part A — Register tools in the ElevenLabs agent dashboard.** Each tool needs a JSON schema describing its name, description, and parameters. The 13+ tool definitions are already written for OpenAI in the existing code (search `TOOL_DEFS` in `index.html`). They translate cleanly to ElevenLabs' format — same name, same parameter schema, slightly different wrapper.
+Goal: Hope remembers facts about Kev's preferences, taste, and recurring techniques across sessions. "Kev hates pumping on the master bus", "he uses Pultec EQs on every vocal chain", "his reference track for trap is Sicko Mode". She picks up where she left off instead of starting from scratch every call.
 
-The tools to register (names + brief purpose):
-- `get_context` — read current chain, genre, target, meters, flags
-- `set_genre` — switch active genre (hiphop, trap, drill, etc.)
-- `set_platform` — switch loudness target (Spotify, YouTube, Tidal, etc.)
-- `add_plugin_to_bus` — add a plugin to a specific bus (master / vocal / 808 / drums / fx)
-- `remove_plugin_from_bus` — remove by index
-- `move_plugin` — reorder
-- `clear_bus` — wipe a bus
-- `set_plugin_settings` — pin settings text under a plugin in the chain
-- `clear_plugin_settings` — wipe pinned settings
-- `toggle_symptom` / `list_symptoms` — flag/unflag mix issues from the Diagnose tab
-- `toggle_favorite` — heart a plugin in the library
-- `record_meter` — capture a meter reading (LUFS / TP / etc.)
-- `list_plugins` / `get_library` — list / digest the plugin library
-- `claude_research` — call Anthropic with web search for niche-knowledge lookups (requires Anthropic API key in the workbench)
+Sketch:
+- New `STATE.profile` blob (free-form text) persisted to `trapMasterState_v1` so it lives alongside the chain/library/etc.
+- At session start, append the profile blob to `EL.pendingContext` so it gets injected via `sendContextualUpdate` alongside the library digest. Same trick as the existing context injection — no prompt-override needed.
+- At session end (`onDisconnect`), fire a Haiku call against the call's transcript to extract any new "learnings" worth keeping. Append to `STATE.profile`. Cap the blob at ~2 KB so it doesn't balloon.
+- Small editor UI on the Voice Chat tab — textarea + "Save profile" + "Clear profile" buttons. Kev can hand-edit when the auto-extraction is wrong.
+- Sync to repo so it's portable across machines: keep the blob inside `trapMasterState_v1` localStorage, and (separately) auto-export `profile.txt` after each edit so it can be committed if Kev wants.
 
-**Part B — Wire client-side handlers in `elStart()`.** Add a `clientTools` field to the `Conversation.startSession()` call:
+Watch out for: keeping the extraction prompt VERY focused (model-of-mix-engineer-only, not full transcript regurgitation), and rate-limiting the Haiku call so a quick test session doesn't burn cents.
 
-```js
-clientTools: {
-  get_context: () => buildContextSummary(),
-  set_genre: ({genre}) => handleToolCall('set_genre', {genre}),
-  add_plugin_to_bus: ({bus, name, position}) => handleToolCall('add_plugin_to_bus', {bus, name, position}),
-  // ... and so on for every tool
-}
-```
+**2. Cost tracking — wire EL spend into the existing panel.**
 
-The existing `handleToolCall(name, args)` function already routes to the right local handler — same one OpenAI uses. Reuse it. Most handlers return a JSON string; ElevenLabs' SDK expects either a string, number, or void return.
+Goal: the OpenAI path streams session cost into `oaSession` / `oaSpent` etc. as audio tokens accumulate. EL doesn't expose token counts via the SDK at all; cost is per-minute, queryable only after disconnect via `GET /v1/convai/conversations/{conversationId}`.
 
-**Important:** the OpenAI path in `onRtEvent` parses tool-call argument JSON manually (because OpenAI streams them). ElevenLabs already passes parsed args directly to the handler. So our handler signatures might need wrapping — check `handleToolCall` to see if it expects already-parsed objects (it does — the parsing happens in `onRtEvent` before calling).
+Sketch:
+- After `onDisconnect`, if we have an `EL.conversationId`, fire an authed GET to `https://api.elevenlabs.io/v1/convai/conversations/{conversationId}` using `xi-api-key`.
+- Response includes `metadata.charging.minutes_used` (or similar — verify with a real call) and the dollar charge.
+- Convert to dollars (verify against Kev's plan rate; Creator plan is $22/mo for ~250 minutes ≈ $0.088/min). Stream into `addSpend('elevenlabs', delta)` — needs a third spend bucket alongside `oai` / `ant`.
+- Or simpler v1: estimate cost during the call from `EL.startedAt` (minutes elapsed × known per-minute rate) and reconcile after disconnect with the API's exact number.
 
-### Other in-flight work (not yet started)
-
-- **Profile system (Task #89).** Cross-conversation memory. STATE.profile blob in localStorage, Haiku-extracts learnings at call end, injected via sendContextualUpdate at session start, visible editor UI in Voice Chat tab, JSON synced to repo for cross-machine portability. Build AFTER tools are working.
-- **Cost tracking (Task #91).** Pull minute-cost from `/v1/convai/conversations/{conversation_id}` after disconnect, stream into the spend panel.
+Watch out for: the spend panel's cost cards (`oaSession`, `oaBalance`, etc.) are OpenAI-named; either rename them to be provider-neutral or add a third pair for EL. The `cpmValue` "cost / minute" tile already exists — just point it at the EL rate when provider === 'elevenlabs'.
 
 ### Non-obvious gotchas
 
@@ -109,7 +107,9 @@ The existing `handleToolCall(name, args)` function already routes to the right l
 - **Free tier** — Conversational AI requires Creator plan ($22/mo). Kev is now on Creator. Don't suggest free tier for testing — it'll silently fail.
 - **Mic permission** — never call `navigator.mediaDevices.getUserMedia()` before `Conversation.startSession()`. The SDK acquires the mic itself; pre-acquiring it causes the SDK to fail silently and you get a 30s "Successful, 0 messages" timeout pattern in the Conversations log. We learned this the hard way.
 - **System prompt override** — toggle in the agent's Security → Overrides is ON, but the server still rejects the override. Don't waste time re-debugging this; we use `sendContextualUpdate` instead.
-- **Drafts vs Live** — agent dashboard changes show as "Draft" until you click **Publish** in the top-right corner of the agent page. Without publishing, the live agent still uses the previous config. Burned an hour on this when Hope wasn't applying.
+- **Drafts vs Live** — agent dashboard changes show as "Draft" until you click **Publish** in the top-right corner of the agent page. Without publishing, the live agent still uses the previous config. Burned an hour on this when Hope wasn't applying. Note: the `register_elevenlabs_tools.py` script's PATCH appears to auto-publish (Publish button stays greyed after running it).
+- **Tool schema strictness** — ElevenLabs' tool-create endpoint requires every leaf parameter to declare a `description` (or `dynamic_variable` / `is_system_provided` / `constant_value`). This applies to enum-only fields, primitives like `{type:"integer"}`, AND array `items` schemas. Our `TOOL_DEFS` in `index.html` omits descriptions on those because OpenAI doesn't need them, so the Python register script normalises before POSTing — see `ensure_param_descriptions`.
+- **Tool registration is per-workspace, not per-agent** — `POST /v1/convai/tools` creates tools in the workspace; the agent then references them by ID via `prompt.tool_ids`. Re-running the register script creates fresh tool entries; old ones become orphans that need manual cleanup from the dashboard's Tools list. Don't run the script casually.
 
 - Live: <https://begb0037admin.github.io/trap-master-reference/>
 - Repo: <https://github.com/begb0037admin/trap-master-reference> (branch `main` is what GitHub Pages serves)
@@ -119,12 +119,14 @@ The existing `handleToolCall(name, args)` function already routes to the right l
 
 ```
 trap-master-reference/
-├── index.html      ← THE app. ~5,100 lines, ~312 KB. Single-file: HTML + CSS + vanilla JS, all inline.
-├── README.md       ← User-facing readme (setup, voice chat keys, what's in it).
-├── CLAUDE.md       ← This file.
-├── .gitignore      ← Ignores macOS junk, editor folders, secrets, and versions/.
-├── versions/       ← Cowork's local artifact history. Gitignored — do NOT commit, do NOT touch.
-└── .git/           ← Standard git repo, remote `origin` → GitHub above.
+├── index.html                       ← THE app. Single-file: HTML + CSS + vanilla JS, all inline.
+├── README.md                        ← User-facing readme (setup, voice chat keys, what's in it).
+├── CLAUDE.md                        ← This file.
+├── elevenlabs-client-tools.json     ← (voice-elevenlabs branch) 25 tool schemas extracted from TOOL_DEFS.
+├── register_elevenlabs_tools.py     ← (voice-elevenlabs branch) bulk-register script — POST tools + PATCH agent.
+├── .gitignore                       ← Ignores macOS junk, editor folders, secrets, versions/, __pycache__.
+├── versions/                        ← Cowork's local artifact history. Gitignored — do NOT commit, do NOT touch.
+└── .git/                            ← Standard git repo, remote `origin` → GitHub above.
 ```
 
 **Rule of thumb:** every change is an edit to `index.html`. There is no build step, no bundler, no framework. No CSS or JS files to import.
