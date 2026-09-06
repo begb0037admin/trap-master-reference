@@ -212,7 +212,15 @@ all need to be present, or maybe give her the ability to stem split."
   microservice call — same shape as the ARCH-2/ARCH-3 Platform Evolution Epic already below in this
   doc; cross-reference that section for the backend-microservice pattern this would reuse.
 
-Kevin hasn't picked A vs B or scoped effort.
+**Decision (2026-09-07, Kevin): both, not either/or.** "Can I have both?" — yes: A and B are
+not mutually exclusive, they're two entry paths into the same downstream system. Once stems exist
+(whether Kevin supplied them or they were auto-split), live reactive analysis, Hope's awareness,
+her control tools, and per-stem EQ all work identically regardless of source. **Sequencing: build
+Option A first** — cheap, immediate value, works with the existing measurement pipeline as-is, and
+unblocks everything else (reqs 3-7). **Option B follows later** as an enhancement for when Kevin
+only has a single mixed file and doesn't want to bounce out to a DAW to export stems first — it's
+the bigger lift (needs a real separation model, same backend-microservice shape as the ARCH-2/
+ARCH-3 Platform Evolution Epic) and isn't blocking A's build.
 
 **Competitive context (captured 2026-09-05, context only — not a task list to copy):** a live
 competitor product already ships, as paid features: AI stem-splitting (not just stem upload — they
