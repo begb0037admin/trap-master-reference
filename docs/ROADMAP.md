@@ -182,6 +182,16 @@ Queue placeholder bug fix (that item was correspondingly dropped to low priority
 `docs/STATUS.md` for its status) — this is now the next thing to pick up. DASHBOARD.html Backlog
 card 22 mirrors this.
 
+**Mockup stage update, 2026-09-07 (Jules):** `docs/mockups/multistem-mixcheck.html` now covers
+all 7 requirements below (previously just 1-2), pushed to `main` (commit `24e491e`), Codex
+three-touchpoint reviewed. Awaiting Kevin's review at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck.html` — see `docs/STATUS.md`
+for the full design-decision writeup. Still backlog capture only, still not build authorization;
+Option A vs B below is still Kevin's open call, unaffected by the mockup existing. (Note: this
+mockup was pushed straight to `main`, not its own branch — `docs/CLAUDE.md`'s standing mockup
+process is the authoritative one, superseding the "own branch" pattern used for the original
+2026-09-04 requirement-1/2 pass.)
+
 **Problem:** Hope can currently only measure the whole rendered mix (`balance.wav`) on Mix Check —
 she has no visibility into individual stems, so when asked "what's causing this low-end issue,"
 she can only give informed reasoning from the full mix, not real per-element measurements.
