@@ -3546,7 +3546,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 // in EVERY commit that touches index.html — it exists so "is the fix
 // actually in my browser or am I on a stale GitHub Pages cache?" is
 // answerable at a glance, never by guesswork.
-const AIMM_BUILD = '2026-09-07.1';
+const AIMM_BUILD = '2026-09-07.2';
 (function(){
   try{
     console.log('[AIMM] build', AIMM_BUILD);
@@ -14760,7 +14760,15 @@ const HOPE_VOICE = (function(){
     } else {
       wasSpeaking = false;
       if (raf){ cancelAnimationFrame(raf); raf = null; }
-      try { HOPE_WAVE.reset(); HOPE_WAVE.startIdle(); } catch(_){}   // PTT: back to idle shimmer
+      // 2026-09-06 round 10 (Kevin: call ends and it stays coloured instead
+      // of returning to grey standby). Root cause: startIdle() no-ops if a
+      // loop is already running (idleAnimFrame !== null) — call-end almost
+      // always happens while the coloured 'listening' shimmer is still
+      // active, so this startIdle() call did nothing and the old coloured
+      // loop just kept running in its own closure forever. Must stopIdle()
+      // first to actually cancel it before restarting fresh in grey (true
+      // standby default, mono=true).
+      try { HOPE_WAVE.stopIdle(); HOPE_WAVE.reset(); HOPE_WAVE.startIdle(); } catch(_){}   // PTT: back to idle shimmer
     }
   }
 
