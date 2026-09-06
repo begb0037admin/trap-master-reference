@@ -3546,7 +3546,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 // in EVERY commit that touches index.html — it exists so "is the fix
 // actually in my browser or am I on a stale GitHub Pages cache?" is
 // answerable at a glance, never by guesswork.
-const AIMM_BUILD = '2026-09-06.11';
+const AIMM_BUILD = '2026-09-07.1';
 (function(){
   try{
     console.log('[AIMM] build', AIMM_BUILD);
@@ -14561,7 +14561,18 @@ const HOPE_WAVE = (function(){
       const k = 1 - Math.exp(-dt / tau);
       realRef = realRef + (rms - realRef) * k;
     } else {
-      realRef = rms;   // seed directly from the first real sample of the turn — no artificial cold-start ceiling to fight
+      // 2026-09-06 round 9 (Kevin: "there is a huge spike ... it should be a
+      // subtle transition not a jump"). Root cause: seeding realRef from the
+      // raw first sample meant a quiet cold-start sample (e.g. a breath
+      // before the first word) left realRef artificially tiny; gain =
+      // target/realRef then massively over-amplified the very next sample
+      // once genuine speech began, before the slow attack tau could catch
+      // up — the actual mechanism behind the spike, not a fixed value. Seed
+      // to REAL_REF_TARGET itself instead: gain = target/target = 1 (unity)
+      // for the first sample regardless of its value, so the turn starts
+      // clean and the attack/release follower ramps up naturally from
+      // there instead of over-correcting a bad cold-start guess.
+      realRef = REAL_REF_TARGET;
     }
     realRefTs = now;
     const gain = Math.min(REAL_GAIN_MAX, REAL_REF_TARGET / Math.max(realRef, REAL_REF_FLOOR));
@@ -14591,7 +14602,7 @@ const HOPE_WAVE = (function(){
     const now = Date.now();
     for (let i = 0; i < bars.length; i++){
       const level = audioLevels[offset + i];
-      paintBar(bars[i], shapeLevel(level, i, bars.length, now, PILL_ANIMATION_BOOST), ACTIVE_BAR_MAX, ACTIVE_BAR_MIN, i, bars.length, true);
+      paintBar(bars[i], shapeLevel(level, i, bars.length, now, PILL_ANIMATION_BOOST), ACTIVE_BAR_MAX, ACTIVE_BAR_MIN, i, bars.length, false);
     }
   }
   function reset(){ audioLevels.fill(0); }   // PTT ui/app.js:219 resetWaveform
@@ -14728,7 +14739,7 @@ const HOPE_VOICE = (function(){
     if (raf){ cancelAnimationFrame(raf); raf = null; }   // stop the active/speaking loop if it was running
     wasSpeaking = false;
     w.dataset.speaking = '0';
-    try { HOPE_WAVE.stopIdle(); HOPE_WAVE.startIdle(); } catch(_){}   // round 7: mono everywhere now, same as true standby
+    try { HOPE_WAVE.stopIdle(); HOPE_WAVE.startIdle(false); } catch(_){}   // round 9: colour for every in-call state; only true standby is grey — geometry untouched
   }
   function setSpeaking(on){
     const w = wave();
