@@ -20,7 +20,7 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
   line-height:1.5;padding:24px;
 }
-.wrap{max-width:1040px;margin:0 auto}
+.wrap{max-width:1400px;margin:0 auto}
 
 .mockup-banner{
   background:linear-gradient(180deg,#15222b,#101a21);
@@ -29,13 +29,22 @@ body{
 }
 .mockup-banner b{color:#e8ebed}
 .mockup-banner .req{font:600 10px var(--mono);color:#4fd8ff;letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:4px}
+.mockup-banner ul{margin:6px 0 0;padding-left:18px}
+.mockup-banner li{margin:2px 0}
+.mockup-banner .tag{font:700 9px var(--mono);text-transform:uppercase;letter-spacing:.04em;padding:1px 5px;border-radius:4px;margin-right:4px}
+.tag.real{background:rgba(52,211,153,.15);color:var(--green)}
+.tag.sim{background:rgba(251,191,36,.15);color:var(--amber)}
 
 h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 .subtitle{color:#9ca3af;font-size:13px;margin:0 0 18px}
 
 .oz-card{background:var(--card);border:1px solid var(--card-bd);border-radius:10px;padding:14px;margin-bottom:16px}
-.oz-input-title{font:700 11px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.oz-input-title{font:700 11px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .oz-input-title .hint{font:500 10px var(--mono);color:var(--faint);text-transform:none;letter-spacing:0}
+
+/* layout: left = stems/transport/analysis, right = Hope rail */
+.layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:1fr}}
 
 /* sync banner */
 .sync-status{display:flex;align-items:center;gap:8px;font:600 11px var(--mono);border-radius:8px;padding:8px 12px;margin-bottom:12px;border:1px solid var(--card-bd);background:var(--inset2);color:var(--muted)}
@@ -46,13 +55,16 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 /* stem stack */
 .stem-stack{display:flex;flex-direction:column;gap:8px}
 .stem-row{
-  display:flex;align-items:center;gap:10px;
   background:var(--inset);border:1px solid var(--card-bd);border-radius:8px;
-  padding:8px 10px;min-height:56px;transition:border-color .15s,background .15s,opacity .15s;
+  padding:8px 10px;transition:border-color .15s,background .15s,opacity .15s,box-shadow .2s;
 }
+.stem-row-main{display:flex;align-items:center;gap:10px;min-height:40px}
 .stem-row.dragover{border-color:var(--accent-a);background:rgba(47,161,230,.08)}
 .stem-row.mismatch{border-color:rgba(251,191,36,.5)}
 .stem-row.effective-muted{opacity:.45}
+.stem-row.hope-acting{border-color:var(--accent-b);box-shadow:0 0 0 2px rgba(165,87,244,.35),0 0 18px rgba(165,87,244,.25);animation:hopePulse 1.1s ease-in-out infinite}
+.stem-row.hope-highlight{border-color:var(--amber);box-shadow:0 0 0 2px rgba(251,191,36,.4)}
+@keyframes hopePulse{0%,100%{box-shadow:0 0 0 2px rgba(165,87,244,.25),0 0 14px rgba(165,87,244,.18)}50%{box-shadow:0 0 0 3px rgba(165,87,244,.55),0 0 24px rgba(165,87,244,.4)}}
 
 .stem-swatch{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
 .stem-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -73,7 +85,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 .stem-drop:hover{color:var(--muted)}
 .stem-drop:hover svg{stroke:var(--muted)}
 
-.stem-wave{width:130px;height:34px;border-radius:5px;background:var(--inset2);border:1px solid #14171b;flex-shrink:0;overflow:hidden}
+.stem-wave{width:110px;height:34px;border-radius:5px;background:var(--inset2);border:1px solid #14171b;flex-shrink:0;overflow:hidden}
 .stem-wave canvas{width:100%;height:100%;display:block}
 
 .stem-controls{display:flex;align-items:center;gap:5px;flex-shrink:0}
@@ -85,6 +97,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 .stem-tbtn:hover{color:var(--ink);border-color:#4b5563}
 .stem-tbtn.mute.active{background:var(--red);border-color:var(--red);color:#3b0a0a}
 .stem-tbtn.solo.active{background:var(--amber);border-color:var(--amber);color:#3b2a05}
+.stem-tbtn.eqtoggle.active{background:var(--grad);border-color:transparent;color:var(--grad-ink)}
 .stem-remove{
   width:22px;height:22px;border-radius:6px;background:transparent;border:1px solid transparent;
   color:var(--faint);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;
@@ -94,11 +107,39 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 .stem-fileinput{display:none}
 
 .add-stem-row{
-  display:flex;align-items:center;justify-content:center;gap:6px;
+  display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
   border:1.5px dashed var(--card-bd);border-radius:8px;padding:10px;margin-top:2px;
   color:var(--faint);font:700 11px var(--mono);cursor:pointer;transition:border-color .15s,color .15s;
+  background:transparent;font-family:inherit;
 }
 .add-stem-row:hover{border-color:var(--accent-a);color:var(--accent-a)}
+
+.demo-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.demo-btn{font:700 10.5px var(--mono);border-radius:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--card-bd);background:var(--inset2);color:var(--muted);transition:filter .15s;font-family:inherit}
+.demo-btn:hover{filter:brightness(1.2)}
+.demo-btn.primary{background:var(--grad);color:var(--grad-ink);border-color:transparent}
+.instruct-ring{position:relative}
+.instruct-ring::after{content:"";position:absolute;inset:-4px;border-radius:10px;border:2px solid var(--amber);box-shadow:0 0 0 3px rgba(251,191,36,.25);animation:ringPulse2 1s ease-in-out infinite;pointer-events:none}
+@keyframes ringPulse2{0%,100%{opacity:.5}50%{opacity:1}}
+.tool-audit{font:600 10px var(--mono);color:#7ce2a8;background:#0c1611;border:1px solid rgba(52,211,153,.3);border-radius:5px;padding:4px 7px;display:inline-block;margin:4px 0}
+.undo-link{font:700 10px var(--mono);font-family:var(--mono);color:var(--accent-a);cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block;background:transparent;border:0;padding:0}
+.band-legend{font:500 9px var(--mono);color:var(--faint);margin-top:8px}
+
+/* --- requirement 7: per-stem live EQ panel --- */
+.stem-eq{display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--card-bd);gap:14px}
+.stem-eq.open{display:flex}
+.eq-band{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.eq-band .eq-name{font:700 9px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.eq-band .eq-name.low{color:#4fd8ff}
+.eq-band .eq-name.mid{color:var(--amber)}
+.eq-band .eq-name.high{color:#f472b6}
+.eq-slider{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--inset2);cursor:pointer}
+.eq-slider::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border:0;border-radius:50%;background:#f2f4f5;cursor:grab}
+.eq-val{font:600 9px var(--mono);color:var(--muted)}
+.eq-freq{font:500 8px var(--mono);color:var(--faint)}
+.eq-reset{align-self:center;font:700 9px var(--mono);color:var(--faint);background:transparent;border:1px solid var(--card-bd);border-radius:5px;padding:3px 8px;cursor:pointer;flex-shrink:0}
+.eq-reset:hover{color:var(--muted);border-color:#4b5563}
+.eq-hint{font:500 9px var(--mono);color:var(--faint);flex-basis:100%;margin-top:2px}
 
 /* shared transport, styled to match #mcTransport / .ref-transport */
 .tp-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -124,25 +165,83 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
   font-size:11.5px;line-height:1.6;background:var(--inset)
 }
 .placeholder-note b{color:var(--muted)}
+
+/* --- requirement 3: live analysis panel (Audio Specs + band corridor) --- */
+.audible-flag{display:flex;align-items:center;gap:6px;font:700 10px var(--mono);color:var(--accent-a);letter-spacing:.02em}
+.audible-flag svg{width:12px;height:12px;stroke:var(--accent-a);fill:none;stroke-width:2}
+.specs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media (max-width:640px){.specs-grid{grid-template-columns:repeat(2,1fr)}}
+.spec-tile{background:var(--inset2);border:1px solid var(--card-bd);border-radius:7px;padding:8px 10px}
+.spec-tile .k{font:700 9px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.spec-tile .v{font:700 15px var(--mono);color:var(--ink);transition:color .2s}
+.spec-tile .v.updating{color:var(--accent-a)}
+
+.band-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.band-card{background:var(--inset2);border:1px solid var(--card-bd);border-radius:7px;padding:8px 9px;text-align:center}
+.band-card .bl{font:700 9px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin-bottom:2px}
+.band-card .bhz{font:500 8px var(--mono);color:#4b5158;display:block}
+.band-card .bv{font:700 13px var(--mono);margin:4px 0}
+.band-bar{height:6px;border-radius:3px;background:#0b0d0f;position:relative;overflow:hidden;margin-top:2px}
+.band-bar .center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#3a3f45}
+.band-bar .fill{position:absolute;top:0;bottom:0;background:var(--grad);border-radius:3px;transition:left .25s,width .25s}
+
+/* --- Hope rail (mockup, styled like the real #hopeRail) --- */
+.hope-rail{background:var(--card);border:1px solid var(--card-bd);border-radius:10px;padding:0;display:flex;flex-direction:column;max-height:820px;position:sticky;top:24px}
+.rail-head{display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid var(--card-bd)}
+.oz-rail-avatar{width:30px;height:30px;border-radius:50%;background:var(--grad);flex-shrink:0}
+.rail-title{flex:1;min-width:0}
+.rail-name{display:flex;align-items:center;gap:6px;font:700 13px Inter,sans-serif}
+.rail-name .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ai-star{width:14px;height:12px;fill:var(--amber)}
+.rail-status{font:500 10px var(--mono);color:var(--faint)}
+.rail-status.live{color:var(--green)}
+.rail-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+
+.hmsg{max-width:100%;background:var(--inset);border:1px solid var(--card-bd);border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.55;color:#dfe3e6;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.hmsg.state{color:var(--faint);font:500 10.5px var(--mono);background:transparent;border-style:dashed;padding:6px 10px}
+.hmsg.acting{border-color:rgba(165,87,244,.5);background:rgba(165,87,244,.08)}
+.hmsg .acting-tag{display:inline-flex;align-items:center;gap:4px;font:700 9px var(--mono);color:var(--accent-b);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.hmsg .acting-tag .dot{width:5px;height:5px;border-radius:50%;background:var(--accent-b);animation:blinkDot 1s infinite}
+@keyframes blinkDot{50%{opacity:.2}}
+
+.hope-suggest{border:1px solid var(--card-bd);border-radius:9px;padding:10px 11px;background:var(--inset)}
+.hope-suggest .hs-title{font:700 12px Inter,sans-serif;color:var(--ink);margin-bottom:3px}
+.hope-suggest .hs-why{font:500 10.5px var(--mono);color:var(--muted);margin-bottom:8px;line-height:1.5}
+.hs-btns{display:flex;gap:6px}
+.hs-btn{flex:1;font:700 10.5px var(--mono);font-family:var(--mono);border-radius:6px;padding:7px 6px;text-align:center;cursor:pointer;border:1px solid var(--card-bd);transition:filter .15s}
+.hs-btn:hover{filter:brightness(1.15)}
+.hs-btn.demo{background:var(--grad);color:var(--grad-ink);border-color:transparent}
+.hs-btn.instruct{background:var(--inset2);color:var(--muted)}
+.hs-btn:disabled{opacity:.4;cursor:default;filter:none}
+
+.rail-foot{padding:10px 14px 14px;border-top:1px solid var(--card-bd)}
+.rail-input{width:100%;background:var(--inset2);border:1px solid var(--card-bd);border-radius:8px;padding:9px 10px;color:var(--faint);font:500 11.5px Inter,sans-serif}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="mockup-banner">
-    <span class="req">Mockup — requirement 2 only, not build authorization</span>
-    Interactive concept for the <b>stem-upload UI</b> from
-    <code>docs/ROADMAP.md</code> → "Multi-stem Mix Check" (captured 2026-09-04). This replaces the
-    single "Drop / browse WAV" zone with a stack of stem slots (drop target + filename + mute/solo)
-    driven by one shared synced transport. Drop-and-play is real (Web Audio, sample-accurate
-    scheduling per requirement 1's sync spec) so you can test it with real stems. Live-reactive
-    Spectral Balance / Audio Specs (req 3), Hope awareness (req 4), Hope tool control (req 5),
-    demonstrate-vs-instruct (req 6), and live EQ (req 7) are <b>not</b> built here — separate,
-    later work per the roadmap.
+    <span class="req">Mockup — Backlog 22, Multi-stem Mix Check (all 7 requirements)</span>
+    Interactive concept for <code>docs/ROADMAP.md</code> → "Multi-stem Mix Check" (captured
+    2026-09-04, priority-bumped 2026-09-06). Extends the earlier requirement-1/2 stem-upload
+    mockup with the remaining five requirements as interaction concepts. Not build
+    authorization — <code>index.html</code> is untouched.
+    <ul>
+      <li><span class="tag real">real</span> Reqs 1–2 — real browser upload/drop/decode + sync-mismatch validation + one shared sample-accurate transport (unchanged from the earlier pass). "Load demo stems" generates 4 synthetic in-sync buffers procedurally so this whole mockup is reviewable with zero files.</li>
+      <li><span class="tag real">real</span> Req 3 — a real reactive demo spectral estimator: a live AnalyserNode reads the actual post-mute/solo/EQ mix bus (analysis is tapped BEFORE the monitor-volume control, so playback volume never affects the readout) and redraws on every change. This is <b>not</b> the production BS.1770-4/FFT engine or genre corridors — labelled "relative energy, demo only" throughout, no fabricated dB-vs-corridor claims.</li>
+      <li><span class="tag real">real</span> Req 7 — real browser BiquadFilterNode DSP: each stem's 3-band EQ is genuinely wired into its playback chain; moving a slider is audible, not decorative.</li>
+      <li><span class="tag sim">simulated</span> Req 4 — a state-grounded scripted Hope transcript: lines are scripted, not LLM-generated, but templated from real live state (which stem was loaded/muted/soloed, by name) rather than fully hardcoded — not a full natural-language summary of every stem's state at once.</li>
+      <li><span class="tag sim">simulated</span> Reqs 5–6 — a scripted local action dispatcher, not real tool-calling. "Let me show you" calls the same mute/solo/play functions the UI buttons call (visible tool-call audit line + purple pulse + an Undo), and changes real audible state; "Talk me through it" changes nothing and instead rings the exact control Kevin should click. Only solo + play are demonstrated end-to-end here — the roadmap's full action set (mute-all-except, seek, stop, EQ-by-voice) is real-build scope, not re-derived per action in this mockup. No actual voice/LLM/<code>TOOL_DEFS</code> integration — that's Cat's/Markey's real build.</li>
+    </ul>
   </div>
 
   <h1>Mix Check — Input</h1>
-  <p class="subtitle">Multi-stem stack (mockup) — drop up to as many stems as you like, mute/solo, one shared transport.</p>
+  <p class="subtitle">Multi-stem stack (mockup) — load demo stems (or drop your own), mute/solo/EQ, watch the analysis and Hope react live.</p>
+
+  <div class="layout">
+  <div class="left-col">
 
   <div class="oz-card">
     <div class="oz-input-title">
@@ -150,17 +249,22 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
       <span class="hint" id="stemCount">0 loaded</span>
     </div>
 
+    <div class="demo-row">
+      <button type="button" class="demo-btn primary" id="loadDemoBtn">▸ Load demo stems (no files needed)</button>
+      <button type="button" class="demo-btn" id="resetDemoBtn">↺ Reset demo</button>
+    </div>
+
     <div class="sync-status" id="syncStatus">
       <span class="dot"></span>
-      <span id="syncStatusText">No stems loaded yet — drop WAV files into the slots below.</span>
+      <span id="syncStatusText">No stems loaded yet — drop WAV files below, or click "Load demo stems" to review everything without your own files.</span>
     </div>
 
     <div class="stem-stack" id="stemStack"></div>
 
-    <div class="add-stem-row" id="addStemRow">
+    <button type="button" class="add-stem-row" id="addStemRow">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add stem
-    </div>
+    </button>
   </div>
 
   <div class="oz-card">
@@ -184,15 +288,58 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
       <span class="tp-time" id="tpElapsed">0:00</span><span class="tp-time" id="tpDuration" style="margin-left:auto">0:00</span>
     </div>
     <div class="mc-wave-box" id="waveBox"><canvas id="waveCanvas"></canvas></div>
-    <div class="mc-wave-caption">Combined waveform of the currently audible (unmuted) stems only — recomputed live on every mute/solo change. Click/drag to seek. Decorative preview in this mockup, not the real Spectral Balance / Audio Specs analysis (requirement 3, not built here).</div>
+    <div class="mc-wave-caption">Combined waveform of the currently audible (unmuted) stems only — recomputed live on every mute/solo change. Click/drag to seek.</div>
   </div>
 
-  <div class="placeholder-note">
-    <b>Where requirement 3 plugs in (not built in this mockup):</b> Spectral Balance and the Audio
-    Specs panel would sit below this transport and re-run their existing whole-mix analysis against
-    whatever subset of stems is currently audible above — e.g. solo the Bass stem and the
-    LOW/LOW-MID/HIGH-MID/HIGH corridor readings would update to show the bass alone. That's a
-    separate build item once this stem-slot UI is approved.
+  <div class="oz-card">
+    <div class="oz-input-title">
+      <span>Audio Specs &amp; Spectral Balance — requirement 3</span>
+      <span class="audible-flag" id="audibleFlag">
+        <svg viewBox="0 0 24 24"><path d="M12 3v18M5 8v8M19 8v8M8 5v14M16 5v14"/></svg>
+        <span id="audibleFlagText">no stems audible</span>
+      </span>
+    </div>
+    <div class="specs-grid" id="specsGrid">
+      <div class="spec-tile"><div class="k">Peak</div><div class="v" id="specPeak">– –</div></div>
+      <div class="spec-tile"><div class="k">RMS (approx)</div><div class="v" id="specRms">– –</div></div>
+      <div class="spec-tile"><div class="k">Audible stems</div><div class="v" id="specAudibleCount">0</div></div>
+      <div class="spec-tile"><div class="k">Mode</div><div class="v" id="specMode" style="font-size:12px">Idle</div></div>
+    </div>
+    <div class="band-grid" id="bandGrid">
+      <div class="band-card"><div class="bl">Low<span class="bhz">20–250Hz</span></div><div class="bv" id="bandLowVal">–</div><div class="band-bar"><div class="center"></div><div class="fill" id="bandLowFill"></div></div></div>
+      <div class="band-card"><div class="bl">Low-Mid<span class="bhz">250Hz–1kHz</span></div><div class="bv" id="bandLmVal">–</div><div class="band-bar"><div class="center"></div><div class="fill" id="bandLmFill"></div></div></div>
+      <div class="band-card"><div class="bl">High-Mid<span class="bhz">1–4kHz</span></div><div class="bv" id="bandHmVal">–</div><div class="band-bar"><div class="center"></div><div class="fill" id="bandHmFill"></div></div></div>
+      <div class="band-card"><div class="bl">High<span class="bhz">4–20kHz</span></div><div class="bv" id="bandHighVal">–</div><div class="band-bar"><div class="center"></div><div class="fill" id="bandHighFill"></div></div></div>
+    </div>
+    <div class="band-legend">Numbers are each band's share of the four bands' combined FFT-bin magnitude, shown as percentage points above/below an even 25% split — a demo indicator, not a dB-accurate reading and not the real corridor engine. Live only while playing (silence/paused reads "–"). Solo a stem or nudge its EQ and watch these move.</div>
+  </div>
+
+  </div><!-- /left-col -->
+
+  <div class="hope-rail">
+    <div class="rail-head">
+      <div class="oz-rail-avatar" aria-hidden="true"></div>
+      <div class="rail-title">
+        <div class="rail-name"><svg class="ai-star" viewBox="0 0 32 28"><path d="M11 0l2.1 4.9L18 7l-4.9 2.1L11 14 8.9 9.1 4 7l4.9-2.1L11 0z"/><path d="M4 12l1.1 2.9L8 16l-2.9 1.1L4 20l-1.1-2.9L0 16l2.9-1.1L4 12z"/><path d="M22 6l3.1 7.9L32 17l-6.9 3.1L22 28l-3.1-7.9L12 17l6.9-3.1L22 6z"/></svg><span class="grad-txt">Hope</span></div>
+        <div class="rail-status" id="railStatus">aware of stem/mute/solo state — req 4</div>
+      </div>
+    </div>
+    <div class="rail-body" id="railBody"></div>
+    <div class="rail-foot">
+      <div class="rail-input">Ask Hope, or say "solo the bass" — voice/chat wiring not built in this mockup (req 5's real tool-calling is a separate build item)</div>
+    </div>
+  </div>
+
+  </div><!-- /layout -->
+
+  <div class="placeholder-note" style="margin-top:16px">
+    <b>Not built here, by design:</b> Hope's real voice/chat, LLM reasoning, and
+    <code>TOOL_DEFS</code> tool-calling wiring (reqs 4–6's actual plumbing lives in
+    <code>index.html</code>'s Hope-awareness/tool-call pattern, Markey's/Cat's domain) —
+    this rail is a scripted stand-in so Kevin can react to the interaction shape
+    (demonstrate vs instruct) before that's built. The real BS.1770-4/FFT analysis engine
+    and genre corridors (req 3) are also unchanged/untouched — the band tiles above use a
+    simplified live-analyser approximation for demo purposes only.
   </div>
 
 </div>
@@ -213,24 +360,57 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
   const stemCountEl = document.getElementById('stemCount');
   const syncStatus = document.getElementById('syncStatus');
   const syncStatusText = document.getElementById('syncStatusText');
+  const railBody = document.getElementById('railBody');
 
-  let stems = []; // {id,label,file,buffer,duration,sampleRate,peaks,gainNode,muted,soloed,mismatch}
+  // Graph (per TP1 review): source -> stem gain/mute -> EQ -> analysisSum -> analyser (tap only)
+  //                                                                       \-> monitorGain -> destination
+  // analysisSum feeds the analyser BEFORE the monitor volume control, so playback volume
+  // (tpVol) never affects what the "live reactive analysis" panel reads — only mute/solo/EQ do.
+  let analysisSum = null, monitorGain = null, analyser = null, analyserData = null;
+  function bus(){
+    if(!analysisSum){
+      analysisSum = ac().createGain();
+      analysisSum.gain.value = 0.4; // headroom so summing several stems doesn't clip
+      monitorGain = ac().createGain();
+      analyser = ac().createAnalyser();
+      analyser.fftSize = 2048;
+      analyserData = new Uint8Array(analyser.frequencyBinCount);
+      analysisSum.connect(analyser);
+      analysisSum.connect(monitorGain);
+      monitorGain.connect(ac().destination);
+    }
+    return analysisSum;
+  }
+
+  let stems = []; // {id,label,file,buffer,duration,sampleRate,peaks,muted,soloed,mismatch,eqOpen,eqLow,eqMid,eqHigh,gainNode,lowFilt,midFilt,highFilt}
   let nextId = 1;
+  let uiSession = 0; // TP2 fix: bumped on Load demo / Reset demo so stale Hope timers from a prior session no-op
 
   DEFAULT_LABELS.forEach(l=>addStem(l,false));
 
   function addStem(label, custom){
     const id = nextId++;
-    stems.push({id,label:label||('Stem '+id),file:null,buffer:null,duration:0,sampleRate:0,peaks:null,gainNode:null,muted:false,soloed:false,mismatch:false,custom:!!custom});
+    stems.push({
+      id,label:label||('Stem '+id),file:null,buffer:null,duration:0,sampleRate:0,peaks:null,
+      muted:false,soloed:false,mismatch:false,custom:!!custom,
+      eqOpen:false,eqLow:0,eqMid:0,eqHigh:0,
+      gainNode:null,lowFilt:null,midFilt:null,highFilt:null
+    });
     renderStack();
   }
 
   function removeStem(id){
     const s = stems.find(s=>s.id===id);
-    if(s && s.gainNode){ try{s.gainNode.disconnect();}catch(e){} }
+    disconnectChain(s);
     stems = stems.filter(s=>s.id!==id);
     renderStack();
     recompute();
+    railNote('Stem removed. Live analysis now reflects '+audibleStems().length+' audible stem(s).');
+  }
+
+  function disconnectChain(s){
+    if(!s) return;
+    [s.gainNode,s.lowFilt,s.midFilt,s.highFilt].forEach(n=>{ if(n){ try{n.disconnect();}catch(e){} } });
   }
 
   function colorFor(idx){ return COLORS[idx % COLORS.length]; }
@@ -245,13 +425,16 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     stemStack.innerHTML='';
     stems.forEach((s,idx)=>{
       const row=document.createElement('div');
-      row.className='stem-row'+(s.mismatch?' mismatch':'');
+      row.className='stem-row'+(s.mismatch?' mismatch':'')+(s._hopeActing?' hope-acting':'')+(s._hopeHighlight?' hope-highlight':'');
       row.dataset.id=s.id;
+
+      const main=document.createElement('div');
+      main.className='stem-row-main';
 
       const swatch=document.createElement('div');
       swatch.className='stem-swatch';
       swatch.style.background=colorFor(idx);
-      row.appendChild(swatch);
+      main.appendChild(swatch);
 
       const body=document.createElement('div');
       body.className='stem-body';
@@ -284,15 +467,15 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
         drop.addEventListener('click',()=>{ fileInputFor(s.id).click(); });
         body.appendChild(drop);
       }
-      row.appendChild(body);
+      main.appendChild(body);
 
       if(s.file){
         const waveWrap=document.createElement('div');
         waveWrap.className='stem-wave';
         const cv=document.createElement('canvas');
-        cv.width=130; cv.height=34;
+        cv.width=110; cv.height=34;
         waveWrap.appendChild(cv);
-        row.appendChild(waveWrap);
+        main.appendChild(waveWrap);
         s._miniCanvas=cv;
         drawMiniWave(s);
       }
@@ -304,16 +487,24 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
       muteBtn.textContent='M';
       muteBtn.title='Mute';
       muteBtn.disabled=!s.file;
-      muteBtn.addEventListener('click',()=>{ s.muted=!s.muted; applyGains(); renderStack(); });
+      muteBtn.addEventListener('click',()=>{ toggleMute(s.id,true); });
       const soloBtn=document.createElement('button');
-      soloBtn.className='stem-tbtn solo'+(s.soloed?' active':'');
+      soloBtn.className='stem-tbtn solo'+(s.soloed?' active':'')+(s._hopeHighlightTarget==='solo'?' instruct-ring':'');
       soloBtn.textContent='S';
       soloBtn.title='Solo';
       soloBtn.disabled=!s.file;
-      soloBtn.addEventListener('click',()=>{ s.soloed=!s.soloed; applyGains(); renderStack(); });
+      soloBtn.addEventListener('click',()=>{ toggleSolo(s.id,true); });
+      const eqBtn=document.createElement('button');
+      eqBtn.className='stem-tbtn eqtoggle'+(s.eqOpen?' active':'');
+      eqBtn.textContent='EQ';
+      eqBtn.style.width='32px';
+      eqBtn.title='Live 3-band EQ (requirement 7)';
+      eqBtn.disabled=!s.file;
+      eqBtn.addEventListener('click',()=>{ s.eqOpen=!s.eqOpen; renderStack(); });
       controls.appendChild(muteBtn);
       controls.appendChild(soloBtn);
-      row.appendChild(controls);
+      controls.appendChild(eqBtn);
+      main.appendChild(controls);
 
       const rm=document.createElement('button');
       rm.className='stem-remove';
@@ -324,15 +515,35 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
         else if(s.file){ clearStemFile(s.id); }
         else { removeStem(s.id); }
       });
-      row.appendChild(rm);
+      main.appendChild(rm);
 
       const fi=document.createElement('input');
       fi.type='file'; fi.accept='audio/wav,audio/x-wav,.wav,audio/*';
       fi.className='stem-fileinput';
       fi.id='stemFile'+s.id;
       fi.addEventListener('change',e=>{ if(e.target.files[0]) loadFile(s.id, e.target.files[0]); });
-      row.appendChild(fi);
+      main.appendChild(fi);
       s._fileInput=fi;
+
+      row.appendChild(main);
+
+      if(s.file){
+        const eqWrap=document.createElement('div');
+        eqWrap.className='stem-eq'+(s.eqOpen?' open':'');
+        eqWrap.appendChild(eqBand('Low','low',s,'80Hz shelf'));
+        eqWrap.appendChild(eqBand('Mid','mid',s,'1kHz peak'));
+        eqWrap.appendChild(eqBand('High','high',s,'8kHz shelf'));
+        const reset=document.createElement('button');
+        reset.className='eq-reset';
+        reset.textContent='Reset';
+        reset.addEventListener('click',()=>{ setEq(s,'low',0); setEq(s,'mid',0); setEq(s,'high',0); renderStack(); });
+        eqWrap.appendChild(reset);
+        const hint=document.createElement('div');
+        hint.className='eq-hint';
+        hint.textContent='Real BiquadFilterNodes — moving these is audibly live on this stem, not decorative.';
+        eqWrap.appendChild(hint);
+        row.appendChild(eqWrap);
+      }
 
       row.addEventListener('dragover',e=>{ e.preventDefault(); row.classList.add('dragover'); });
       row.addEventListener('dragleave',()=>row.classList.remove('dragover'));
@@ -344,8 +555,54 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 
       updateEffectiveMuteClass(row,s);
       stemStack.appendChild(row);
+      s._row=row;
     });
     stemCountEl.textContent = stems.filter(s=>s.file).length+' loaded';
+  }
+
+  function eqBand(label,key,s,freqLabel){
+    const wrap=document.createElement('div');
+    wrap.className='eq-band';
+    const name=document.createElement('div');
+    name.className='eq-name '+key;
+    name.textContent=label;
+    wrap.appendChild(name);
+    const slider=document.createElement('input');
+    slider.type='range'; slider.min='-12'; slider.max='12'; slider.step='0.5';
+    slider.className='eq-slider';
+    slider.value=s['eq'+cap(key)];
+    slider.addEventListener('input',()=>{ setEq(s,key,parseFloat(slider.value)); val.textContent=fmtDb(s['eq'+cap(key)]); });
+    wrap.appendChild(slider);
+    const val=document.createElement('div');
+    val.className='eq-val';
+    val.textContent=fmtDb(s['eq'+cap(key)]);
+    wrap.appendChild(val);
+    const freq=document.createElement('div');
+    freq.className='eq-freq';
+    freq.textContent=freqLabel;
+    wrap.appendChild(freq);
+    return wrap;
+  }
+  function cap(k){ return k.charAt(0).toUpperCase()+k.slice(1); }
+  function fmtDb(v){ v=Math.round(v*10)/10; return (v>0?'+':'')+v+'dB'; }
+
+  function setEq(s,key,val){
+    s['eq'+cap(key)]=val;
+    const filt = key==='low'?s.lowFilt : key==='mid'?s.midFilt : s.highFilt;
+    if(filt){ filt.gain.setTargetAtTime(val, ac().currentTime, 0.02); }
+  }
+
+  function toggleMute(id,userInitiated){
+    const s=stems.find(s=>s.id===id); if(!s) return;
+    s.muted=!s.muted;
+    applyGains(); renderStack();
+    if(userInitiated) railNote((s.muted?'Muted ':'Unmuted ')+s.label+'.');
+  }
+  function toggleSolo(id,userInitiated){
+    const s=stems.find(s=>s.id===id); if(!s) return;
+    s.soloed=!s.soloed;
+    applyGains(); renderStack();
+    if(userInitiated) railNote((s.soloed?'Soloed ':'Un-soloed ')+s.label+'.');
   }
 
   function fileInputFor(id){ const s=stems.find(s=>s.id===id); return s && s._fileInput; }
@@ -359,23 +616,44 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
   function clearStemFile(id){
     const s=stems.find(s=>s.id===id);
     if(!s) return;
-    if(s.gainNode){ try{s.gainNode.disconnect();}catch(e){} s.gainNode=null; }
-    s.file=null; s.buffer=null; s.duration=0; s.sampleRate=0; s.peaks=null; s.muted=false; s.soloed=false; s.mismatch=false;
+    if(playing) stopAll(); // TP3 fix: don't leave the transport claiming "playing" over a chain that's about to vanish
+    s._loadToken=(s._loadToken||0)+1; // TP2 fix: invalidates any decodeAudioData callback still in flight for this slot
+    s._hopeActing=false; s._hopeHighlight=false; s._hopeHighlightTarget=null;
+    disconnectChain(s);
+    s.file=null; s.buffer=null; s.duration=0; s.sampleRate=0; s.peaks=null;
+    s.muted=false; s.soloed=false; s.mismatch=false; s.eqOpen=false;
+    s.eqLow=0; s.eqMid=0; s.eqHigh=0;
+    s.gainNode=s.lowFilt=s.midFilt=s.highFilt=null;
     renderStack();
     recompute();
+  }
+
+  function buildChain(s){
+    // stem source -> gain -> low-shelf -> mid-peak -> high-shelf -> master bus -> analyser (reqs 3+7)
+    s.gainNode = ac().createGain();
+    s.lowFilt = ac().createBiquadFilter(); s.lowFilt.type='lowshelf'; s.lowFilt.frequency.value=80; s.lowFilt.gain.value=s.eqLow;
+    s.midFilt = ac().createBiquadFilter(); s.midFilt.type='peaking'; s.midFilt.frequency.value=1000; s.midFilt.Q.value=1; s.midFilt.gain.value=s.eqMid;
+    s.highFilt = ac().createBiquadFilter(); s.highFilt.type='highshelf'; s.highFilt.frequency.value=8000; s.highFilt.gain.value=s.eqHigh;
+    s.gainNode.connect(s.lowFilt); s.lowFilt.connect(s.midFilt); s.midFilt.connect(s.highFilt); s.highFilt.connect(bus());
   }
 
   function loadFile(id,file){
     const s=stems.find(s=>s.id===id);
     if(!s) return;
+    if(playing) stopAll(); // TP2 fix: don't let an old chain keep sounding under a newly-loading one
+    const myToken=(s._loadToken=(s._loadToken||0)+1); // TP2 fix: stale-callback guard
     const reader=new FileReader();
     reader.onload=function(ev){
       ac().decodeAudioData(ev.target.result.slice(0), function(buffer){
-        s.file=file; s.buffer=buffer; s.duration=buffer.duration; s.sampleRate=buffer.sampleRate;
-        s.peaks=computePeaks(buffer,PEAK_COLS);
-        if(!s.gainNode){ s.gainNode=ac().createGain(); s.gainNode.connect(ac().destination); }
+        const cur=stems.find(x=>x.id===id);
+        if(!cur || cur._loadToken!==myToken) return; // slot was cleared/replaced/removed since this decode started
+        cur.file=file; cur.buffer=buffer; cur.duration=buffer.duration; cur.sampleRate=buffer.sampleRate;
+        cur.peaks=computePeaks(buffer,PEAK_COLS);
+        disconnectChain(cur); // in case this is a replace of an already-loaded stem
+        buildChain(cur);
         renderStack();
         recompute();
+        railNote(cur.label+' loaded — '+fmtTime(cur.duration)+' @ '+cur.sampleRate+'Hz. I can already see this in the mix bus.');
       }, function(err){
         alert('Could not decode "'+file.name+'" as audio: '+(err&&err.message||err));
       });
@@ -391,7 +669,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     for(let i=0;i<cols;i++){
       const start=i*perCol, end=Math.min(len,start+perCol);
       let peak=0;
-      for(let j=start;j<end;j+=4){ // stride for speed
+      for(let j=start;j<end;j+=4){
         for(let c=0;c<chans.length;c++){
           const v=Math.abs(chans[c][j]||0);
           if(v>peak) peak=v;
@@ -408,6 +686,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     const dur=maxDuration();
     document.getElementById('tpDuration').textContent=fmtTime(dur);
     redrawWave();
+    updateAnalysisPanel();
   }
 
   function maxDuration(){
@@ -468,10 +747,13 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     stems.forEach(s=>{
       if(!s.gainNode) return;
       const audible = anySolo ? s.soloed : !s.muted;
-      const vol=tpVol.value/100;
-      s.gainNode.gain.setTargetAtTime(audible?vol:0, ac().currentTime, 0.01);
+      // stem gain is mute/solo ONLY (always 0 or 1) — playback volume lives on monitorGain,
+      // downstream of the analyser tap, so it never affects the live analysis (TP1 fix).
+      s.gainNode.gain.setTargetAtTime(audible?1:0, ac().currentTime, 0.01);
     });
+    if(monitorGain) monitorGain.gain.setTargetAtTime(tpVol.value/100, ac().currentTime, 0.01);
     redrawWave();
+    updateAnalysisPanel();
   }
 
   tpVol.addEventListener('input', applyGains);
@@ -490,7 +772,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     stopSources();
     const loaded=stems.filter(s=>s.file);
     if(!loaded.length) return;
-    const when = ac().currentTime + 0.06; // shared start timestamp — sample-accurate sync (req 1)
+    const when = ac().currentTime + 0.06;
     loaded.forEach(s=>{
       const src=ac().createBufferSource();
       src.buffer=s.buffer;
@@ -506,6 +788,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
 
   function play(){
     if(!stems.some(s=>s.file)) return;
+    if(ac().state==='suspended') ac().resume(); // TP3 fix: some browsers create the context suspended even inside a gesture
     const dur=maxDuration();
     if(offset>=dur) offset=0;
     startPlayback(offset);
@@ -521,6 +804,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     playIcon.style.display=''; pauseIcon.style.display='none';
     cancelAnimationFrame(raf);
     redrawWave();
+    updateAnalysisPanel(); // TP2 fix: don't leave the panel reading stale "Live" values once paused
   }
   function stopAll(){
     stopSources();
@@ -529,6 +813,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     cancelAnimationFrame(raf);
     tpElapsed.textContent='0:00';
     redrawWave();
+    updateAnalysisPanel(); // TP2 fix: same as pause() — stop must also drop back to Idle, not stale Live
   }
   function seek(sec){
     const dur=maxDuration();
@@ -550,6 +835,7 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     if(off>=dur && dur>0){ stopAll(); return; }
     tpElapsed.textContent=fmtTime(off);
     redrawWave();
+    updateAnalysisPanel();
     raf=requestAnimationFrame(loop);
   }
 
@@ -606,7 +892,6 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
     const mid=h/2;
     const off=currentOffset();
     const playedX = dur>0 ? Math.floor((off/dur)*cols) : 0;
-    // gradient for played span
     const grad=g.createLinearGradient(0,0,w,0);
     grad.addColorStop(0,'#2fa1e6'); grad.addColorStop(1,'#a557f4');
     for(let x=0;x<cols;x++){
@@ -615,7 +900,6 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
       g.fillStyle = (x<=playedX) ? grad : '#3a3f45';
       g.fillRect(x,mid-barH/2,1,barH);
     }
-    // playhead
     g.fillStyle='#f2f4f5';
     g.fillRect(Math.max(0,playedX-1),0,2,h);
   }
@@ -630,7 +914,348 @@ h1{font-size:22px;font-weight:700;color:#f9fafb;margin:0 0 2px}
   waveBox.addEventListener('mousedown',e=>{ dragging=true; seekFromEvent(e); });
   window.addEventListener('mousemove',e=>{ if(dragging) seekFromEvent(e); });
   window.addEventListener('mouseup',()=>{ dragging=false; });
-  window.addEventListener('resize',redrawWave);
+  window.addEventListener('resize',()=>{ redrawWave(); });
+
+  // ============ REQUIREMENT 3 — live reactive analysis ============
+  const audibleFlagText=document.getElementById('audibleFlagText');
+  const specPeak=document.getElementById('specPeak'), specRms=document.getElementById('specRms');
+  const specAudibleCount=document.getElementById('specAudibleCount'), specMode=document.getElementById('specMode');
+  const bandEls={
+    low:{v:document.getElementById('bandLowVal'),f:document.getElementById('bandLowFill')},
+    lm:{v:document.getElementById('bandLmVal'),f:document.getElementById('bandLmFill')},
+    hm:{v:document.getElementById('bandHmVal'),f:document.getElementById('bandHmFill')},
+    high:{v:document.getElementById('bandHighVal'),f:document.getElementById('bandHighFill')}
+  };
+  let lastBandReadout=null;
+
+  function bandRanges(sampleRate){
+    // 4-band split matching the real app's Low/Low-Mid/High-Mid/High labels, simplified for the mockup
+    return { low:[20,250], lm:[250,1000], hm:[1000,4000], high:[4000,20000] };
+  }
+
+  function updateAnalysisPanel(){
+    const audible=audibleStems();
+    specAudibleCount.textContent=audible.length;
+    audibleFlagText.textContent = audible.length===0 ? 'no stems audible'
+      : audible.length===stems.filter(s=>s.file).length && stems.filter(s=>s.file).length>0 ? 'full mix audible'
+      : audible.length+' stem'+(audible.length>1?'s':'')+' isolated: '+audible.map(s=>s.label).join(', ');
+
+    if(!audible.length){
+      specMode.textContent='Idle';
+      specPeak.textContent='– –'; specRms.textContent='– –';
+      renderBands(null,false);
+      return;
+    }
+
+    // Peak/RMS: a source-envelope estimate from each audible stem's decoded time-domain peak
+    // data (max envelope, not the true summed/EQ'd mix) — valid whether playing or paused,
+    // always labelled as an estimate, never presented as a mix measurement (TP2 fix).
+    const approx=approxLevels(audible);
+    specPeak.textContent=approx.peakDb+' dBFS (source estimate)'; specRms.textContent=approx.rmsDb+' dBFS (source estimate)';
+
+    if(playing && analyser){
+      // Live spectral read (TP1 fix: an AnalyserNode is only meaningful on actively-processed
+      // audio — no fabricated band split while paused, see the else branch below).
+      analyser.getByteFrequencyData(analyserData);
+      const nyquist=ac().sampleRate/2; // TP2 fix: the analyser lives in the AudioContext's own
+      // sample-rate domain, not any one stem's decoded rate — using ac().sampleRate keeps band
+      // edges correct even if stems were mismatched/upsampled on the way into the graph.
+      const ranges=bandRanges();
+      const binHz = nyquist/analyserData.length;
+      const bandEnergy = key=>{
+        const [lo,hi]=ranges[key];
+        const i0=Math.max(0,Math.floor(lo/binHz)), i1=Math.min(analyserData.length-1,Math.ceil(hi/binHz));
+        let sum=0,n=0;
+        for(let i=i0;i<=i1;i++){ sum+=analyserData[i]; n++; }
+        return n? sum/n : 0; // 0-255, raw FFT-bin magnitude average — NOT calibrated dB/LUFS
+      };
+      const vals={low:bandEnergy('low'),lm:bandEnergy('lm'),hm:bandEnergy('hm'),high:bandEnergy('high')};
+      const totalEnergy=vals.low+vals.lm+vals.hm+vals.high;
+      if(totalEnergy<4){
+        // TP2 fix: near-silence (e.g. a mid-playback gap in the synthetic vocal phrase) should
+        // read as "no signal", not a fabricated even split.
+        specMode.textContent='Live (playing — no signal right now)';
+        renderBands(null,false);
+      } else {
+        specMode.textContent='Live (playing)';
+        renderBands(vals,true);
+      }
+    } else {
+      // Paused: an AnalyserNode reads silence here, and the decoded "peaks" array is
+      // time-domain waveform data, not a spectral estimate — showing a real per-band split
+      // would be fabricated, so this mockup is honest about that gap instead (per TP1 review).
+      specMode.textContent='Idle (press play for a live spectral read)';
+      renderBands(null,false);
+    }
+  }
+
+  function approxLevels(audible){
+    let peak=0,sum=0,n=0;
+    audible.forEach(s=>{
+      s.peaks.forEach(v=>{ if(v>peak) peak=v; sum+=v*v; n++; });
+    });
+    const rms=n? Math.sqrt(sum/n) : 0;
+    const toDb=v=>v>0? Math.round(20*Math.log10(v)) : -60;
+    return { peakDb: toDb(peak), rmsDb: toDb(rms) };
+  }
+
+  function renderBands(vals,live){
+    const keys=['low','lm','hm','high'];
+    if(!vals){
+      keys.forEach(k=>{ bandEls[k].v.textContent='–'; bandEls[k].v.classList.remove('updating'); bandEls[k].f.style.left='50%'; bandEls[k].f.style.width='0%'; });
+      lastBandReadout=null;
+      return;
+    }
+    // Relative-energy display: each band's share of the four bands' total, deviation from an
+    // even 25% split — explicitly NOT a calibrated dB or corridor-deviation reading (TP1 fix).
+    const total = keys.reduce((sum,k)=>sum+vals[k],0) || 1;
+    keys.forEach(k=>{
+      const share = vals[k]/total; // 0-1
+      const devPct = Math.round((share-0.25)*100); // +/- percentage points vs an even split
+      bandEls[k].v.textContent=(devPct>0?'+':'')+devPct+'%';
+      const pct=Math.max(4,Math.min(96, 50 + devPct*2.2));
+      const left = Math.min(50,pct), width=Math.abs(pct-50);
+      bandEls[k].f.style.left=left+'%';
+      bandEls[k].f.style.width=width+'%';
+      bandEls[k].v.classList.toggle('updating',!!live);
+    });
+    lastBandReadout=vals;
+  }
+
+  // ============ Hope rail (requirement 4/5/6, scripted) ============
+  function railScrollBottom(){ railBody.scrollTop=railBody.scrollHeight; }
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function railNote(text){
+    const el=document.createElement('div');
+    el.className='hmsg state';
+    el.textContent=text;
+    railBody.appendChild(el);
+    railScrollBottom();
+    maybeSuggest();
+  }
+
+  function railSay(html){
+    const el=document.createElement('div');
+    el.className='hmsg';
+    el.innerHTML=html;
+    railBody.appendChild(el);
+    railScrollBottom();
+    return el;
+  }
+
+  function railActing(html){
+    const el=document.createElement('div');
+    el.className='hmsg acting';
+    el.innerHTML='<div class="acting-tag"><span class="dot"></span>Hope is doing this now</div>'+html;
+    railBody.appendChild(el);
+    railScrollBottom();
+    return el;
+  }
+
+  let suggestionShown=false;
+  function maybeSuggest(){
+    if(suggestionShown) return;
+    const loaded=stems.filter(s=>s.file && !s.mismatch);
+    if(loaded.length<2) return;
+    suggestionShown=true;
+    renderSuggestionCard(loaded.find(s=>/bass|kick|drum/i.test(s.label)) || loaded[0]);
+  }
+
+  function renderSuggestionCard(target){
+    const mySession=uiSession;
+    setTimeout(()=>{
+      if(uiSession!==mySession) return; // TP2 fix: a Load-demo/Reset happened while this was pending
+      const stillValid = stems.find(x=>x.id===target.id && x.file && !x.mismatch);
+      if(!stillValid){
+        railNote('(The stem I was going to suggest isolating is no longer loaded/valid — skipping that suggestion.)');
+        return;
+      }
+      const label=escapeHtml(target.label);
+      const card=document.createElement('div');
+      card.className='hope-suggest';
+      // TP2 fix: no fabricated diagnosis ("Low is reading hot") — this is honestly framed as
+      // a listening-check offer, not a measured finding, since nothing here has actually
+      // analysed the audio yet to support a specific claim.
+      card.innerHTML =
+        '<div class="hs-title">Want to hear '+label+' on its own?</div>'+
+        '<div class="hs-why">Isolating a stem is often the fastest way to judge what it\'s really doing in the mix. <b>This is how she is able to help and advise — "let me show you."</b></div>'+
+        '<div class="hs-btns">'+
+          '<button type="button" class="hs-btn demo" data-mode="demo">Let me show you</button>'+
+          '<button type="button" class="hs-btn instruct" data-mode="instruct">Talk me through it</button>'+
+        '</div>';
+      railBody.appendChild(card);
+      railScrollBottom();
+      const demoBtn=card.querySelector('.hs-btn.demo'), instructBtn=card.querySelector('.hs-btn.instruct');
+      let acted=false; // guards against double-click / double-invocation while the sequence runs
+      demoBtn.addEventListener('click',()=>{ if(acted) return; acted=true; demoBtn.disabled=true; instructBtn.disabled=true; hopeDemonstrate(target.id); });
+      instructBtn.addEventListener('click',()=>{ if(acted) return; acted=true; demoBtn.disabled=true; instructBtn.disabled=true; hopeInstruct(target.id); });
+    },700);
+  }
+
+  // requirement 5 + 6 — demonstrate mode: Hope actually calls the same functions the UI buttons
+  // call (not a separate code path), and shows a visible tool-call audit line so the
+  // control/tool-calling concept is legible even though there's no real TOOL_DEFS/LLM here.
+  // TP2 fix: "on its own" now means exclusive solo (every other stem un-soloed first), matching
+  // the copy literally, and Undo restores every stem's prior solo state + transport, not just
+  // the target's.
+  function hopeDemonstrate(stemId){
+    const s=stems.find(x=>x.id===stemId); if(!s) return;
+    const mySession=uiSession;
+    const label=escapeHtml(s.label);
+    const prevSoloMap=new Map(stems.map(x=>[x.id,x.soloed]));
+    const wasPlaying=playing;
+    const wasOffset=currentOffset(); // TP3 fix: Undo must restore transport position too, not just play/pause
+    const note=railActing(
+      'Soloing <b>'+label+'</b> on its own so you can hear it isolated…<br>'+
+      '<span class="tool-audit">solo_stem({ stem: "'+label+'", exclusive: true }) → applied</span>'
+    );
+    s._hopeActing=true; renderStack();
+    setTimeout(()=>{
+      if(uiSession!==mySession || !stems.find(x=>x.id===stemId)) return; // TP2 fix: session changed mid-sequence
+      // TP3 fix: exclusive isolate via the SAME toggleSolo() the UI's own solo buttons call —
+      // no separate direct-mutation code path for Hope vs a manual click.
+      stems.forEach(x=>{ if(x!==s && x.soloed) toggleSolo(x.id,false); });
+      if(!s.soloed) toggleSolo(s.id,false);
+      note.innerHTML += '<br><span class="tool-audit">play_transport() → applied</span>';
+      if(!playing) play();
+      setTimeout(()=>{
+        if(uiSession!==mySession || !stems.find(x=>x.id===stemId)) return;
+        s._hopeActing=false; renderStack();
+        const undoEl=railSay('Soloed and playing '+label+' on its own — have a listen and judge for yourself whether it needs attention. <button type="button" class="undo-link" id="undoLink'+s.id+'">Undo my changes</button>');
+        const undo=undoEl.querySelector('#undoLink'+s.id);
+        if(undo) undo.addEventListener('click',()=>{
+          if(uiSession!==mySession) return;
+          stems.forEach(x=>{ const prev=prevSoloMap.get(x.id); if(prev!==undefined && x.soloed!==prev) toggleSolo(x.id,false); });
+          if(wasPlaying && !playing) play();
+          if(!wasPlaying && playing) pause();
+          seek(wasOffset); // TP3 fix: restore the exact transport position too
+          railNote('Undone — every stem\'s solo state and transport position restored to how it was before I acted.');
+        });
+      },900);
+    },500);
+  }
+
+  // requirement 6 — instruct mode: Hope highlights the real controls instead of touching them.
+  // Deliberately changes NO audio/control state (per TP1 review) — the rings are applied via
+  // state flags re-rendered every pass, not one-off DOM queries, so they survive any other
+  // stem's mute/solo re-render in the meantime instead of going stale.
+  function hopeInstruct(stemId){
+    const s=stems.find(x=>x.id===stemId); if(!s) return;
+    const mySession=uiSession;
+    const label=escapeHtml(s.label);
+    railSay('Sure — click the <b>S</b> (solo) button on the <b>'+label+'</b> row, then <b>Play</b> in the transport above (both ringed below). I\'m waiting — I haven\'t touched anything myself, and I\'ll see it in the mix bus the moment you do.');
+    s._hopeHighlight=true; s._hopeHighlightTarget='solo'; instructHighlightPlay=true; renderStack(); applyInstructPlayRing();
+    setTimeout(()=>{
+      if(uiSession!==mySession) return; // TP2 fix
+      const cur=stems.find(x=>x.id===stemId);
+      if(cur){ cur._hopeHighlight=false; cur._hopeHighlightTarget=null; }
+      instructHighlightPlay=false; renderStack(); applyInstructPlayRing();
+    },7000);
+  }
+  let instructHighlightPlay=false;
+  function applyInstructPlayRing(){ btnPlay.classList.toggle('instruct-ring', instructHighlightPlay); }
+
+  railNote('I can see the stem stack — 4 slots ready, none loaded yet. Drop stems in above and I\'ll track mute/solo state as you go (requirement 4). Or click "Load demo stems" to review this whole mockup with zero files.');
+
+  // ============ Deterministic demo fixture (per TP1 review) ============
+  // Generates 4 real, distinct, in-sync AudioBuffers directly (no files needed) so every
+  // requirement is reviewable on GitHub Pages without Kevin supplying his own stems.
+  const DEMO_DUR = 8; // seconds
+  // TP2 fix: a seeded LCG, not Math.random() — "Load demo stems" must produce byte-identical
+  // audio every time, matching the "deterministic fixture" claim in the banner.
+  function makeSeededRng(seed){
+    let s = seed >>> 0;
+    return function(){ s = (s*1664525 + 1013904223) >>> 0; return (s/4294967296); };
+  }
+  function synthBuffer(sr, dur, fillFn){
+    const buf = ac().createBuffer(1, Math.floor(sr*dur), sr);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++){ d[i] = fillFn(i/sr, i); }
+    return buf;
+  }
+  function demoDrums(sr){
+    const rng=makeSeededRng(1);
+    return synthBuffer(sr, DEMO_DUR, (t)=>{
+      const beat = t*2; // 120bpm-ish eighth pulses
+      const phase = beat - Math.floor(beat);
+      const env = Math.exp(-phase*28); // sharp percussive decay
+      const noise = (rng()*2-1);
+      const isKick = Math.floor(beat)%2===0;
+      const tone = isKick ? Math.sin(2*Math.PI*60*t)*0.6 : 0;
+      return (noise*0.5 + tone)*env*0.9;
+    });
+  }
+  function demoBass(sr){
+    const notes=[55,55,73.4,65.4]; // A1,A1,D2,C2-ish, one per 2s
+    return synthBuffer(sr, DEMO_DUR, (t)=>{
+      const noteIdx=Math.min(notes.length-1,Math.floor(t/2));
+      const f=notes[noteIdx];
+      const withinNote=t-noteIdx*2;
+      const env=Math.min(1,withinNote*8)*Math.exp(-withinNote*0.15);
+      return Math.sin(2*Math.PI*f*t)*0.8*env;
+    });
+  }
+  function demoVocals(sr){
+    return synthBuffer(sr, DEMO_DUR, (t)=>{
+      const phraseOn = (t%4)<3; // phrases with gaps, vocal-like phrasing
+      if(!phraseOn) return 0;
+      const vibrato=Math.sin(2*Math.PI*5*t)*4;
+      const f=340+vibrato+Math.sin(t*0.6)*40;
+      const env=Math.sin(Math.PI*((t%4)/3))*0.55;
+      return (Math.sin(2*Math.PI*f*t)+0.5*Math.sin(2*Math.PI*f*2*t))*0.35*env;
+    });
+  }
+  function demoOther(sr){
+    const rng=makeSeededRng(4);
+    let lp=0;
+    return synthBuffer(sr, DEMO_DUR, (t)=>{
+      const noise=(rng()*2-1);
+      lp += (noise-lp)*0.06; // crude low-passed shimmer pad, sits in the highs relative to bass/drums
+      const swell=0.5+0.5*Math.sin(2*Math.PI*0.15*t);
+      return lp*0.7*swell;
+    });
+  }
+  function loadDemoStems(){
+    uiSession++; // TP2 fix: invalidates any in-flight Hope demonstrate/instruct timers from before this load
+    stopAll();
+    const sr=ac().sampleRate;
+    const generators=[
+      {label:'Drums',fn:demoDrums},{label:'Bass',fn:demoBass},
+      {label:'Vocals',fn:demoVocals},{label:'Other',fn:demoOther}
+    ];
+    stems.forEach(s=>clearStemFile(s.id));
+    while(stems.length<4) addStem(generators[stems.length].label,false);
+    generators.forEach((g,idx)=>{
+      const s=stems[idx];
+      s.label=g.label;
+      const buffer=g.fn(sr);
+      s.file={name:'demo-'+g.label.toLowerCase()+'.wav (synthetic, generated in-browser)'};
+      s.buffer=buffer; s.duration=buffer.duration; s.sampleRate=buffer.sampleRate;
+      s.peaks=computePeaks(buffer,PEAK_COLS);
+      buildChain(s);
+    });
+    renderStack();
+    recompute();
+    railNote('Demo stems loaded — Drums, Bass, Vocals, Other, all 8s and perfectly in sync (generated in-browser, no files needed). Try soloing one, or use the suggestion below once it appears.');
+  }
+  function resetDemo(){
+    uiSession++; // TP2 fix: same session-invalidation as loadDemoStems
+    stopAll();
+    stems.slice().forEach(s=>{ if(s.custom) removeStem(s.id); });
+    stems.forEach(s=>clearStemFile(s.id));
+    stems.forEach((s,idx)=>{ s.label=DEFAULT_LABELS[idx]||('Stem '+s.id); });
+    suggestionShown=false;
+    instructHighlightPlay=false; applyInstructPlayRing();
+    renderStack();
+    recompute();
+    railBody.innerHTML='';
+    railNote('Demo reset — 4 empty slots, back to the start.');
+  }
+  document.getElementById('loadDemoBtn').addEventListener('click', loadDemoStems);
+  document.getElementById('resetDemoBtn').addEventListener('click', resetDemo);
 
   renderStack();
   recompute();
