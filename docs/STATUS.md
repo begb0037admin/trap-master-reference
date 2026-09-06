@@ -1,5 +1,43 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update (Jules) — Backlog 22 (Multi-stem Mix Check) mockup now covers all 7
+requirements, pushed to `main`, awaiting Kevin's review:** Per Kevin's 2026-09-06 priority bump
+and his explicit authorization to proceed to the mockup stage overnight, extended the existing
+requirement-1/2 stem-upload mockup (`docs/mockups/multistem-mixcheck.html`, built 2026-09-04) to
+also cover requirements 3-7 — the full requirement set from `docs/ROADMAP.md`'s "Multi-stem Mix
+Check" section. Reqs 1-2 (stem drop/upload, sync-mismatch validation, one shared sample-accurate
+transport) are unchanged from the earlier pass. New in this pass: a deterministic in-browser
+demo-stem generator ("Load demo stems") so the whole mockup is reviewable without Kevin supplying
+his own files; a real reactive live-analysis panel (req 3) — an `AnalyserNode` tapped BEFORE the
+monitor-volume gain (so playback volume never affects the reading), redrawing on every
+mute/solo/EQ change, explicitly labelled "relative FFT magnitude, demo only" rather than claiming
+production BS.1770-4/corridor numbers; a scripted, state-grounded Hope rail (req 4); Hope
+suggestion cards with two real interaction modes (reqs 5-6, the emphasis area per Kevin) — "Let
+me show you" genuinely calls the same `toggleSolo()`/`play()` functions the UI buttons call
+(exclusive isolate, a visible tool-call audit line, and a full-state Undo restoring every stem's
+solo state + transport position), while "Talk me through it" changes nothing and instead rings
+the real controls Kevin should click; and a genuinely-wired per-stem 3-band EQ (req 7) via real
+`BiquadFilterNode`s, so a demonstrated move is audibly real, not just pictured. Codex
+three-touchpoint review run in full — TP1 (plan) surfaced 9 gaps (deterministic fixture, a
+correctly-separated analysis/monitor audio graph, no fabricated dB claims, broader req-5
+coverage, protecting the two Hope modes from ambiguity, layout) all addressed before building;
+TP2 (diff, against the actual built file) surfaced further honesty/robustness gaps (paused
+analysis reading stale "Live" values, `Math.random()` non-determinism, an unsupported "Low is
+reading hot" diagnostic claim, several async races around stale `decodeAudioData` callbacks and
+delayed Hope timers surviving a Reset, non-real `<button>` elements) — all fixed and independently
+re-verified via a real headless-Chrome click-through (load demo → sync OK → play → live analysis
+→ pause correctly drops to Idle, not stale → solo → exactly 1 stem isolated → suggestion card →
+demonstrate → both tool-call audit lines + Undo correctly restores solo state → reset clears
+everything); TP3 (end-to-end) found 4 further concrete issues (Undo not keyboard-accessible,
+Undo not restoring transport position, `play()` never resuming a suspended `AudioContext`, Hope
+directly mutating state instead of calling the same `toggleSolo()` the UI uses) — all fixed and
+re-verified. `index.html` untouched throughout — this is a docs/mockups-only pass, no build
+authorization. Pushed directly to `main` (mockups are design artifacts per `docs/CLAUDE.md`'s
+standing process, not a branch this time) at commit `24e491e`. Review at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck.html` — Kevin reviews live
+and gives explicit sign-off/redirect before any real build starts; Option A vs B (multi-stem
+upload vs auto stem-split) also remains Kevin's call, unchanged by this mockup.
+
 **2026-09-06 update — Hope-rail waveform saga CLOSED (build 2026-09-06.8), Kevin: "better - it will do for now":**
 Final state after 4 rounds (3 blind, 1 source-verified) on the same live-call feedback thread
 ("no headroom, constantly large, no dynamics" → fixed for speaking; then "this should not happen
