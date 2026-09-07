@@ -1,5 +1,58 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, correctness-bug pass (Cat) — Backlog 22 (Multi-stem Mix Check): real
+stem-classifier bug found and fixed, routed by Jules.** Kevin tested the final-brief build
+(commit `755e68b`) and reported: "vocals appear as drums - we need to fix this - every track is
+completely off." Real DSP debugging, not a threshold re-tune — full Codex three-touchpoint review.
+
+**Root cause, proven with real headless-Chrome numbers, not self-report.** `classifyStem()`'s
+stereo-to-mono downmix (`mono()`) fed a signal into the FFT whose every sample's magnitude came
+from the correct energy formula `sqrt((L^2+R^2)/2)` but whose SIGN was an arbitrary global choice
+based on `(l+r)`'s sign — the code's own comment claimed this was "harmless… magnitude-only," which
+was false. Whenever L and R aren't in phase (true of nearly every real stereo stem — reverb, delay,
+chorus, stereo width, all normal on a vocal stem exported from a DAW), this produces a
+rectification-like artifact that fabricates broadband harmonic content not present in either
+channel, inflating spectral flatness specifically. Measured directly: a formant-shaped, sung-melody
+synthetic "vocals" test signal (mono) measured flatness ≈0.066 (correctly reads as tonal, well under
+the 0.30 Vocals ceiling); the identical vocal content, unchanged, with a realistic 3-tap reverb tail
+added to the right channel only, measured flatness 0.33–0.43 through the old downmix — enough to
+cross out of the Vocals bucket entirely and, depending on the exact reverb/onset shape, all the way
+past the 0.35 Drums floor too, even with `midRatio` still ≈0.6–0.86 (clearly vocal-formant-dominant).
+This directly reproduces "vocals reads as drums / every track is completely off" — since almost
+every real-world stereo stem carries some width/reverb, this wasn't an edge case.
+
+**Fix:** `classifyStem()` no longer downmixes time-domain samples before the FFT. It now FFTs each
+channel separately (same Hann window) and sums squared magnitude per bin across channels — a
+phase-safe combination that can neither fabricate harmonics (the bug) nor destructively cancel
+out-of-phase content (the original, valid concern the old sign-hack was trying, incorrectly, to
+solve). `mono()` was renamed `monoEnergy()` and kept only for the RMS/onset envelope, where sign is
+provably irrelevant (RMS squares the sample). Mono-file behaviour is unchanged. Real headless-Chrome
+verification (Playwright + a real Chrome binary, same 4 realistic stereo synthetic stems, before
+`git HEAD` vs after the fix): Drums/Bass/Other all still correctly classified both before and after;
+Vocals went from misclassified (`Other`, flatness 0.356) to correctly `Vocals` (flatness 0.066),
+`midRatio` unchanged (≈0.87, always clearly vocal) proving the fix touched only the fabricated
+metric, not the real signal content. Codex TP1 (plan, before code) flagged the `mono()` sign bug on
+inspection before any instrumentation ran; Codex TP2 (diff review) approved with two minor
+follow-ups applied (`Float64Array` for the power-spectrum accumulator to preserve the original
+double-precision accuracy; `channels` debug field now reads `buf.numberOfChannels` directly).
+
+**Also confirmed, not fixed (honest limitation, not a bug):** an extreme synthetic test where a
+"vocal" signal's energy was deliberately ~80% broadband noise (a far heavier sibilant/consonant
+ratio than any real singing voice) still reads as Drums even post-fix (`flatness` 0.43,
+`transientsPerSec` 3.5) — a stem that's mostly noise-transient energy genuinely does resemble
+percussive content on this feature set. This matches the classifier's existing disclosed limitation
+in the section below (tonal-vs-percussive ambiguity is a real heuristic ceiling, not a coding error)
+and is not something this fix should chase further — badged "guessed," click-to-rename remains the
+correction path.
+
+Instrumentation added (all additive, no decision-logic change): `classifyStem()`'s return now also
+carries `activeWindows`, `framesCounted`, `onsets` (split into `silenceOnsets`/`jumpOnsets`),
+`analyzedSec`, `sampleRate`, `channels`; `window.__mcDebug.classifyStem` exposes the real function
+for future headless-Chrome verification without needing file drag/drop. `AIMM_BUILD` bumped to
+`2026-09-07.3`.
+
+---
+
 **2026-09-07 update, final pass (Jules) — Backlog 22 (Multi-stem Mix Check): final agreed brief,
 SUPERSEDES `multistem-mixcheck.html`, `multistem-mixcheck-in-context.html`, and
 `multistem-mixcheck-minimal.html` for review purposes.** After an extensive live design discussion,

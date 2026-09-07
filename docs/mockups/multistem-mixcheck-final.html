@@ -3585,7 +3585,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 // in EVERY commit that touches index.html — it exists so "is the fix
 // actually in my browser or am I on a stale GitHub Pages cache?" is
 // answerable at a glance, never by guesswork.
-const AIMM_BUILD = '2026-09-07.2';
+const AIMM_BUILD = '2026-09-07.3';
 (function(){
   try{
     console.log('[AIMM] build', AIMM_BUILD);
@@ -18769,22 +18769,38 @@ csInit('csPlatform');
     let startOffset = 0;         // transport position (seconds) that generation started from
     let rafId = null;
 
-    function mono(buf, ch0, ch1){
-      // Energy-preserving downmix for CLASSIFICATION FEATURES ONLY (never used
-      // for the real audible signal — playback and the analysis-sum both use the
-      // real per-channel data). A plain (L+R)/2 average can cancel out-of-phase
-      // stereo content to near-silence; sqrt((L^2+R^2)/2) keeps the energy
-      // estimate correct at some cost to phase fidelity, which classification
-      // doesn't need. Sign is kept (via L+R) purely so short-time waveforms don't
-      // look fully rectified in comments/debugging — it has no effect on any of
-      // the energy-ratio/flatness/transient metrics below, which are magnitude-only.
+    function monoEnergy(buf, ch0, ch1){
+      // RMS/onset-detection ONLY (never fed to the FFT — see the bug note on
+      // the FFT step in classifyStem below). RMS squares every sample, so
+      // sign carries no information here — sqrt((L^2+R^2)/2) is a correct,
+      // energy-preserving envelope regardless of inter-channel phase. This
+      // used to also be (mis)used as the FFT input via a sign-guessing hack
+      // (`(l+r)<0 ? -mag : mag`) that the code claimed was harmless for
+      // "magnitude-only" metrics — that claim was false: feeding a signal
+      // whose instantaneous VALUE is always |sqrt((L^2+R^2)/2)| with only an
+      // artificially-assigned sign into an FFT does not reproduce the real
+      // waveform's spectrum — it fabricates broadband harmonic content
+      // (effectively a rectification-like artifact) whenever L and R aren't
+      // in phase, which is true of almost every real stereo stem (reverb,
+      // delay, chorus, stereo widening). Confirmed via TP1 headless-Chrome
+      // measurement: a clean, pure-tone-harmonic mono "vocal" test signal
+      // measured spectral flatness ~0.00004 (correctly reads as tonal); the
+      // identical signal with a realistic stereo reverb tail added to the
+      // right channel only (no change to actual vocal content) measured
+      // flatness 0.33-0.40 through the old downmix — high enough to cross
+      // out of the Vocals bucket and, depending on the exact reverb/onset
+      // shape, as far as the Drums bucket — this is the real root cause of
+      // "vocals appear as drums / every track is completely off." Root-cause
+      // fix: classifyStem() now analyzes the spectrum via a phase-safe
+      // per-channel power-spectrum sum instead of ever downmixing time-domain
+      // samples before the FFT. This function is kept only for the (correct,
+      // unaffected) RMS envelope.
       const n=buf.length;
       const out=new Float32Array(n);
       if(!ch1){ out.set(ch0); return out; }
       for(let i=0;i<n;i++){
         const l=ch0[i], r=ch1[i];
-        const mag=Math.sqrt((l*l+r*r)/2);
-        out[i]=(l+r)<0 ? -mag : mag;
+        out[i]=Math.sqrt((l*l+r*r)/2);
       }
       return out;
     }
@@ -18841,21 +18857,27 @@ csInit('csPlatform');
       if(analyzeLen < FFT_SIZE*2){
         return {label:'Other', guessed:true, reason:'too short to classify'};
       }
-      const m=mono({length:analyzeLen}, ch0.subarray(0,analyzeLen), ch1?ch1.subarray(0,analyzeLen):null);
+      const analyzeCh0=ch0.subarray(0,analyzeLen), analyzeCh1=ch1?ch1.subarray(0,analyzeLen):null;
+      const m=monoEnergy({length:analyzeLen}, analyzeCh0, analyzeCh1); // RMS/onset envelope only — see monoEnergy's comment
 
       const win=new Float32Array(FFT_SIZE);
       for(let i=0;i<FFT_SIZE;i++) win[i]=0.5-0.5*Math.cos(2*Math.PI*i/(FFT_SIZE-1)); // Hann
 
       let activeWindows=0, lowRatioSum=0, midRatioSum=0, flatnessSum=0;
       let prevRms=null, onsets=0, framesCounted=0;
+      let silenceOnsets=0, jumpOnsets=0; // debug-only split of the two onset causes (TP1/TP3 diagnostics)
       const binHz=sr/FFT_SIZE;
       const loLoBin=Math.max(1,Math.round(LOW_LO/binHz)), loHiBin=Math.round(LOW_HI/binHz);
       const midLoBin=Math.round(MID_LO/binHz), midHiBin=Math.round(MID_HI/binHz);
 
+      const half=FFT_SIZE/2;
+      const re0=new Float32Array(FFT_SIZE), im0=new Float32Array(FFT_SIZE);
+      const re1=analyzeCh1?new Float32Array(FFT_SIZE):null, im1=analyzeCh1?new Float32Array(FFT_SIZE):null;
+      const pow2=new Float64Array(half); // squared magnitude per bin, summed across channels — phase-safe (Float64 to match the original double-precision accumulation, per Codex TP2)
+
       for(let start=0; start+FFT_SIZE<=analyzeLen; start+=HOP){
         let rms=0;
-        const re=new Float32Array(FFT_SIZE), im=new Float32Array(FFT_SIZE);
-        for(let i=0;i<FFT_SIZE;i++){ const s=m[start+i]*win[i]; re[i]=s; rms+=s*s; }
+        for(let i=0;i<FFT_SIZE;i++){ const s=m[start+i]*win[i]; rms+=s*s; }
         rms=Math.sqrt(rms/FFT_SIZE);
         framesCounted++;
         const isActive=rms>=NOISE_FLOOR_RMS;
@@ -18865,20 +18887,34 @@ csInit('csPlatform');
           // heuristic required the PREVIOUS frame to already be active, which
           // backwards-excluded exactly this case) OR a sudden level jump while
           // already active (a secondary case, e.g. a hit landing mid-sustain).
-          if(prevRms===null || prevRms<NOISE_FLOOR_RMS || rms > prevRms*ONSET_RATIO) onsets++;
-          fft(re, im);
-          const half=FFT_SIZE/2;
-          const mag=new Float32Array(half);
+          if(prevRms===null || prevRms<NOISE_FLOOR_RMS){ onsets++; silenceOnsets++; }
+          else if(rms > prevRms*ONSET_RATIO){ onsets++; jumpOnsets++; }
+
+          // Spectrum: FFT each channel SEPARATELY (windowed) and sum squared
+          // magnitude per bin — a phase-safe combination. Never downmix time-
+          // domain samples before an FFT (see monoEnergy's comment for the bug
+          // this replaces: a sign-guessing time-domain downmix fabricates
+          // broadband harmonic content whenever channels aren't in phase,
+          // which is true of almost every real stereo stem).
+          for(let i=0;i<FFT_SIZE;i++){ re0[i]=analyzeCh0[start+i]*win[i]; im0[i]=0; }
+          fft(re0, im0);
+          for(let k=0;k<half;k++) pow2[k]=re0[k]*re0[k]+im0[k]*im0[k];
+          if(analyzeCh1){
+            for(let i=0;i<FFT_SIZE;i++){ re1[i]=analyzeCh1[start+i]*win[i]; im1[i]=0; }
+            fft(re1, im1);
+            for(let k=0;k<half;k++) pow2[k]+=re1[k]*re1[k]+im1[k]*im1[k];
+          }
+
           let total=0, logSum=0, linSum=0;
           for(let k=1;k<half;k++){ // skip DC
-            const mg=Math.sqrt(re[k]*re[k]+im[k]*im[k]);
-            mag[k]=mg; total+=mg*mg;
+            const mg=Math.sqrt(pow2[k]);
+            total+=pow2[k];
             const e=mg+1e-9;
             logSum+=Math.log(e); linSum+=e;
           }
           let low=0, mid=0;
-          for(let k=loLoBin;k<=loHiBin && k<half;k++) low+=mag[k]*mag[k];
-          for(let k=midLoBin;k<=midHiBin && k<half;k++) mid+=mag[k]*mag[k];
+          for(let k=loLoBin;k<=loHiBin && k<half;k++) low+=pow2[k];
+          for(let k=midLoBin;k<=midHiBin && k<half;k++) mid+=pow2[k];
           if(total>0){
             lowRatioSum += low/total;
             midRatioSum += mid/total;
@@ -18905,7 +18941,12 @@ csInit('csPlatform');
       else if(lowRatio>=BASS_LOW_RATIO) label='Bass';
       else if(midRatio>=VOCALS_MID_RATIO && flatness<VOCALS_FLATNESS) label='Vocals';
       else label='Other';
-      return {label, guessed:true, features:{lowRatio,midRatio,flatness,transientsPerSec}};
+      return {label, guessed:true, features:{
+        lowRatio, midRatio, flatness, transientsPerSec,
+        // debug-only diagnostics (TP1/TP3), not used by any decision logic:
+        activeWindows, framesCounted, onsets, silenceOnsets, jumpOnsets,
+        analyzedSec, sampleRate:sr, channels: buf.numberOfChannels
+      }};
     }
 
     // ---------------- fingerprinting (for Snapshot restore matching) ----------------
@@ -19514,7 +19555,8 @@ csInit('csPlatform');
       playGen: ()=>playGen,
       sourceCount: ()=>sources.length,
       stemCount: ()=>stems.length,
-      playing: ()=>playing
+      playing: ()=>playing,
+      classifyStem: (buf)=>classifyStem(buf) // exposes the real classifier for TP1/TP3 headless-Chrome verification
     };
   })();
 
