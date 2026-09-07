@@ -192,6 +192,34 @@ mockup was pushed straight to `main`, not its own branch — `docs/CLAUDE.md`'s 
 process is the authoritative one, superseding the "own branch" pattern used for the original
 2026-09-04 requirement-1/2 pass.)
 
+**Minimal-pass mockup, 2026-09-07 (Jules), later same day — SUPERSEDES both mockups below for
+review purposes, per a fresh live design discussion with Kevin.** Kevin's explicit framing: the
+two mockups below (all-7-requirements and in-context) were both too elaborate and built the wrong
+shape — "we already have this, just add the tracks." **Kevin should review
+`docs/mockups/multistem-mixcheck-minimal.html`** (live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-minimal.html`), not the two
+below — they stay live/unchanged for reference only, not deleted. New scope, nothing more: the
+real transport bar (play/prev/loop/stop/volume/time/`Drop / browse WAV ▾`) is completely unchanged
+mechanically; the only new capability is that the drop control accepts multiple named stems
+(filename = label, no fixed taxonomy) with a minimal inline mute(M)/solo(S)/remove(×) toggle per
+stem styled with the exact same `.ref-t-btn` class as the existing transport buttons. **EQ
+(requirement 7) is explicitly DROPPED from scope this pass — Kevin: "remove EQ — this is not
+working."** None of either prior mockup's EQ code was carried into this one. Build approach: a
+fresh, never-edited `main` `index.html` as the base, with a small surgical in-place diff; every
+real analysis mechanism (Audio Specs, Spectral Balance, Fix Queue, the waveform, the transport) is
+reused UNMODIFIED — currently-audible stems are summed into one combined buffer and fed through
+the app's own existing single-file `refLoadFile()` pipeline (requirement 3 — live reactive
+analysis — comes for free this way), with sample rate/channel/length validation on load
+(requirement 1) flagging and excluding mismatched stems rather than silently misaligning them.
+Codex three-touchpoint review found and fixed real bugs, not just scope creep: TP1 (plan) flagged
+7 concrete implementation risks before code was written; TP2 (diff) reproduced two real bugs live
+— a drop-bubbling double-load and a muted-lone-stem-silently-unmutes-itself case — both fixed; TP3
+(real headless-Chrome click-through) regression-tested both plus the full requirement checklist,
+all clean. Requirements 4-6 (Hope-awareness, tool-calling control, demonstrate-vs-instruct) were
+NOT built this pass — explicitly deferred as lower priority per the brief, not dropped. Full
+write-up in `docs/STATUS.md`. Still backlog capture only, still not build authorization; Option A
+vs B below remains Kevin's open call, unaffected by any of the three mockups existing.
+
 **In-context mockup, 2026-09-07 (Jules), added alongside the standalone one above, per Kevin's
 explicit ask after reviewing it ("I want to see it in context of the entire page"):**
 `docs/mockups/multistem-mixcheck-in-context.html` wraps the SAME multi-stem Mix Check feature (all

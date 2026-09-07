@@ -1,5 +1,96 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, later same day (Jules) — Backlog 22 (Multi-stem Mix Check): a fresh, MUCH
+NARROWER mockup after a live design discussion with Kevin, superseding both prior mockups for
+review purposes.** Kevin's explicit framing after seeing the all-7-requirements and in-context
+mockups below: "we already have this, just add the tracks." The two prior mockups (built earlier
+today) were both too elaborate and built the wrong shape — a separate stem-rack panel, a real
+per-stem EQ, a scripted duplicate Hope surface. **New scope, nothing more:** the real Mix Check
+transport bar (play/prev/loop/stop, volume, time readout, `Drop / browse WAV ▾`) stays completely
+unchanged mechanically; the ONLY new capability is that the drop control now accepts MULTIPLE named
+stems (filename = stem label, no fixed Kick/Bass/Vocals/Other taxonomy) with a minimal inline
+mute(M)/solo(S)/remove(×) toggle per stem, styled with the exact same `.ref-t-btn` class as the
+existing play/prev/loop/stop buttons. **EQ (requirement 7) is explicitly OUT OF SCOPE this pass —
+Kevin: "remove EQ — this is not working."** Nothing from either prior mockup's EQ code was carried
+into this one.
+
+**Kevin should review `docs/mockups/multistem-mixcheck-minimal.html`** — this is the one to look
+at now, not `multistem-mixcheck.html` or `multistem-mixcheck-in-context.html` (both still live at
+their own URLs, unchanged, kept for reference — this minimal pass supersedes them for review
+purposes only, it doesn't delete or replace them). Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-minimal.html`.
+
+**Build approach — genuinely minimal, reuses the real pipeline as a black box.** Base: a fresh
+`index.html` fetched straight from `main` (byte-identical), edited surgically in place —
+`index.html` itself was never touched, it's read-only reference. The diff against it is small and
+literal: `#refFileInput` gains a `multiple` attribute; the existing `wireDropZone` drop/change
+handlers (on `#refDropZone`, and the shared `#eq`/`#mcTransport` drop targets) now collect ALL
+dropped/selected files into `window.mcHandleFiles()` instead of only `files[0]`; a new hidden
+`<div id="mcStemRow">` sits inside the real `#refDzLoaded`, between the existing `.ref-transport`
+row and the existing `.mc-wave-box` — hidden until 2+ stems are loaded, so the single-file
+workflow (requirement 8) is pixel-identical to today. All the real analysis machinery (Audio
+Specs, Spectral Balance, Fix Queue, `#mcWave`, the transport) is reused UNMODIFIED: a stem store
+(`window.mcStems`) decodes and validates each stem (requirement 1 — sample rate/channel
+count/length checked against the first stem; a mismatch is flagged with a visible ⚠ + a toast and
+excluded from the combined sum, never silently misaligned), and on every add/remove/mute/solo
+change, `mcSync()` sums the currently-audible stems' PCM into one combined `AudioBuffer`, encodes
+it as a small in-memory WAV, and feeds it through the SAME unmodified `window.refLoadFile()` the
+app already uses for a single file — so there's only ever one playback/analysis buffer (no
+separate multi-source clock-sync engine needed) and Audio Specs/Spectral Balance/Fix Queue update
+live via the app's own existing repopulate functions (requirement 3), exactly as they would for
+any normal file load. The degenerate 1-unmuted-stem case routes the ORIGINAL file straight through
+`refLoadFile()`, unchanged from today's exact single-file path.
+
+**Codex three-touchpoint review — real issues found and fixed at TP1 and TP2, not just a clean
+pass-through.** TP1 (plan, before code) confirmed the `refLoadFile()`-reuse approach was sound and
+the scope was clean, but flagged 7 concrete implementation risks: drop-event bubbling could
+double-load files (three nested elements all bound `drop` without `stopPropagation`), an
+async-race guard was needed, mismatch validation needed to check channel count too (not just
+sample rate/length) and exclude mismatched stems from the sum rather than including them
+misaligned, a "byte-for-byte" framing claim was slightly inaccurate, PCM16 encoding needed an
+explicit clipping policy, the synthetic file's identity needed to be fresh every time so the Fix
+Queue never inherits a stale applied/dismissed entry from a different mute/solo state, and the
+1-stem-remaining and 0-stems-remaining removal paths both needed explicit handling. All 7 were
+fixed before TP2. **TP2 (diff review) then reproduced two REAL bugs live**, not just scope-audited:
+(1) a drop landing on `#mcTransport` (inside `#eq`) still bubbled to `#eq`'s own copy of the same
+handler and double-loaded every file — reproduced with an actual `DragEvent`/`DataTransfer` drop;
+fixed by adding `stopPropagation()` to that shared handler too. (2) the first draft's "revision
+counter" race guard was ineffective because it only checked staleness AFTER `refLoadFile()` had
+already mutated the shared UI state — replaced with a strictly-serialized promise-chain queue
+(`scheduleSync()`) where every mutating action reads `window.mcStems` fresh at execution time, so
+no matter how many rapid clicks queue up, the run that actually executes last always reflects the
+truly-current state. TP2 also caught that reducing to exactly 1 stem always reloaded the original
+file regardless of that stem's own mute state — a muted lone stem would have silently un-muted
+itself; fixed so the single-file shortcut only applies when that stem is actually unmuted, muted
+routes through the general (silence-capable) combine path instead. TP3 (real headless-Chrome
+click-through, not a self-report) then specifically re-tested both TP2 findings as regression
+cases — a real `DragEvent` dropped directly on `#mcTransport` added exactly one stem, not two; a
+stem muted via the UI then reduced down to the last remaining one stayed muted (measured loudness
+read near-silence, ~−70 LUFS, not the plain unmuted tone) — plus the full original checklist:
+exactly one `#hopeRail` on the page, zero `BiquadFilterNode`/EQ UI anywhere (the only "EQ" text
+matches on the page are the pre-existing plugin-library names like "Neutron 5 EQ", unrelated to
+this feature), single-file load unchanged (stem row stays hidden), 3 demo stems loading + chip
+names correct, mute/solo verifiably changing the measured loudness and the `#mcWave` pixel output,
+a sample-rate/length-mismatched stem correctly flagged and excluded, and clean removal all the way
+back down to zero stems (which correctly calls the real `refClearFile()` and restores the empty
+drop-zone state). Console was clean of errors introduced by this diff (the only console noise —
+`docs/knowledge/*.json` fetch failures and an Anthropic-proxy CORS block — is pre-existing app
+behaviour when run outside its normal hosted origin, reproducible identically on vanilla
+`index.html`, unrelated to this change).
+
+**Requirements 4-6 (Hope-awareness, tool-calling control, demonstrate-vs-instruct) were NOT built
+this pass** — the brief flagged them as lower priority than 1-3 for this minimal pass, and time
+went to getting 1-3 genuinely robust (including the TP1/TP2 fixes above) rather than a shallow pass
+at all seven. Logged here as explicitly deferred, not silently dropped — a future pass extending
+`buildMixCheckState()`/`buildMixCheckContextBlock()` with stem/mute/solo state, feeding the ONE
+real `#hopeRail`, is the next piece if Kevin wants to continue down this path after reviewing the
+minimal version.
+
+**Not build authorization.** This is still a mockup for Kevin's review, on `main` alongside (not
+replacing) the two prior mockups; Option A vs B (multi-stem upload vs auto stem-split) in
+`docs/ROADMAP.md`'s "Multi-stem Mix Check" section remains Kevin's open call, unaffected by any of
+the three mockups existing.
+
 **2026-09-07 update (Jules) — Backlog 22 (Multi-stem Mix Check) mockup now shown IN THE REAL APP
 FRAME, alongside the original standalone mockup:** Per Kevin's explicit ask after reviewing the
 standalone mockup ("I want to see it in context of the entire page"), built a second mockup file,
