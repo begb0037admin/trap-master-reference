@@ -1,5 +1,77 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update (Jules) — Backlog 22 (Multi-stem Mix Check) mockup now shown IN THE REAL APP
+FRAME, alongside the original standalone mockup:** Per Kevin's explicit ask after reviewing the
+standalone mockup ("I want to see it in context of the entire page"), built a second mockup file,
+`docs/mockups/multistem-mixcheck-in-context.html`, that wraps the exact same multi-stem Mix Check
+feature (all 7 requirements, unchanged) inside the REAL, freshly-fetched `main` `index.html`'s own
+chrome — real header, real 8-tab strip (Mix Check/Workbench/Library/Insight/Snapshots/Settings/
+Marketing/Community, Mix Check active by default), and the real `#hopeRail` dock, so Kevin can
+judge the new stem-slot UI sitting in the actual app rather than as an isolated single-tab demo.
+Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-in-context.html` — the
+original standalone mockup (`docs/mockups/multistem-mixcheck.html`) is unchanged and still live at
+its own URL below; this is an additional view, not a replacement. `index.html` itself is
+read-only reference for this pass — never edited.
+
+**Build approach:** the real `index.html` is carried over byte-for-byte; only `#eq`'s (Mix
+Check's) inner content changed. The REAL `.mc-head` title row (which also receives the real
+Genre/Target/Settings header-actions cluster, exactly as it does live) was kept fully visible and
+untouched. Everything else that used to be inside `#eq` — the real banner/transport/meter-rail/
+analyser/actions markup — was wrapped in a hidden (`display:none`), NOT deleted, wrapper
+(`#eqLegacyHidden`), matching this codebase's existing hide-via-CSS-don't-delete pattern, so the
+real page's own init code (`wireDropZone`/`wireMcBanner`/`wireMcInput`/`wireScrub`/`wireMcVol`/
+`ozSpecInit`, the transport/header-actions relocation shims, `eqGridInit`/`refTargetChanged`) keeps
+finding every element it looks for instead of retrying forever against missing nodes — this exact
+retry-loop risk was one of Codex's TP1 catches, before any code was written. The new multi-stem
+content itself was carried over verbatim from the standalone mockup into a new `#msmcRoot`
+container, with its `<style>` block re-scoped so every selector is prefixed `#msmcRoot` (nothing
+in it can bleed into, or be shadowed by, the real page's own extensive CSS).
+
+**Codex three-touchpoint review, all three touchpoints found real issues, all fixed:**
+- **TP1 (plan):** verified the tab strip's actual click-handler logic, the `.panel`/`.panel.active`
+  CSS, and that the one function known to reach into `#eq`'s specific descendants (`eqGridInit`)
+  already null-guards cleanly — but flagged that verbatim page-copying is only safe if the OTHER
+  real Mix-Check-specific relocation/init hooks are checked too, not just that one. Follow-up
+  investigation (still pre-build) found several more — `wireDropZone`/`wireMcBanner`/`wireMcInput`/
+  `wireScrub`/`wireMcVol`/`ozSpecInit`, plus the transport and header-actions relocation shims —
+  which retry forever (uncapped `setTimeout`) against missing DOM nodes, which directly shaped the
+  hide-don't-delete decision above instead of deleting `#eq`'s original content outright. Also
+  flagged real global `@keyframes` names in the standalone mockup's CSS as a zero-cost thing to
+  namespace before merging (renamed `hopePulse`/`ringPulse2`/`fadeIn`/`blinkDot` to an `msmc-`
+  prefix — no actual collision existed, but cheap to rule out for good).
+- **TP2 (diff, against the actual built file):** found a genuine event-bubbling bug — dropping a
+  WAV onto a stem row also bubbles up to the real page's own `#eq` drop listener (wired by the
+  hidden `wireDropZone()`), which would silently call the real single-file `refLoadFile()` and
+  overwrite the real, still-visible `.mc-head` title with the dropped filename. Fixed with
+  `stopPropagation()` on the stem-row handler, plus a catch-all `dragover`/`drop` guard on
+  `#msmcRoot` itself for anywhere else in the new content. TP2 also found that several transport
+  class names (`tp-file`, `tp-row`, `tp-btns`, `ref-t-btn`, `ref-play-pause`, `tp-vol`,
+  `tp-vol-ico`, `tp-vol-range`, `tp-time`, `mc-wave-box`) were intentionally named to match the
+  real component's own styling in the original standalone mockup, but because both now live under
+  the same `#eq` subtree, the real page's `#eq.oz-mixcheck .tp-file`-style rules (higher
+  specificity than `#msmcRoot`'s scoped rules) would win and visibly clip/re-style the transport's
+  file label — renamed all ten to an `msmc-` prefix to remove the whole class of risk rather than
+  patch it rule-by-rule; re-screenshotted afterward to confirm no visual regression (values had
+  been intentionally matched anyway, so the fix is style-neutral). Confirmed the carried-over
+  multi-stem markup/script otherwise matches the standalone mockup exactly (ids and interaction
+  functions intact), and confirmed the `#eq.oz-mixcheck.active{display:block}` override is
+  guaranteed to win over the real page's own `display:grid` rule for this file (later in source
+  order, identical specificity, nothing downstream re-asserts `display:grid`).
+- **TP3 (end-to-end, real headless-Chrome click-through):** confirmed Mix Check loads by default
+  showing the new content; clicked through all 8 tabs in sequence and back to Mix Check, confirming
+  `.tab.active`/`.panel.active` matched the clicked tab every time and that returning to Mix Check
+  preserved live in-progress state (stem still soloed, playback still running, live analysis panel
+  still updating) with the new UI fully intact; loaded demo stems, confirmed Solo/Play/EQ-panel-
+  open/Hope-suggestion-card/"Let me show you" (tool-call audit line + Undo link) all worked exactly
+  as in the standalone mockup; ran `node --check` on every real `<script>` block (clean; one
+  pre-existing non-JS `<script type="application/json">` block correctly fails, same as in
+  unmodified `index.html`); confirmed the only 2 console messages seen
+  (`docs/knowledge/*.json` fetch failures) are byte-identical when loading the unmodified real
+  `index.html` directly — a `file://`-vs-`https://` testing artifact, not something this change
+  introduced; and specifically re-tested the TP2 drop-bubbling fix with a dispatched native `drop`
+  event on a stem row, confirming the real `.mc-head` title text is unchanged afterward.
+
 **2026-09-07 update (Jules) — Backlog 22 (Multi-stem Mix Check) mockup now covers all 7
 requirements, pushed to `main`, awaiting Kevin's review:** Per Kevin's 2026-09-06 priority bump
 and his explicit authorization to proceed to the mockup stage overnight, extended the existing
