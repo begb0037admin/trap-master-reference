@@ -192,6 +192,28 @@ mockup was pushed straight to `main`, not its own branch — `docs/CLAUDE.md`'s 
 process is the authoritative one, superseding the "own branch" pattern used for the original
 2026-09-04 requirement-1/2 pass.)
 
+**In-context mockup, 2026-09-07 (Jules), added alongside the standalone one above, per Kevin's
+explicit ask after reviewing it ("I want to see it in context of the entire page"):**
+`docs/mockups/multistem-mixcheck-in-context.html` wraps the SAME multi-stem Mix Check feature (all
+7 requirements, unchanged) inside the real, freshly-fetched `main` `index.html`'s own chrome — real
+header, real 8-tab strip (Mix Check active by default), real `#hopeRail` dock — so Kevin can judge
+it sitting in the actual app rather than as an isolated single-tab demo. `index.html` itself is
+read-only reference for this pass, never edited. Codex three-touchpoint reviewed; TP1 surfaced
+several real-page init hooks (`wireDropZone`/`wireMcBanner`/`wireMcInput`/`wireScrub`/`wireMcVol`/
+`ozSpecInit`, the transport/header-actions relocation shims) that retry forever against missing DOM
+nodes, which shaped a hide-not-delete approach for the real Mix Check markup that had to move aside;
+TP2 found (and this pass fixed) a real event-bubbling bug where a stem-row file drop would silently
+reach the real page's own drop handler and overwrite the real Mix Check title, plus a CSS
+specificity collision on several transport class names reused from the real component's own
+styling; TP3 (real headless-Chrome click-through) confirmed all 8 tabs switch correctly, the new
+content survives round-trips through every other tab, and the multi-stem feature itself (demo
+stems, mute/solo, live analysis, Hope demonstrate/instruct, EQ, Undo) is unchanged and fully
+functional. Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-in-context.html` — full
+design-decision writeup in `docs/STATUS.md`. Still backlog capture only, still not build
+authorization; Option A vs B below remains Kevin's open call, unaffected by either mockup.
+
+
 **Problem:** Hope can currently only measure the whole rendered mix (`balance.wav`) on Mix Check —
 she has no visibility into individual stems, so when asked "what's causing this low-end issue,"
 she can only give informed reasoning from the full mix, not real per-element measurements.
