@@ -192,6 +192,28 @@ mockup was pushed straight to `main`, not its own branch — `docs/CLAUDE.md`'s 
 process is the authoritative one, superseding the "own branch" pattern used for the original
 2026-09-04 requirement-1/2 pass.)
 
+**v2 mockup, 2026-09-07 (Jules), later same day again — SUPERSEDES the minimal pass below after
+Kevin tested it and found a real bug plus a wrong interaction model.** Kevin reported: (1) a real
+bug — dropping files produced 7 identical duplicate stem rows, a "mismatched stem(s) excluded"
+warning; root cause confirmed by live headless-Chrome reproduction — no dedupe check against an
+already-loaded identical stem, plus zero visible feedback below 2 stems, so a user re-dropping the
+same file (getting no acknowledgement) silently accumulated duplicates. (2) Wrong interaction
+model — Kevin pointed at the ORIGINAL standalone mockup's per-stem-slot panel (fixed Drums/Bass/
+Vocals/Other, each independently droppable, + "+ Add stem") as the correct shape, explicitly
+rejecting the minimal pass's shared multi-file picker, and asked for each stem's own inline
+waveform preview. **`docs/mockups/multistem-mixcheck-v2.html`** delivers per-stem drop slots
+(replace-not-append semantics close the duplicate bug structurally), restyled to the real app's
+own tokens/`.ref-t-btn` class (not the standalone mockup's separate dark-card system Kevin already
+flagged as inconsistent), a per-slot own-waveform preview alongside the still-present shared
+combined waveform, and a generation-token race guard. Codex three-touchpoint review found and
+fixed 3 real issues in TP2 (a legacy-drop state-divergence risk, a `mcClearAllStems()` gap, and a
+remove-then-reload requirement for replacing a loaded slot) plus one more found during TP3
+iteration (a loaded dynamic "+ Add stem" slot had no way to remove the slot itself) — all fixed
+and re-verified via real headless-Chrome execution. Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-v2.html`. Full write-up in
+`docs/STATUS.md`. Still backlog capture only, still not build authorization; Option A vs B below
+remains Kevin's open call, unaffected by any of the mockups.
+
 **Minimal-pass mockup, 2026-09-07 (Jules), later same day — SUPERSEDES both mockups below for
 review purposes, per a fresh live design discussion with Kevin.** Kevin's explicit framing: the
 two mockups below (all-7-requirements and in-context) were both too elaborate and built the wrong
