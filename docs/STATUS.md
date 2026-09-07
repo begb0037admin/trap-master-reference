@@ -1,5 +1,117 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, later same day again (Jules) — Backlog 22 (Multi-stem Mix Check) v2:
+per-stem drop slots, SUPERSEDES the minimal pass below after Kevin tested it and found a real
+bug plus a wrong interaction model.** Kevin tested `docs/mockups/multistem-mixcheck-minimal.html`
+(the "minimal pass" write-up immediately below this one) and reported two problems: (1) a real
+bug — dropping files produced 7 identical duplicate stem rows all named the same thing, with a
+"mismatched stem(s) excluded" warning; (2) the interaction model itself was wrong — he sent a
+screenshot of the ORIGINAL standalone mockup's "Input — Stems" panel (fixed Drums/Bass/Vocals/
+Other rows, each its own independent drop target reading "Drop WAV here or click to browse", plus
+a "+ Add stem" row) and said "they should look like this," explicitly rejecting the minimal
+pass's single shared multi-file `Drop / browse WAV` picker. He also asked "where are the multiple
+wave files" — expecting each stem to show its own waveform preview inline, not just the shared
+combined waveform.
+
+**Root cause of the duplicate-stem bug, confirmed by live headless-Chrome reproduction (Playwright
+against the actual built minimal-pass file, not guessed):** a single synthetic drop with one file
+correctly produced exactly one stem — event bubbling/`stopPropagation()` were NOT the problem.
+Re-dispatching the SAME file at the SAME shared drop target 7 times in a row produced exactly 7
+identical `window.mcStems` entries, an exact match for Kevin's report. The minimal pass's shared
+multi-file picker had no dedupe check against an already-loaded identical stem, AND gave ZERO
+visible feedback below 2 stems (`mcRenderStemRow()` hides the stem row entirely until there are
+2+ stems, by design, to keep the single-file case pixel-identical to today) — so a user who drops
+once, sees no visible "stem added" acknowledgement, and reasonably re-drops the same file
+expecting it to register, silently accumulates duplicate stems. This is a UX/interaction-model
+bug, not a stray double-event-firing bug — and it is exactly the kind of failure the per-stem-slot
+redesign structurally prevents (each slot holds at most one stem and REPLACES, not appends, on
+every drop).
+
+**Delivered: `docs/mockups/multistem-mixcheck-v2.html`**, pushed to `main`. Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-v2.html`. `index.html`
+read-only reference throughout, fetched fresh — never edited. Kevin should review THIS one now;
+the minimal pass and both earlier mockups stay live at their own URLs, unchanged, for reference
+only.
+
+**What changed vs the minimal pass:**
+- **Per-stem drop slots, not a shared picker.** Four default slots (Drums/Bass/Vocals/Other) plus
+  a "+ Add stem" row for open-ended generic slots, matching the structure in Kevin's screenshot.
+  Each slot is independently droppable/clickable; dropping into an already-filled slot REPLACES
+  its stem in place (no remove-then-reload needed), closing the duplicate-drop failure mode
+  structurally, not just by coincidence of the new layout.
+- **Restyled to the real app's own visual language**, not the standalone mockup's separate dark
+  card system Kevin had already flagged as inconsistent in an earlier round — reuses the real
+  page's own `--card`/`--card-bd`/`--inset2`/`--grad`/`--mono` tokens and the exact `.ref-t-btn`
+  button class already used by the real transport's play/prev/loop/stop buttons.
+- **Each stem shows its own inline waveform preview** — a small per-slot `<canvas>` peak-render of
+  that individual stem's decoded audio, standalone/decoupled from the real combined-waveform
+  engine (no shared mutable state) — in addition to, not instead of, the existing shared combined
+  waveform below the transport (which still shows the combined currently-audible mix).
+- **Generation-token guarded loads** — a rapid second drop onto the same slot before the first
+  decode resolves always lets the newer one win, never a stale race (a Codex TP1 plan-review
+  catch, verified in TP3 with two back-to-back drops onto one slot).
+- **The legacy shared "Drop / browse WAV" control is hidden (via CSS, not deleted)**, not
+  re-purposed into the slot system — its pristine drop/click handlers call `refLoadFile()`
+  directly and bypass `window.mcSlots` entirely, so wiring it into the new model would let it
+  silently fight the slot system for control of the transport (a real risk Codex's TP2 diff review
+  caught and this pass closed with a capture-phase guard on `#eq` that blocks any drop landing
+  outside a stem slot, rather than letting it silently diverge state). `#refDropZone`/
+  `#refFileInput`/`#mcInput` keep their exact ids/DOM position so the real page's own uncapped
+  DOM-retry init loops (`wireDropZone()`/`wireMcInput()`) still resolve on the first pass, per the
+  standing lesson from the earlier in-context mockup pass.
+- Mute(M)/Solo(S) per stem still reuse the real `.ref-t-btn` styling. **No EQ anywhere** — still
+  explicitly out of scope, confirmed via a zero-match grep for real `BiquadFilterNode` usage (the
+  one text hit in the file is this pass's own code comment saying EQ is out of scope).
+- Sync/mismatch validation (requirement 1), the combine-buffer-through-`refLoadFile()` reuse for
+  live-reactive Audio Specs/Spectral Balance/Fix Queue (requirement 3), the single-file degenerate
+  case, and the single real `#hopeRail` are all unchanged in behaviour from the minimal pass,
+  just re-plumbed onto a slot-keyed data model instead of a flat push-only array.
+
+**Codex three-touchpoint review — all three touchpoints found real, concrete issues, all fixed
+and re-verified via live headless-Chrome (Playwright) execution, not self-report:**
+- **TP1 (plan):** confirmed the root-cause diagnosis and that per-slot replace-not-append
+  semantics close the duplicate-drop bug, but flagged: add a generation token per slot to guard
+  against a race between two in-flight loads targeting the same slot (built in from the start);
+  keep the per-slot waveform renderer fully decoupled from the real combined-waveform engine's
+  state (built in from the start — a standalone pure function, no shared globals); and account
+  for the real page's uncapped DOM-retry init functions when replacing the shared drop zone's
+  markup (addressed by leaving `#refDropZone`/`#refFileInput`/`#mcInput` untouched and only hiding
+  their empty-state children via CSS, never deleting/moving them).
+- **TP2 (diff, against the actual built file):** found 3 real issues, all fixed and re-verified:
+  (1) the legacy `#refDropZone`/`#eq`/`#mcTransport` background area could still silently diverge
+  `window.mcSlots` from the visible transport via a stray drop outside any stem slot — closed
+  with a capture-phase guard on `#eq`; (2) `mcClearAllStems()` cleared the internal slot array but
+  never called `scheduleSync()`, leaving the real transport showing a stale combined file — fixed;
+  (3) replacing an already-loaded slot required remove-then-reload since the drop target was only
+  the empty-state markup — fixed by delegating drag/drop off the whole `.mc-stem-slot` row instead
+  of just its empty-state child, so a direct drop-to-replace works.
+- **TP3 (real headless-Chrome click-through, Playwright, not a self-report):** re-verified the
+  original bug fix (a single drop into one slot → exactly 1 stem; the SAME file re-dropped 7 times
+  onto the SAME slot → still exactly 1 stem, replaced not accumulated — the literal regression
+  test for what Kevin hit); 4 different stems loaded into their own slots with correct names; each
+  loaded slot's own waveform canvas has real non-empty drawn pixels, confirmed via `getImageData`,
+  alongside the still-present shared combined waveform; solo/mute correctly re-drives the combined
+  buffer and Audio Specs/Spectral Balance; a genuine mismatch (very different real duration, not
+  just a re-decode of the same file) is correctly flagged/excluded; a race — two drops onto one
+  slot with no await between them — the later one always wins; dynamically added "+ Add stem"
+  slots load, render their own waveform, and can be fully removed (this surfaced and fixed a real
+  bug during iteration: a loaded dynamic slot initially had no way to remove the SLOT itself, only
+  its stem, since the remove control only rendered in the empty state — fixed by unifying the
+  remove button's behaviour on `slot.fixed`); a stray drop outside any stem slot is blocked
+  entirely, never appearing in `window.mcSlots`; a replacement file dropped directly onto an
+  already-loaded slot replaces it in place; `mcClearAllStems()` now genuinely clears the real
+  transport (`#refDzLoaded` loses its `.visible` class, `#mcTitle` resets to "Mix Check"); zero EQ
+  UI/`BiquadFilterNode`; exactly one `#hopeRail`; single-file load into one slot unchanged from
+  today's behaviour.
+
+**Disclosed, carried forward unchanged from the already-Codex-reviewed minimal pass, not a new
+v2 issue:** the combined buffer is hard-clamped to `[-1,1]` rather than normalized, so multiple
+simultaneous full-scale stems can clip the combined analysis — an accepted product-acceptance
+question for Kevin, not a bug in this pass.
+
+Still backlog capture only, still not build authorization; Option A vs B in `docs/ROADMAP.md`
+remains Kevin's open call, unaffected by this or any of the other mockups.
+
 **2026-09-07 update, later same day (Jules) — Backlog 22 (Multi-stem Mix Check): a fresh, MUCH
 NARROWER mockup after a live design discussion with Kevin, superseding both prior mockups for
 review purposes.** Kevin's explicit framing after seeing the all-7-requirements and in-context
