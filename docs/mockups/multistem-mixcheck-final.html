@@ -2113,6 +2113,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
    (.ref-t-btn reused at a smaller size for M/S/x, JetBrains-style mono for
    labels, same as the app's existing metric/label typography). #mcWave /
    MC_WAVE / .mc-wave-box are untouched by any of this. */
+.mc-stem-stack[hidden]{display:none}
 .mc-stem-stack{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .mc-stem-stack-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mc-stem-stack-title{font:600 11px ui-monospace,Menlo,Consolas,monospace;color:#9aa0a6;text-transform:uppercase;letter-spacing:.04em}
@@ -18859,7 +18860,12 @@ csInit('csPlatform');
         framesCounted++;
         const isActive=rms>=NOISE_FLOOR_RMS;
         if(isActive){
-          if(prevRms!==null && prevRms>=NOISE_FLOOR_RMS && rms > prevRms*ONSET_RATIO) onsets++;
+          // An onset is either a fresh silence->active transition (the primary
+          // percussive/transient signal — a bug in an earlier draft of this
+          // heuristic required the PREVIOUS frame to already be active, which
+          // backwards-excluded exactly this case) OR a sudden level jump while
+          // already active (a secondary case, e.g. a hit landing mid-sustain).
+          if(prevRms===null || prevRms<NOISE_FLOOR_RMS || rms > prevRms*ONSET_RATIO) onsets++;
           fft(re, im);
           const half=FFT_SIZE/2;
           const mag=new Float32Array(half);
@@ -18965,7 +18971,13 @@ csInit('csPlatform');
       return ref.buffer.sampleRate!==buf.sampleRate || ref.buffer.numberOfChannels!==buf.numberOfChannels || lenDeltaSec>0.05;
     }
     function revalidateAll(){
-      const ref=stems.find(s=>!s.mismatch);
+      let ref=stems.find(s=>!s.mismatch);
+      // [TP2] If every remaining stem was flagged relative to a reference that
+      // has now been removed, there is no longer anything to be mismatched
+      // AGAINST — fall back to stems[0] as the new reference and clear its
+      // flag, rather than leaving every stem permanently stuck flagged with
+      // no possible reference. Only matters once at least one stem remains.
+      if(!ref && stems.length){ ref=stems[0]; ref.mismatch=false; }
       if(!ref) return;
       stems.forEach(s=>{
         if(s===ref){ s.mismatch=false; return; }
@@ -19021,16 +19033,24 @@ csInit('csPlatform');
       const key=fingerprintSetKey(currentFingerprintSet());
       const match=(STATE.journal||[]).find(e=>e.type==='stem-session' && e.stemFingerprintSet===key);
       if(!match || !match.stemSession) return false;
-      const byKey=new Map();
-      match.stemSession.stems.forEach(rec=>{
-        const k=fpKey(rec.fingerprint);
-        const arr=byKey.get(k)||[]; arr.push(rec); byKey.set(k,arr);
-      });
+      // [TP2] Match using the SAME occurrence-indexed key fingerprintSetKey()
+      // already computes (fpKey+'#'+idx), in the two sides' own array order —
+      // an earlier version grouped by bare fpKey and used shift(), which
+      // discarded the occurrence index it had already validated matched.
+      // Correct for true duplicates (identical fingerprints) either way, but
+      // this makes the pairing explicit rather than order-of-iteration luck.
+      const occCounts=new Map();
+      function occKey(fp){
+        const k=fpKey(fp);
+        const idx=occCounts.get(k)||0; occCounts.set(k,idx+1);
+        return k+'#'+idx;
+      }
+      const byOccKey=new Map();
+      match.stemSession.stems.forEach(rec=>{ byOccKey.set(occKey(rec.fingerprint), rec); });
+      occCounts.clear();
       stems.forEach(s=>{
-        const k=fpKey(s.fingerprint);
-        const arr=byKey.get(k);
-        if(arr && arr.length){
-          const rec=arr.shift();
+        const rec=byOccKey.get(occKey(s.fingerprint));
+        if(rec){
           s.label=rec.label; s.guessed=rec.guessed; s.requestedMuted=!!rec.muted; s.solo=!!rec.solo;
           s._snapshotRestored=true;
         }
@@ -19103,6 +19123,13 @@ csInit('csPlatform');
       mcStop();
       stems.forEach(s=>{ if(s.gainNode){ try{ s.gainNode.disconnect(); }catch(_){} } });
       stems=[];
+      // [TP2] Invalidate any in-flight analysis generation too — without this,
+      // an analysis call already inside window.refLoadFile() when a reset
+      // happens can still resolve afterward and repopulate Audio Specs/Fix
+      // Queue for a session that no longer exists. runAnalysisSync() re-checks
+      // stems.length itself (belt-and-braces), but bumping analysisSeq here
+      // also stops a queued-but-not-yet-started run from firing at all.
+      analysisSeq++; pendingAnalysisSeq=0;
       mcExitStemMode();
     }
     window.mcClearStemsForRefClear = mcResetStems; // called from the patched refClearFile below
@@ -19317,6 +19344,17 @@ csInit('csPlatform');
       mcRenderStemRows();
       mcSetMultiStemHeader();
       scheduleAnalysisSync();
+      // [TP2] A stem added while the transport is already playing must join
+      // the running mix immediately, not stay silent until the next manual
+      // play/seek — re-schedule ALL sources (including pre-existing ones) at
+      // the current shared offset so the newcomer starts in sync with
+      // everything already running. This is a genuine transport reschedule
+      // (like a seek), not a mute/solo toggle, so restarting sources here is
+      // correct and expected, not a violation of the continuous-sync rule.
+      if(playing){
+        const pos = startOffset + (refCtx.currentTime - startCtxTime);
+        window.mcSeek(pos, true);
+      }
     }
     function mcExitStemMode(){
       const wb=document.getElementById('mcWaveBox'), ss=document.getElementById('mcStemStack');
@@ -19402,8 +19440,13 @@ csInit('csPlatform');
     async function runAnalysisSync(mySeq){
       if(!stems.length) return;
       const eligible=eligibleStems();
-      const soloed=eligible.filter(s=>s.solo);
-      const audible=(soloed.length?soloed:eligible).filter(s=>!s.requestedMuted);
+      // [TP2] Use the SAME effectiveMuted() logic as playback/visual dimging —
+      // an earlier version of this function computed its own separate
+      // soloed/muted filter that disagreed with effectiveMuted() for a stem
+      // that is both soloed AND individually marked muted (playback treated
+      // solo as overriding mute; analysis excluded it anyway). Audible-for-
+      // analysis must always match audible-for-playback.
+      const audible=eligible.filter(s=>!effectiveMuted(s));
       const ctx=ensureAudioCtx();
       if(!eligible.length) return;
       const sr=eligible[0].buffer.sampleRate;
@@ -19419,12 +19462,16 @@ csInit('csPlatform');
           for(let i=0;i<n;i++) data[i]+=src[i];
         });
       }
-      // Deterministic, non-name-leaking synthetic identity: a hash of the
-      // audible stem id set + mute/solo pattern, NOT a timestamp and NOT the
-      // stem names — so the Fix Queue gets a stable signature per audible
-      // combination (never inherits a stale entry from a different combo) and
-      // the header never sees anything derived from concatenated stem names.
-      const sigInput = eligible.map(s=>s.id+':'+(audible.includes(s)?1:0)).join(',');
+      // Deterministic, non-name-leaking synthetic identity: a hash of each
+      // eligible stem's own content FINGERPRINT (not its session-local id,
+      // which resets/changes across a reload of the same files and would
+      // silently produce a different signature — [TP2] fixed) + mute/solo
+      // pattern, NOT a timestamp and NOT the stem names — so the Fix Queue
+      // gets a signature that is genuinely stable for the same audible
+      // combination across reloads (never inherits a stale entry from a
+      // different combo), and the header never sees anything derived from
+      // concatenated stem names.
+      const sigInput = eligible.map(s=>fpKey(s.fingerprint)+':'+(audible.includes(s)?1:0)).sort().join(',');
       const sigHash = hash32(sigInput);
       const wavFile = new File([encodeWav(out)], 'mix-'+sigHash+'.wav', {type:'audio/wav', lastModified: 0});
       if(mySeq!==analysisSeq && pendingAnalysisSeq!==0) return; // superseded before we even started encoding
@@ -19432,7 +19479,12 @@ csInit('csPlatform');
       // state (playing/startOffset/startCtxTime/sources), only refLoadFile's own
       // internal refBuffer/refAnalyser, which are never played or exposed here.
       await window.refLoadFile(wavFile);
-      if(mySeq===analysisSeq){
+      // [TP2] Re-check AFTER the await, not just the sequence — mcResetStems()
+      // may have cleared the whole session while this call was in flight (it
+      // bumps analysisSeq too, but a defensive stems.length check here means
+      // this never repopulates the header/UI for a session that no longer
+      // exists even in some future refactor that changes the seq bump order).
+      if(mySeq===analysisSeq && stems.length){
         mcSetMultiStemHeader(); // refLoadFile() just called mcSetHeader(wavFile.name,...) — override back immediately
       }
     }
@@ -19450,6 +19502,19 @@ csInit('csPlatform');
     window.refClearFile = function(){
       if(stems.length) mcResetStems();
       return origClearFile();
+    };
+
+    // Debug/verification hook only (TP3 real-headless-Chrome click-through) —
+    // exposes read-only accessors so a test harness can inspect the actual
+    // AudioContext/source-node state from outside this closure without
+    // reaching into module-private variables. Not used by any UI/app code
+    // path; safe to leave in a design mockup, not shipped product code.
+    window.__mcDebug = {
+      ctx: ()=>refCtx,
+      playGen: ()=>playGen,
+      sourceCount: ()=>sources.length,
+      stemCount: ()=>stems.length,
+      playing: ()=>playing
     };
   })();
 
