@@ -264,6 +264,106 @@ design-decision writeup in `docs/STATUS.md`. Still backlog capture only, still n
 authorization; Option A vs B below remains Kevin's open call, unaffected by either mockup.
 
 
+**Final agreed brief mockup, 2026-09-07 (Jules) — SUPERSEDES `multistem-mixcheck.html`,
+`multistem-mixcheck-in-context.html`, and `multistem-mixcheck-minimal.html` for review purposes,
+per Kevin's final agreed brief after an extensive live design discussion.** One-line reason each
+is superseded, so the history stays legible:
+- `multistem-mixcheck.html` (+ its all-7-reqs expansion) — **wrong drop-target structure**: a
+  separate stem-slot panel bolted on beside the real transport, instead of extending the app's own
+  existing shared `Drop / browse WAV` control.
+- `multistem-mixcheck-in-context.html` — **hidden real components + duplicate Hope**: hid the real
+  Mix Check markup behind a wrapper instead of genuinely extending it in place, and carried a second
+  scripted "Hope" panel alongside the real `#hopeRail`.
+- `multistem-mixcheck-minimal.html` — **wrong interaction model**: reused `refLoadFile()` for BOTH
+  playback and analysis (one single-buffer engine), so mute/solo had to stop/reload the whole mix
+  rather than keep every stem's source node continuously running — the opposite of what Kevin
+  corrected this pass to require — and labelled stems from the filename, which produced the
+  concatenated-filenames header bug Kevin flagged directly.
+
+**Flagged discrepancy, not silently resolved:** `docs/mockups/multistem-mixcheck-v2.html` (Jules,
+later on 2026-09-07, per-stem drop slots — see the STATUS.md/DASHBOARD.html entries for that pass)
+is a fourth prior mockup that Kevin's final brief for this pass did **not** name in its explicit
+supersession list (which named only the three above). This final pass's point 1 ("one shared drop
+zone... nothing existing is removed") is a shared-picker model, which is the opposite structural
+direction from v2's per-stem-slot design that Kevin had explicitly asked for after rejecting the
+minimal pass's shared picker. Read together with the rest of this final brief (content-based
+classification + click-to-rename, which removes the filename-labelling problem v2's slots existed
+partly to solve), it looks very likely that v2 is *also* superseded by this final direction — but
+since the brief didn't say so explicitly, this is logged as an open question for Kevin to confirm
+rather than assumed. `multistem-mixcheck-v2.html` is left untouched, live, and its DASHBOARD.html
+badge is not silently removed.
+
+Delivered: `docs/mockups/multistem-mixcheck-final.html`, pushed to `main`. Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-final.html`. Base = a fresh
+fetch of `main` `index.html` (commit `2d0f949afb3aa1f78f8e6fac10d1ea259f0e2a01`), edited in place —
+`index.html` itself untouched, read-only reference throughout.
+
+**What's new vs the minimal pass, per the brief's 11 numbered points:** the shared drop zone now
+accepts multiple named stems (single-file load byte-for-byte unchanged, the degenerate case);
+**every stem's `AudioBufferSourceNode` runs continuously for the whole playback duration regardless
+of mute state** — mute/solo ONLY ramps that stem's own persistent `GainNode`, never
+stops/starts/reschedules a source (the specific correction Kevin gave, verified — see the TP3
+summary in `docs/STATUS.md`); each stem gets its own stacked waveform row (a faithful port of the
+real, LOCKED `#mcWave`/`MC_WAVE` peak-drawing algorithm, parameterized per stem — `#mcWave` itself
+untouched); stem labels come from real content-based classification (transient density + spectral
+flatness + low/mid band-energy ratios, concrete documented thresholds, not filenames), honestly
+badged "guessed" and click-to-rename; the header never concatenates — `#mcSub` shows a clean
+"N stems loaded — duration" summary, individual names live only in their own row; a Snapshot
+extends the existing `STATE.journal`/`createWorkbenchBackupPill()` pattern (`type:'stem-session'`,
+fingerprint-keyed restore, settings-only, no raw audio) so reloading the same files restores
+labels/mute/solo without re-classifying; Audio Specs/Spectral Balance/Fix Queue stay real and
+unmodified, reacting live to the audible subset via the same summed-buffer-through-`refLoadFile()`
+black-box technique the minimal pass proved, now serialized via a latest-wins queue; still no EQ;
+exactly one real `#hopeRail`.
+
+**Codex three-touchpoint review — all three found real, concrete issues, all fixed and
+re-verified via live headless-Chrome (Playwright), not self-report.** TP1 (plan) materially
+reshaped the playback-engine design (gain-automation cancel-before-ramp, transport-generation
+discipline, `refCtx.resume()` handling), the analysis-serialization approach (a latest-wins drain
+queue, a content-fingerprint-based Fix Queue signature instead of a timestamp), the classification
+constants (concrete FFT size/hop/thresholds instead of vague adjectives, an energy-preserving
+mono downmix to avoid phase cancellation), and the Snapshot fingerprint design (stable identity,
+occurrence-indexed for duplicates), before any code was written. TP2 (diff review against the
+actual built file) confirmed the mute/solo path never touches a source node — only
+`gainNode.gain` — and found and fixed 6 more real bugs: an analysis-reset race (`mcResetStems()`
+didn't invalidate the in-flight analysis generation), a solo+mute inconsistency (a stem that was
+both soloed and individually muted was audible in playback but excluded from analysis — now both
+paths call the same `effectiveMuted()`), a session-local-id Fix-Queue signature that changed on
+every reload of the same files (now keyed to stable content fingerprints), a Snapshot-restore
+duplicate-matching gap (now occurrence-indexed explicitly), a stem added mid-playback staying
+silent until the next manual transport action (now re-schedules immediately, in sync), and a
+mismatch-reference edge case (removing the reference stem could leave the last remaining stem
+stuck flagged with nothing left to compare against). TP3 (real headless-Chrome click-through
+against 4 spectrally-distinguishable synthetic demo stems — drums/bass/vocals/other) found and
+fixed two more: a `[hidden]` CSS-specificity bug where the stem-stack panel showed even on a
+single-file load, and a backwards onset-detection condition that required the frame BEFORE a
+transient to already be active — which structurally excluded the silence-to-hit transition that
+IS the onset for percussive content, so the synthetic drums stem misclassified as "Other" until
+fixed. All fixed; the full TP3 suite re-ran clean afterward with zero regressions.
+
+**Continuous-sync-while-muted, verified not just built:** a debug hook
+(`window.__mcDebug`) exposes the real `AudioContext` and generation counters (not exposed on
+`window` anywhere else in the app) so the test harness can inspect actual engine state rather than
+trust self-report. With 4 stems loaded and playing, `AudioContext.prototype.createBufferSource`
+was instrumented to count real invocations; three full rounds of mute-toggling every stem plus a
+solo/un-solo cycle produced **zero** new source-node creations, `AudioContext.state` stayed
+`"running"` throughout, `currentTime` kept advancing, and the transport's play state and elapsed
+time both continued forward uninterrupted (confirmed advancing from the toggle point to +1s later
+mid-track). Isolating a single stem (all others muted) changed the measured loudness from -70.0
+LUFS (all muted, near-silence) to -14.7 LUFS (real signal) — live-reactive analysis confirmed
+functionally correct, not just visually plausible.
+
+**Classification heuristic, honestly assessed:** concrete, documented constants (2048-sample FFT,
+1024 hop, analyzes up to the first 20s, a 5-window minimum before guessing at all); on the 4
+spectrally-distinguishable synthetic demo stems built for TP3 (broadband decaying percussive hits,
+a 55Hz sine, layered vocal-range harmonics with vibrato, a sustained high-passed noise pad) it
+classified all 4 correctly after the TP3 onset-detection fix. Known, disclosed limitations (found
+via Codex TP1's own critique, not hidden): tonal mid-band material that isn't a voice (guitars,
+synths, pianos) will often satisfy the "Vocals" rule; a very percussive bass line or a low piano
+can read as "Drums"/confuse the "Bass" rule; this is a real, honest heuristic guess, not ML-grade
+classification — which is exactly why it's badged "guessed" in the UI and click-to-rename exists
+as the correction path, per the brief.
+
 **Problem:** Hope can currently only measure the whole rendered mix (`balance.wav`) on Mix Check —
 she has no visibility into individual stems, so when asked "what's causing this low-end issue,"
 she can only give informed reasoning from the full mix, not real per-element measurements.
