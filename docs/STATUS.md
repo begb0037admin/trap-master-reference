@@ -1,5 +1,69 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, filename-first stem labelling (Cat) — Backlog 22 (Multi-stem Mix Check).**
+Kevin tested the mockup with his own real files and sent a screenshot showing filenames like
+"Paypadream$ (mastered)_Bass.wav", "_Drums.wav", "_Guitar.wav", "_Other.wav", "_Piano.wav",
+"_Vocals.wav" — the instrument name is explicitly right there in the filename, and the audio-content
+classifier (which had a real bug fixed in it earlier the same day — the stereo-downmix sign error
+that fabricated harmonics) was running anyway, guessing an answer the filename already gave for
+free. Kevin's framing: "AI should be intelligent enough to be able to know the title, and instrument
+from the wav title, this should not be a guess." `index.html` untouched — `docs/mockups/multistem-
+mixcheck-final.html` only.
+
+**Fix — filename tried first, content classifier only as fallback.** Added
+`FILENAME_KEYWORD_CATEGORIES` + `labelFromFilename(name)` (placed immediately before
+`classifyStem()`, since it conceptually runs first) covering Bass/Drums/Guitar/Vocals/Piano/Kick/
+Snare/Hats/Percussion/Synth/Keys/Strings/Brass/FX/Other, each matched case-insensitively via a
+regex using a negative lookbehind/lookahead requiring a NON-LETTER (or start/end of string) on both
+sides — deliberately NOT JS `\b`, which treats `_` as a word character and would fail to match
+"_Bass.wav" (no boundary between `_` and `B`, both `\w`). The stem-classification loop in
+`mcHandleFiles` now calls `labelFromFilename(s.fileName)` first; if it returns exactly one
+unambiguous category, that becomes the label directly with `guessed:false` (NOT badged "GUESSED" —
+it's a known fact from the filename, not a guess) and `classifyStem()` is skipped entirely. Only
+falls back to the audio-content classifier (`guessed:true`, badge shown) when the filename gives no
+usable clue (a generic export name like "track1.wav") or an ambiguous one (two different instrument
+keywords in the same filename, e.g. "Guitar_Bass_stem.wav" — resolved by falling back rather than
+picking one arbitrarily). Rename (the contenteditable label) is untouched and works identically for
+both filename-derived and content-guessed labels.
+
+**Codex three-touchpoint review, mandatory per agent-commons policy:**
+- **TP1 (plan)** — reviewed the lookbehind/lookahead approach and keyword set before writing code.
+  Confirmed the `\b`-vs-custom-lookaround reasoning was necessary; flagged two real caveats folded
+  into the code comments (ASCII-only `[a-zA-Z]` — Unicode filenames out of scope; modern-JS lookbehind
+  support required, acceptable since this runs in Kevin's own current browser) and one compound-word
+  limitation accepted as out of scope ("drumloop.wav" style fused compounds don't match — Kevin's
+  real files use delimiters).
+- **TP2 (diff)** — reviewed the actual diff; ran a real Node execution of the exact regex table
+  against representative filenames as part of the review. No functional bug found. One inaccurate
+  code *comment* caught and fixed (an example claimed "an-OTHER-.wav" wouldn't match "Other" — it
+  actually does, since hyphens are delimiters, not letters; the comment was corrected to state the
+  rule accurately instead of contradicting the code's own real behaviour).
+- **TP3 (real headless-Chrome, Playwright)** — synthetic WAV stems built with Kevin's exact filename
+  pattern, dropped through the real `#refFileInput` → `window.mcHandleFiles()` path (not a unit test
+  of the function in isolation) and the actual rendered `#mcStemRows` DOM read back. Four scenarios,
+  all passed: (1) all six of Kevin's real filenames ("_Bass.wav" through "_Vocals.wav") resolved to
+  the correct label with the "GUESSED" badge absent in every case; (2) a generic filename
+  ("track1.wav") with no instrument keyword fell back to the content classifier and showed the
+  "GUESSED" badge, while a filename-keyword stem in the same session correctly stayed
+  filename-derived; (3) an ambiguous filename containing two different instrument keywords
+  ("Guitar_Bass_stem.wav") fell back to the content classifier rather than picking Guitar or Bass
+  arbitrarily; (4) a false-positive-prone filename ("brassy_loop.wav") did NOT match "Bass" and
+  correctly fell back to the classifier, confirming the word-boundary logic holds against the
+  substring-collision case Kevin's brief specifically named. A companion Node-level test (25 cases
+  covering "another.wav"/"mother_track.wav" not matching "Other", "percent_calc.wav"/"percolate.wav"
+  not matching "Percussion" via "perc", `vocals_vox.wav` matching Vocals via either synonym without
+  being flagged ambiguous, delimiter tolerance for `_`/space/`-`/`()`, etc.) also passed 25/25. Two
+  unrelated pre-existing 404s (`docs/knowledge/*.json`, a relative-path artifact of serving the
+  mockup outside its normal deployed root) were confirmed present and unrelated before/after this
+  change — not a regression.
+
+**Debug hook added (mockup-only, matches existing convention):** `window.__mcDebug.labelFromFilename`
+exposed alongside the existing `classifyStem` debug accessor, for TP3 headless-Chrome verification —
+same "not used by any UI/app code path, safe to leave in a design mockup" convention already
+documented at that object's definition.
+
+---
+
 **2026-09-07 update, corridor-comparison architectural fix (Cat) — Backlog 22 (Multi-stem Mix
 Check) requirement 3 refinement.** Kevin found a real architectural gap: dropping a solo bass stem
 into Mix Check compared it against the FULL-MIX genre corridor, producing meaningless numbers

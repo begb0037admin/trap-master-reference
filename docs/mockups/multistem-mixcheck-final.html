@@ -18963,7 +18963,65 @@ csInit('csPlatform');
       return out;
     }
 
-    // ---------------- content-based classification ----------------
+    // ---------------- filename-based classification (tried FIRST) ----------------
+    // [Backlog 22 filename-first fix] Kevin's real stems already carry an explicit
+    // instrument keyword in the filename (e.g. "Paypadream$ (mastered)_Bass.wav") —
+    // running the audio-content classifier below on those is pointless and worse
+    // than useless (see monoEnergy's comment above for that classifier's real
+    // history of fabricating harmonics and mislabelling stems). If the filename
+    // states the instrument outright, that's a known fact, not a guess: use it
+    // directly, skip classifyStem() entirely, and never show the "guessed" badge.
+    // Only fall back to classifyStem() when the filename gives no usable clue
+    // (a generic DAW export name like "track1.wav") or gives more than one
+    // conflicting clue (two different instrument keywords in one filename).
+    //
+    // Word-boundary approach: deliberately NOT JS `\b`, because `\b` treats `_`
+    // as a word character (part of `\w`) — `\bBass\b` would FAIL to match
+    // "_Bass.wav" since there's no boundary between `_` and `B` (both `\w`).
+    // Instead each pattern uses a negative lookbehind/lookahead requiring a
+    // NON-LETTER (or start/end of string) on both sides of the match, so `_`,
+    // space, `-`, `(`, `)`, digits, and start/end-of-string all correctly count
+    // as delimiters (so "-OTHER-.wav" DOES match "Other" — hyphens are
+    // delimiters, not letters), while an adjacent LETTER (e.g. "another.wav" ->
+    // the 'n' right before "other" blocks the match) correctly prevents a false
+    // positive. ASCII-only (`[a-zA-Z]`) by design — ordinary DAW export
+    // filenames are ASCII; Unicode-adjacent edge cases are out of scope.
+    // Confirmed via Codex TP1 read-only plan review (2026-09-07) before
+    // implementation, and TP2 diff review (including a real node executable
+    // test against representative filenames) after.
+    const FILENAME_KEYWORD_CATEGORIES = [
+      {label:'Bass',       alt:'bass'},
+      {label:'Drums',      alt:'drums?'},
+      {label:'Guitar',     alt:'guitars?'},
+      {label:'Vocals',     alt:'vocals?|vox'},
+      {label:'Piano',      alt:'pianos?'},
+      {label:'Kick',       alt:'kicks?'},
+      {label:'Snare',      alt:'snares?'},
+      {label:'Hats',       alt:'hi-?hats?|hats?'},
+      {label:'Percussion', alt:'percussion|perc'},
+      {label:'Synth',      alt:'synths?'},
+      {label:'Keys',       alt:'keys?'},
+      {label:'Strings',    alt:'strings?'},
+      {label:'Brass',      alt:'brass'},
+      {label:'FX',         alt:'fx'},
+      {label:'Other',      alt:'other|misc(?:ellaneous)?'}
+    ].map(c=>({label:c.label, re:new RegExp('(?<![a-zA-Z])(?:'+c.alt+')(?![a-zA-Z])','i')}));
+
+    // Returns a canonical label if the filename unambiguously names exactly ONE
+    // instrument category, else null (caller falls back to classifyStem). Two
+    // DIFFERENT categories matching (e.g. "Guitar_Bass_stem.wav") is treated as
+    // ambiguous, not resolved by picking one arbitrarily — that would just be a
+    // different kind of guess. Two synonyms of the SAME category matching (e.g.
+    // "vocals_vox.wav" hitting both `vocals?` and `vox`) is NOT ambiguous —
+    // matches are grouped by distinct LABEL, not by which alternative fired.
+    function labelFromFilename(name){
+      if(!name) return null;
+      const matched = FILENAME_KEYWORD_CATEGORIES.filter(c=>c.re.test(name));
+      if(matched.length!==1) return null;
+      return matched[0].label;
+    }
+
+    // ---------------- content-based classification (fallback only) ----------------
     // Concrete, documented constants (Codex TP1: "high/low/dominant" must be
     // reproducible numbers, not vague adjectives) — this is a heuristic best
     // guess, not ML-grade classification, and is labelled as a guess in the UI.
@@ -19318,8 +19376,17 @@ csInit('csPlatform');
       tryRestoreFromSnapshot();
       // Classify every stem that wasn't just restored from a matching Snapshot
       // (marked _snapshotRestored) and hasn't already been classified once.
+      // [Backlog 22 filename-first fix] Try the filename keyword first — it's a
+      // known fact when unambiguous, not a guess, so it's never badged "guessed".
+      // Only run the unreliable audio-content classifier when the filename gives
+      // no usable clue (or an ambiguous one).
       stems.forEach(s=>{
         if(s.mismatch || s._snapshotRestored || s.classifiedOnce) return;
+        const fromName = labelFromFilename(s.fileName);
+        if(fromName){
+          s.label = fromName; s.guessed = false; s.classifiedOnce = true;
+          return;
+        }
         const guess=classifyStem(s.buffer);
         s.label=guess.label; s.guessed=true; s.classifiedOnce=true;
       });
@@ -19823,7 +19890,8 @@ csInit('csPlatform');
       sourceCount: ()=>sources.length,
       stemCount: ()=>stems.length,
       playing: ()=>playing,
-      classifyStem: (buf)=>classifyStem(buf) // exposes the real classifier for TP1/TP3 headless-Chrome verification
+      classifyStem: (buf)=>classifyStem(buf), // exposes the real classifier for TP1/TP3 headless-Chrome verification
+      labelFromFilename: (name)=>labelFromFilename(name) // exposes the filename-first keyword matcher (Backlog 22) for TP3 headless-Chrome verification
     };
   })();
 
