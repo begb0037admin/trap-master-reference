@@ -1615,6 +1615,18 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 #eq.oz-mixcheck .oz-band-bar::before{content:"−6 dB";left:0}
 #eq.oz-mixcheck .oz-band-bar::after{content:"+6 dB";right:0}
 #eq.oz-mixcheck #ozBandLowTag,#eq.oz-mixcheck #ozBandMidTag,#eq.oz-mixcheck #ozBandHighTag{display:none}
+/* Backlog 22 follow-up (2026-09-07, Kevin — solo a bass stem, corridor screams
+   "+41 dB" because it's comparing a stem against a full-mix target): honesty
+   banner for when exactly one stem out of a multi-stem session is currently
+   audible. #mcCorridorNote sits inside the Spectral Balance card, default
+   hidden; shown only while window.__mcSingleStemIsolated() is true (see JS —
+   NOT for the ordinary single-file-loaded case, which stays fully unaffected).
+   Band cards (.oz-band-val/.oz-band-fill) get an explicit dash/zero state from
+   ozPopulateBands() itself in that same state — no extra CSS needed there, the
+   existing rules already render a dash value + zero-width fill cleanly. */
+#eq.oz-mixcheck #mcCorridorNote{display:none;align-items:flex-start;gap:8px;margin:0 0 10px;padding:8px 10px;border:1px solid #3a2f52;border-left:3px solid #a557f4;border-radius:6px;background:rgba(165,87,244,.08);font-size:11.5px;line-height:1.4;color:#c7ccd0}
+#eq.oz-mixcheck #mcCorridorNote.visible{display:flex}
+#eq.oz-mixcheck #mcCorridorNote b{color:#f2f4f5}
 /* ── R3 step 4 (jules mockups/05, 2026-08-31) — FIX QUEUE (#mcActions) ──────
    One "up next" .mcq-card (the next not-applied, not-dismissed item), fully
    actionable — orange (#f97316) freq-target graphic + rank + title +
@@ -2900,6 +2912,9 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
           <span>Low</span><span>Low-Mid</span><span>High-Mid</span><span>High</span>
         </div>
       </div>
+      <div id="mcCorridorNote">
+        <span>Corridor comparison needs the full mix (or multiple stems) — an isolated stem's low/mid/high balance is being compared against nothing, so those numbers are suppressed here. <b>Showing the raw spectrum only.</b> Loudness, true peak, dynamics and correlation below are still real, correct readings for whatever's currently audible.</span>
+      </div>
       <div class="oz-band-grid">
         <div class="oz-band-card">
           <div class="oz-band-label">Low <small>20–250 Hz</small></div>
@@ -3593,7 +3608,7 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 // in EVERY commit that touches index.html — it exists so "is the fix
 // actually in my browser or am I on a stale GitHub Pages cache?" is
 // answerable at a glance, never by guesswork.
-const AIMM_BUILD = '2026-09-07.3';
+const AIMM_BUILD = '2026-09-07.4';
 (function(){
   try{
     console.log('[AIMM] build', AIMM_BUILD);
@@ -8662,6 +8677,7 @@ function buildMixCheckState(){
       breakdown: bd ? {
         loudness_vs_target: bd.loudnessVsTarget,
         tonal_balance_deltas_db: bd.tonalBalanceDeltas,
+        tonal_balance_suppressed: !!bd.tonalBalanceSuppressed,
         transient_read: bd.transientRead
       } : null,
       fix_queue: {
@@ -8740,7 +8756,12 @@ function buildMixCheckContextBlock(){
     const tb = sOrNull.breakdown.tonal_balance_deltas_db || {};
     const tr = sOrNull.breakdown.transient_read || {};
     L.push('Measured read — loudness ' + (lv.lufsI != null ? lv.lufsI + ' LUFS' : 'n/a') + (lv.deltaDb != null ? (' (' + (lv.deltaDb > 0 ? '+' : '') + lv.deltaDb + ' dB vs target, ' + (lv.verdict || '') + ')') : '') + ', PLR ' + (lv.plr != null ? lv.plr + ' dB' : 'n/a') + '.');
-    L.push('Tonal balance vs corridor — low ' + fmtSignedDb(tb.low) + ', mid ' + fmtSignedDb(tb.mid) + ', high ' + fmtSignedDb(tb.high) + ' dB.');
+    // Backlog 22 follow-up (2026-09-07): while a single stem is isolated out of
+    // a multi-stem session, comparing it against the full-mix corridor is
+    // meaningless — say so plainly instead of reciting three "n/a"s with no
+    // explanation, so Hope never sounds like she's missing data by mistake.
+    if (sOrNull.breakdown.tonal_balance_suppressed) L.push('Tonal balance vs corridor — not meaningful right now: a single isolated stem is playing (solo or muted down to one) out of a multi-stem session, and the corridor target is built for a full mix. Loudness/true peak/dynamics above are still real, correct readings for what\'s currently audible — just don\'t comment on tonal balance vs the corridor while this is the case.');
+    else L.push('Tonal balance vs corridor — low ' + fmtSignedDb(tb.low) + ', mid ' + fmtSignedDb(tb.mid) + ', high ' + fmtSignedDb(tb.high) + ' dB.');
     L.push('Transients — ' + (tr.character || 'n/a') + (tr.note ? (' (' + tr.note + ')') : '') + '.');
   }
   const fq = sOrNull.fix_queue || {};
@@ -16877,16 +16898,54 @@ csInit('csPlatform');
     if(!n||!cn)return null;
     return(s/n)-(cs/cn);
   }
+  // Backlog 22 follow-up (2026-09-07): a solo'd/muted-down single stem out of a
+  // MULTI-stem session gets summed and fed through this exact same single-file
+  // pipeline (see the multi-stem module's runAnalysisSync), so ozBandDelta has
+  // no way of knowing it's looking at an isolated stem rather than a full mix
+  // — it just compares whatever spectrum it's given against the full-mix
+  // corridor, which is meaningless for a bass-only or vocals-only signal.
+  // window.__mcSingleStemIsolated (defined in the multi-stem module further
+  // down the file) is the single shared source of truth for this state — it
+  // mirrors that module's own eligibleStems()/effectiveMuted() audible count
+  // exactly, so "suppressed here" and "audible for analysis" never disagree.
+  // Deliberately does NOT fire for the ordinary single-file-loaded case (no
+  // stems session at all) or for a degenerate one-stem-total session — see
+  // that function's own comment for the precise boundary.
+  function mcCorridorSuppressed(){
+    try{ return typeof window.__mcSingleStemIsolated==='function' && window.__mcSingleStemIsolated(); }
+    catch(_){ return false; }
+  }
+  window.mcCorridorSuppressed=mcCorridorSuppressed;
   function ozPopulateBands(){
     // MID band is 250-3000 Hz to MATCH ozBandDelta's 150-3000 Hz normalisation window
     // (Jules SPEC v2 §7 flag, coupled to fix #1): with the correct steeper corridor a
     // well-balanced master otherwise reads MID ~-2 to -3 dB purely because the old
     // 250-4000 band caught the 3-4 kHz roll-off the norm window does not.
     const bands=[['ozBandLow',20,250],['ozBandMid',250,3000],['ozBandHigh',4000,20000]];
+    const noteEl=document.getElementById('mcCorridorNote');
+    const suppressed=mcCorridorSuppressed();
+    if(noteEl) noteEl.classList.toggle('visible',suppressed);
     for(const[prefix,fLo,fHi]of bands){
-      const d=ozBandDelta(fLo,fHi);
       const valEl=document.getElementById(prefix+'Val'),tagEl=document.getElementById(prefix+'Tag'),fillEl=document.getElementById(prefix+'Fill');
       if(!valEl)continue;
+      if(suppressed){
+        // Honest "not meaningful" state — never compute/show a fabricated
+        // delta for an isolated stem against the full-mix corridor.
+        // [Codex TP2 fix] The .oz-band-val element is what's actually
+        // visible here — #ozBand*Tag is permanently display:none (see the
+        // CSS rule right above this function's own comment block; this
+        // redesigned meter conveys status via the fill bar/value text, not
+        // the tag), so putting the "isolated stem" explanation ONLY in
+        // tagEl.innerHTML (as an earlier pass did) rendered nothing visible
+        // at all — just a silent dash. The explanation now lives in the
+        // value text itself, which is genuinely on-screen; #mcCorridorNote
+        // above the band grid carries the fuller explanation.
+        valEl.innerHTML='N/A<span class="oz-unit"> · isolated stem</span>';
+        if(tagEl)tagEl.innerHTML=refTag('N/A — ISOLATED STEM','warn');
+        if(fillEl){fillEl.style.left='50%';fillEl.style.width='0%';}
+        continue;
+      }
+      const d=ozBandDelta(fLo,fHi);
       if(d===null){valEl.innerHTML='– –<span class="oz-unit"> dB</span>';if(tagEl)tagEl.innerHTML='';if(fillEl){fillEl.style.left='50%';fillEl.style.width='0%';}continue;}
       valEl.innerHTML=(d>=0?'+':'')+d.toFixed(1)+'<span class="oz-unit"> dB</span>';
       // Deviation meter: ±6 dB full-scale maps to half the track width, so the
@@ -17548,21 +17607,33 @@ csInit('csPlatform');
       }
       // 3) per-band corridor deltas (refSpecPoints vs the active corridor, same
       //    maths + 150 Hz–3 kHz normalisation the Spectral card shows) ----------
-      const bd=[['low',20,250],['lowmid',150,500],['mid',250,4000],['high',4000,20000]];
-      for(const [bk,lo,hi] of bd){
-        const delta=(typeof ozBandDelta==='function')?ozBandDelta(lo,hi):null;
-        if(delta==null||!isFinite(delta)) continue;
-        const over=Math.abs(delta)-1.5;
-        if(over<=0) continue;
-        const B=BANDS[bk]||BANDS.mid;
-        const hot=delta>0;
-        const lbl={low:'low end',lowmid:'low-mids',mid:'mids',high:'highs'}[bk]||bk;
-        const hiTxt=(B.hiHz>=1000?(B.hiHz/1000)+'k':B.hiHz);
-        raw.push({key:'band-'+bk,focusBand:bk,score:over*B.w,
-          impact:over>3?'high':(over>1?'med':'low'),confidence:'med',
-          title:lbl.charAt(0).toUpperCase()+lbl.slice(1)+' '+(hot?'+':'−')+Math.abs(delta).toFixed(1)+' dB vs corridor ('+B.loHz+'–'+hiTxt+' Hz)',
-          why:'Measured '+lbl+': '+Math.abs(delta).toFixed(1)+' dB '+(hot?'above':'below')+' the '+corrLabel+' corridor centre, whole-track average.',
-          move:MOVE_PENDING});
+      // Backlog 22 follow-up (2026-09-07): skip this entire signal group while
+      // a single stem out of a multi-stem session is isolated (solo, or
+      // muted down to one) — comparing an isolated bass/vocals/drums stem
+      // against a FULL-MIX corridor produces a fabricated, meaningless
+      // deviation (Kevin: "it screams your low end is 41 dB over"). The other
+      // signal groups above (true peak / PLR / correlation / loudness / the
+      // ratio-based sub/air heuristics) are untouched — they remain valid
+      // measurements of whatever's currently audible; only the corridor
+      // COMPARISON is suppressed, not the whole Fix Queue.
+      const corridorSuppressed = typeof window.mcCorridorSuppressed==='function' && window.mcCorridorSuppressed();
+      if(!corridorSuppressed){
+        const bd=[['low',20,250],['lowmid',150,500],['mid',250,4000],['high',4000,20000]];
+        for(const [bk,lo,hi] of bd){
+          const delta=(typeof ozBandDelta==='function')?ozBandDelta(lo,hi):null;
+          if(delta==null||!isFinite(delta)) continue;
+          const over=Math.abs(delta)-1.5;
+          if(over<=0) continue;
+          const B=BANDS[bk]||BANDS.mid;
+          const hot=delta>0;
+          const lbl={low:'low end',lowmid:'low-mids',mid:'mids',high:'highs'}[bk]||bk;
+          const hiTxt=(B.hiHz>=1000?(B.hiHz/1000)+'k':B.hiHz);
+          raw.push({key:'band-'+bk,focusBand:bk,score:over*B.w,
+            impact:over>3?'high':(over>1?'med':'low'),confidence:'med',
+            title:lbl.charAt(0).toUpperCase()+lbl.slice(1)+' '+(hot?'+':'−')+Math.abs(delta).toFixed(1)+' dB vs corridor ('+B.loHz+'–'+hiTxt+' Hz)',
+            why:'Measured '+lbl+': '+Math.abs(delta).toFixed(1)+' dB '+(hot?'above':'below')+' the '+corrLabel+' corridor centre, whole-track average.',
+            move:MOVE_PENDING});
+        }
       }
 
       // dedupe by focusBand (HANDOVER §3) — highest score wins, the rest fold
@@ -17720,11 +17791,20 @@ csInit('csPlatform');
         :character==='spiky'?('Crest '+crest+' dB — transient-heavy, peaks well above the body.')
         :character==='sustained'?('Crest '+crest+' dB — squashed, little peak-to-body swing.')
         :('Crest '+crest+' dB — transients and body roughly balanced.');
+      // Backlog 22 follow-up (2026-09-07): while a single stem out of a
+      // multi-stem session is isolated, the corridor comparison behind
+      // bandDelta()/ozBandDelta() is meaningless (comparing one stem against
+      // a full-mix target) — null the deltas out instead of returning a
+      // fabricated number, and flag it so downstream text (Hope's read, the
+      // "MIX CHECK — LIVE STATE" context block) can say so honestly rather
+      // than silently showing three "n/a"s with no explanation.
+      const tbSuppressed = typeof window.mcCorridorSuppressed==='function' && window.mcCorridorSuppressed();
       return {
         fileSignature: sig||'',
         analysisRev: rev,
         loudnessVsTarget:{ lufsI: hasLi?Math.round(li*10)/10:null, targetLufs: target, deltaDb: deltaDb, plr: plr, verdict: verdict },
-        tonalBalanceDeltas:{ low: bandDelta(20,250), mid: bandDelta(250,4000), high: bandDelta(4000,20000) },
+        tonalBalanceDeltas: tbSuppressed ? { low:null, mid:null, high:null } : { low: bandDelta(20,250), mid: bandDelta(250,4000), high: bandDelta(4000,20000) },
+        tonalBalanceSuppressed: tbSuppressed,
         transientRead:{ character: character, crestDb: crest, note: note },
         topFixes: publicList().slice(0,3)
       };
@@ -18005,10 +18085,19 @@ csInit('csPlatform');
         let lib = ''; try { lib = (typeof buildLibraryDigest === 'function') ? buildLibraryDigest() : ''; } catch(_){}
         const fixLines = list.map(it => it.id + ' | ' + it.title + ' | why: ' + it.why).join('\n');
         const sys = 'You are Hope, Kev\'s mix/master co-pilot inside AI Mix Masters. Ground EVERY recommendation in the reference library below (transcripts from MWTM and other producer/mixing YouTube channels) and in Kev\'s own plugin library — never generic training defaults. Target / corridor: ' + corr + '.\n\n' + kb + '\n\n' + lib;
+        // Backlog 22 follow-up (2026-09-07): tb.low/mid/high are already null
+        // when bd.tonalBalanceSuppressed is set (an isolated stem out of a
+        // multi-stem session, corridor comparison meaningless) — tell Hope
+        // that plainly instead of feeding her three "n/a"s with no context,
+        // so her generated "read" doesn't guess or stay silent in a way that
+        // reads as a data gap rather than an honest "not applicable here".
+        const tbLine = bd.tonalBalanceSuppressed
+          ? 'Tonal balance vs corridor: not meaningful right now — a single isolated stem is playing out of a multi-stem session, and the corridor target is built for a full mix. Do not comment on tonal balance vs the corridor; loudness/PLR above are still real and valid.'
+          : 'Tonal balance vs corridor: low ' + fmtSignedDb(tb.low) + ', mid ' + fmtSignedDb(tb.mid) + ', high ' + fmtSignedDb(tb.high) + ' dB';
         const usr = 'A mix just finished analysis on the Mix Check tab.\n'
           + 'File: ' + fname + '\n'
           + 'Loudness: ' + (lv.lufsI!=null?lv.lufsI+' LUFS':'n/a') + (lv.deltaDb!=null?(' ('+(lv.deltaDb>0?'+':'')+lv.deltaDb+' dB vs target, '+(lv.verdict||'')+')'):'') + ', PLR ' + (lv.plr!=null?lv.plr+' dB':'n/a') + '\n'
-          + 'Tonal balance vs corridor: low ' + fmtSignedDb(tb.low) + ', mid ' + fmtSignedDb(tb.mid) + ', high ' + fmtSignedDb(tb.high) + ' dB\n'
+          + tbLine + '\n'
           + 'Transients: ' + (tr.character||'n/a') + (tr.note?(' ('+tr.note+')'):'') + '\n\n'
           + 'Ranked Fix Queue (id | title | measured reason):\n' + fixLines + '\n\n'
           + 'Return ONLY minified JSON, nothing around it:\n'
@@ -19682,6 +19771,32 @@ csInit('csPlatform');
     // scheduleAnalysisSync() hasn't finished re-analysing yet.
     window.__mcAnalysisStale = function(){
       return stems.length>0 && lastCompletedAnalysisSeq!==analysisSeq;
+    };
+    // Backlog 22 follow-up (2026-09-07, Kevin — solo a bass stem, the corridor
+    // "screams that your low end is forty one dB over" because it's judging an
+    // isolated stem against a full-mix target). Single shared source of truth
+    // for "is the currently-audible signal an isolated SUBSET of a multi-stem
+    // session" — consumed by mcCorridorSuppressed() (Spectral Balance card),
+    // MC_FIXQUEUE.build() (corridor-based Fix Queue items), and
+    // breakdownData()/buildMixCheckContextBlock() (Hope's context), so all
+    // three surfaces agree on the same state at all times.
+    //
+    // Uses stems.length (every stem EVER dropped into this session, including
+    // ones later excluded for a sample-rate/length mismatch) — NOT
+    // eligibleStems().length — to decide "was this a multi-stem session at
+    // all". [Codex TP1 fix]: using eligibleStems().length here would
+    // misclassify the case where 2+ stems were dropped but all-but-one failed
+    // validation and got mismatch-excluded — that remaining stem is still one
+    // isolated part of an attempted multi-stem session, not an ordinary
+    // single-file load, so the corridor comparison is exactly as meaningless
+    // as a straightforward solo. Audibility itself still uses
+    // eligibleStems()/effectiveMuted() (mismatched stems are never audible
+    // anyway), mirroring runAnalysisSync()'s own audible derivation exactly so
+    // "suppressed here" can never disagree with "audible for analysis".
+    window.__mcSingleStemIsolated = function(){
+      if (stems.length <= 1) return false; // ordinary single-file case (or no stems) — corridor stays meaningful
+      const audible = eligibleStems().filter(s => !effectiveMuted(s));
+      return audible.length === 1; // exactly one stem audible out of a MULTI-stem session
     };
     window.__mcStemsForHope = function(){
       if(!stems.length) return null;

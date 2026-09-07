@@ -422,6 +422,26 @@ fold all of these into whichever option/build a future session picks up):**
    whole-mix analysis re-running against whatever subset is currently audible. Fix Queue items
    should be able to point at a specific stem once isolated this way (e.g. "Bass stem +9 dB in Low
    band").
+   - **Refinement, 2026-09-07 (Kevin — real architectural gap found in testing):** "reflect
+     whatever subset is currently audible" turned out to be incomplete on its own — Kevin: "when
+     you drop a solo bass stem into Mix Check, the app compares it against a full-mix corridor
+     target — so it screams that your low end is forty one dB over, which is meaningless, because
+     of course a bass stem has no highs. The corridor doesn't know it's looking at a stem." Kevin
+     offered two options (a stem-specific reference target, or skipping the tonal-balance
+     comparison entirely) and chose the SECOND, simpler one: a fabricated "what a solo bass stem
+     should look like" target would be just as likely to mislead as the wrong-target comparison it
+     replaces. **Fixed** on `docs/mockups/multistem-mixcheck-final.html` (mockup only,
+     `index.html` untouched) — reflecting the audible subset honestly now means: when the
+     currently-audible set is a single isolated stem out of a MULTI-stem session (solo, or muted
+     down to one — `window.__mcSingleStemIsolated()`), the Spectral Balance corridor-deviation
+     cards, the raw canvas framing, the corridor-based Fix Queue items, and Hope's own tonal-balance
+     context all say the comparison isn't meaningful right now, rather than computing/reciting a
+     number regardless. Loudness/true peak/dynamics/correlation remain fully live-reactive and
+     valid in every state, isolated or not — only the corridor COMPARISON is suppressed, never the
+     whole analysis. The ordinary single-file-loaded case (nothing else ever loaded alongside it)
+     is explicitly unaffected — that state IS the full file the corridor was designed to judge. Full
+     write-up (exact detection condition, what's suppressed vs. shown, Codex three-touchpoint
+     summary): `docs/STATUS.md`.
 4. **Hard requirement — Hope must be aware of stem state at all times, not just the finished mix.**
    Once stems ship, extend the existing Hope-awareness context mechanism
    (`buildMixCheckState()` / `buildMixCheckContextBlock()`, line ~8450/~8494 in `index.html` — the

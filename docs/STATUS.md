@@ -1,5 +1,77 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, corridor-comparison architectural fix (Cat) — Backlog 22 (Multi-stem Mix
+Check) requirement 3 refinement.** Kevin found a real architectural gap: dropping a solo bass stem
+into Mix Check compared it against the FULL-MIX genre corridor, producing meaningless numbers
+("your low end is forty one dB over") since a bass-only signal has no highs by design — the
+corridor didn't know it was looking at an isolated stem rather than a full mix. Went with Kevin's
+explicitly chosen simpler option (of the two he offered): when a multi-stem session has been
+narrowed to exactly one currently-audible stem, SUPPRESS the corridor comparison and say so
+honestly, rather than inventing a stem-specific reference target (a fabricated "what a solo bass
+stem should look like" target would be just as misleading as the wrong-target comparison it
+replaces). `index.html` untouched — `docs/mockups/multistem-mixcheck-final.html` only, build bumped
+to `2026-09-07.4`.
+
+**Exact detection condition** — a new shared accessor `window.__mcSingleStemIsolated()` (added
+inside the existing multi-stem IIFE, exported as `window.mcCorridorSuppressed()` for external
+callers) returns true only when BOTH: (a) more than one stem was EVER loaded into the session
+(`stems.length > 1` — counts every stem dropped in, including ones later excluded for a
+sample-rate/length mismatch, so a 2-stem session where one failed validation still counts as
+"attempted multi-stem", not an ordinary single-file load — a real edge case Codex's TP1 review
+caught, see below), AND (b) exactly one of the non-mismatched stems is currently audible
+(`eligibleStems().filter(s=>!effectiveMuted(s)).length === 1`, using the SAME
+`eligibleStems()`/`effectiveMuted()` logic `runAnalysisSync()` itself uses, so "suppressed here" can
+never disagree with "audible for analysis"). Deliberately returns **false** (corridor stays
+meaningful, unaffected) for: an ordinary single-file load (no stems array populated at all) and a
+degenerate one-stem-total session (nothing was ever loaded alongside it) — matching Kevin's own
+framing that a single loaded "stem" IS the full file the corridor was designed for. Mute-down-to-one
+and solo-one are treated identically (both produce `audible.length === 1`), confirmed by direct
+test.
+
+**What's suppressed vs. shown when isolated** — three surfaces gated on the same flag: (1) the
+visible Spectral Balance Low/Mid/High corridor-deviation cards (`ozPopulateBands()`) show `N/A ·
+isolated stem` instead of a computed dB delta, plus a new visible banner
+(`#mcCorridorNote`, "Corridor comparison needs the full mix (or multiple stems) — showing raw
+spectrum only") — the raw spectral CURVE canvas itself is left completely untouched, still drawing
+the real measured curve; (2) the Fix Queue's per-band corridor-delta signal group
+(`MC_FIXQUEUE.build()`, titled e.g. "Low end +X dB vs corridor") is skipped entirely — zero
+corridor-based items generated; (3) Hope's context feed (`breakdownData().tonalBalanceDeltas`
+nulled + new `tonalBalanceSuppressed` flag, consumed by both `buildMixCheckContextBlock()`'s "MIX
+CHECK — LIVE STATE" block and the real Claude-API prompt that generates Hope's spoken "read") says
+the comparison isn't meaningful right now instead of reciting fabricated or blank numbers.
+Deliberately UNCHANGED: LUFS/true peak/PLR/correlation/crest (Audio Specs) — all computed directly
+from the combined audible buffer with zero corridor involvement — and the Fix Queue's other signal
+groups (true peak/PLR/correlation/loudness direct-measure signals, plus the ratio-based sub/air-band
+heuristics like "muddy"/"808"/"harsh", which use fixed thresholds rather than a corridor
+comparison) — the brief scoped suppression strictly to "corridor-comparison claims", and these
+remain valid measurements of whatever's currently audible.
+
+**Codex three-touchpoint review, mandatory per agent-commons policy:**
+- **TP1 (plan)** — reviewed the exact detection condition + what gets suppressed before writing
+  code. Flagged one real edge case (see (a) above — using `eligibleStems().length` instead of
+  `stems.length` would have misclassified a multi-stem session where all-but-one stem failed
+  validation as an ordinary single-file load); confirmed leaving the ratio-based Fix Queue signals
+  untouched was the correct scope boundary per the brief.
+- **TP2 (diff)** — found and fixed one real bug: the "N/A — isolated stem" tag text was written into
+  `#ozBand*Tag`, an element permanently `display:none` in this redesign (status is conveyed via the
+  fill bar, not the tag) — so the explanation was silently invisible, leaving only a bare dash on
+  screen. Fixed by moving the explanation into `.oz-band-val` itself (genuinely visible). Also
+  flagged a defensive-consistency nit (two call sites used `window.__mcSingleStemIsolated()`
+  directly instead of the guarded `mcCorridorSuppressed()` wrapper) — fixed for consistency across
+  all three gated surfaces.
+- **TP3 (real headless-Chrome, Playwright)** — synthetic 3-stem session (60/90 Hz "Bass", 150/3000 Hz
+  "Drums", 300/700 Hz "Vocals") driven via `window.mcHandleFiles()` + real solo/mute button clicks.
+  Confirmed: full mix shows real corridor numbers + corridor Fix Queue items, note hidden; soloing
+  Bass suppresses corridor cards (now visibly "N/A · isolated stem"), shows the banner, drops
+  corridor Fix Queue items while keeping LUFS/PLR items, and LUFS/true peak read real numbers for the
+  isolated stem (-16.2 LUFS / -10.9 dBTP, distinct from the full-mix numbers); un-soloing back to
+  full mix resumes corridor comparison with the exact same numbers as before; mute-down-to-one
+  (no solo) produces identical suppression to solo-one, confirming the two are treated the same;
+  all-muted (unrelated pre-existing edge case, zero stems audible) correctly does NOT trigger
+  suppression — out of scope either way; the ordinary single-file-loaded case (`stemCount:0`, never
+  entered stem mode at all — `mcHandleFiles` degenerate-case path) was explicitly re-tested and
+  confirmed corridor comparison still works completely normally, unaffected by this fix.
+
 **2026-09-07 update, second correctness-bug pass (Cat) — Backlog 22 (Multi-stem Mix Check):
 five issues found and fixed on `docs/mockups/multistem-mixcheck-final.html`, routed by Jules.**
 Kevin re-tested with 6 real WAV files after the stem-classifier fix (below) and reported two
