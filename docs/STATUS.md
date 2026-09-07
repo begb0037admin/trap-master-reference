@@ -1,5 +1,98 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, second correctness-bug pass (Cat) — Backlog 22 (Multi-stem Mix Check):
+five issues found and fixed on `docs/mockups/multistem-mixcheck-final.html`, routed by Jules.**
+Kevin re-tested with 6 real WAV files after the stem-classifier fix (below) and reported two
+concrete bugs from a screenshot; Jules folded in three more real gaps mid-pass (immediate-draw
+timing, the colour scheme never actually being applied, and Hope having zero stem awareness).
+`index.html` untouched throughout — mockup-only. Full Codex three-touchpoint review on all five.
+
+1. **Per-stem waveforms were completely blank.** Root cause, confirmed with real headless-Chrome
+   instrumentation (temporary console.log probes in `smDraw()`/`mcDrawStemRows()`, real synthetic
+   stereo WAV stems loaded via `#refFileInput`, live DOM ancestor-chain dump at the exact moment
+   the draw call returned early): the whole `#mcStemStack` tree lives inside `#refDzLoaded`, which
+   is `display:none` until something adds `.visible` to it. That reveal only ever happened inside
+   `window.refLoadFile()` (the single-file path), and for the multi-stem path `refLoadFile()` is
+   only invoked ASYNCHRONOUSLY and LATER — via `scheduleAnalysisSync() -> runAnalysisSync() ->
+   await window.refLoadFile(wavFile)` (the synthesized down-mixed analysis file). `mcEnterStemMode()`
+   calls `mcRenderStemRows()` (which draws every stem canvas) synchronously and immediately, well
+   before that async reveal — so every canvas measured 0×0 at draw time, `smDraw()`'s
+   `if(!cw||!ch) return;` guard silently fired, and nothing ever re-triggered a redraw until a
+   later transport action (play/pause/seek) happened to fire after the reveal had finally landed.
+   Measured directly: initial draw call logged `cw=0,ch=0` with `#refDzLoaded` computed
+   `display:none`; a later draw call (post-reveal) produced non-blank canvas pixel data.
+   **Fix:** added `window.__mcRevealTransport()` — the same three DOM writes `refLoadFile()` always
+   did, now shared and called SYNCHRONOUSLY at the top of `mcEnterStemMode()`, before any row is
+   rendered/drawn — plus a defensive extra `mcDrawStemRows()` call at the end of
+   `runAnalysisSync()`'s success branch as a cheap, idempotent second-chance repaint. This also
+   satisfies Kevin's separate, previously-missed requirement that waveforms render immediately once
+   stems are decoded, not wait for Play.
+
+2. **Stem rows with the same guessed category were visually identical.** Root cause, confirmed by
+   reading the code: `mcHandleFiles()`'s `stems.push({..., label: stemBaseName(f.name), ...})`
+   initially stored the real filename in `label`, but the immediately-following classification loop
+   unconditionally overwrote it (`s.label=guess.label`), permanently discarding it — nothing else on
+   the stem object retained it, and the row template only ever rendered `label` + a "guessed" badge.
+   With 3 stems guessed "Other" and 2 "Bass" (Kevin's screenshot), those rows became text-for-text
+   identical. **Fix:** added an immutable `fileName` field captured once at push time (never touched
+   by classification or rename), rendered in the row head ahead of the existing editable
+   content-guessed label + badge, reusing the app's existing muted small-mono `.tp-file` filename
+   styling (used for the single main loaded file's name) with a row-local override
+   (`.mc-stem-file{min-width:0;flex-shrink:1;max-width:130px}`) so long names still fit.
+
+3. **Colour scheme was never actually applied.** Kevin's words: "I want the waves in our colour...
+   complete wave and as played they turn Orange." `smDraw()` previously stroked the WHOLE unplayed
+   span in flat grey and only the played span in the app's blue->purple `--send-blue` gradient — the
+   opposite of what was asked, and never implemented at all despite being in the original brief.
+   **Fix:** inverted for these NEW per-stem rows only (the real locked `#mcWave` transport canvas is
+   untouched — `smDraw()` is a fully separate function from `MC_WAVE.draw()`): the full/unplayed
+   span now renders in the blue->purple gradient (`#2fa1e6`->`#a557f4`, spanning the whole canvas
+   width) and the played span (behind the playhead) switches to the app's existing faded-orange
+   gradient (`#fdba74`->`#f97316`, reused verbatim from `.aichat-msg.fixaction .fa-mini i`).
+   Verified with real per-pixel colour sampling across the canvas width, before and during playback.
+
+4. **Hope had zero stem awareness.** Kevin tested it and Hope answered "bounce a stem down and drop
+   it in separately" as if only a single rendered mix file was loaded — a dropped requirement from
+   the original brief (req 4: "Hope must be aware of stem state at all times... never ask, she
+   already knows"). Root cause: the Hope rail's text chat (`aichatSend()`, a REAL Claude API call,
+   not scripted text) builds its system-prompt context via `buildMixCheckContextBlock()`, which only
+   ever described `buildMixCheckState()`'s single `file_name` — nothing in it ever asked the
+   multi-stem module (whose `stems` array is private to its own IIFE closure) whether stems were
+   loaded at all. **Fix:** added `window.__mcStemsForHope()`, a real (non-debug) accessor bridging
+   the closure, and wove its output into `buildMixCheckContextBlock()` — stem list, guessed/renamed
+   labels, and accurate mute/solo/audible state, woven in ahead of the existing Fix Queue section.
+   Scoped as content/context-string changes only — explicitly not new ElevenLabs/RT_INSTRUCTIONS/
+   TOOL_DEFS wiring, so this stayed with Cat rather than routing to Markey.
+   **Codex TP2 caught two real follow-on bugs, both fixed and re-verified:** (a) a stale-analysis
+   exposure — muting/soloing/adding/removing a stem bumps the async re-analysis but the OLD Fix
+   Queue/loudness numbers stayed visible with no indication they didn't match the new stem
+   combination yet; fixed with `window.__mcAnalysisStale()` (an `analysisSeq` vs
+   `lastCompletedAnalysisSeq` tracker) which now suppresses stale numbers behind an explicit
+   "re-running after a stem change" note. (b) a soloed-AND-muted stem displayed as `[SOLO, muted]`
+   even though solo overrides mute and the stem is actually audible; fixed to read
+   "mute requested but overridden by solo — still audible", based on the same `effectiveMuted()`
+   logic already used for playback.
+
+Codex three-touchpoint summary for this pass: TP1 (plan, before code) confirmed the bug-1 root
+cause against the actual `mcEnterStemMode()`/`refLoadFile()`/`runAnalysisSync()` code and the fix
+location, flagged an existing-but-separate async race (stems cleared mid-analysis) as a hardening
+note (not required for this scope), and confirmed bug-2 + the colour plan. TP2 (diff review) found
+the two real follow-on bugs described above (stale analysis exposure, solo/mute display) — both
+fixed before TP3. TP3 (real headless Chrome, Playwright + a real Chrome binary, 6 real synthetic
+stereo WAV stems — kick/bass/vocal/guitar/pad/fx, deliberately producing 3 "Bass" + 3 "Vocals"
+duplicate-category guesses to reproduce the original "3 identical Other rows" scenario): confirmed
+all 6 rows show real non-blank waveform pixel content the instant stems finish decoding (before any
+Play click); confirmed all 6 rows show a distinguishing filename alongside the guessed-category
+badge, with same-category rows fully distinguishable; confirmed real per-pixel colour sampling
+matches the blue->purple (unplayed) / orange (played) split exactly, both before playback (100%
+blue->purple) and mid-playback (orange up to the playhead, blue->purple after it); confirmed
+`buildMixCheckContextBlock()` (the actual string fed into both the elStart voice path and the
+aichatSend text-chat path) correctly lists all 6 stems with accurate labels and updates mute/solo
+state live, including the stale-analysis and solo-overrides-mute corrections. Zero console
+`pageerror`s across the full run.
+
+---
+
 **2026-09-07 update, correctness-bug pass (Cat) — Backlog 22 (Multi-stem Mix Check): real
 stem-classifier bug found and fixed, routed by Jules.** Kevin tested the final-brief build
 (commit `755e68b`) and reported: "vocals appear as drums - we need to fix this - every track is

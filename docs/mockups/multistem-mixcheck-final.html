@@ -2133,6 +2133,14 @@ select,button,input,textarea{font-family:inherit;font-size:13px}
 .mc-stem-row .ref-t-btn.mc-stem-x:hover{color:#f87171;border-color:#f87171}
 .mc-stem-wave-box{position:relative;height:44px;border-radius:6px;overflow:hidden;background:#0b0c0e}
 .mc-stem-wave{display:block;width:100%;height:100%}
+/* [Backlog 22 bug fix] Filename identifier shown ahead of the editable
+   content-guessed label — reuses the app's existing muted small-mono
+   filename look (.tp-file, already used for the single main loaded file's
+   name) but overrides flex-shrink so a long filename + long label + guess
+   badge + M/S/x buttons can still all fit/truncate in a narrow row instead
+   of overflowing (.tp-file itself is flex-shrink:0, fine for the single
+   real transport row which has more room). */
+.mc-stem-file{min-width:0;flex-shrink:1;max-width:130px}
 </style>
 <!-- Sortable.js powers drag-to-reorder on the Mastering Reference tab.
      ~30 KB, MIT, no jQuery. Pinned to v1 (latest 1.x). -->
@@ -8674,18 +8682,68 @@ function buildMixCheckState(){
 // where a fix came from.
 function buildMixCheckContextBlock(){
   const s = buildMixCheckState();
-  if (!s) return '';
+  // [Backlog 22 gap fix — Hope stem awareness] Kev tested this and got "bounce
+  // a stem down and drop it in separately" back — a generic single-file
+  // answer with zero awareness the multi-stem feature exists or that stems
+  // are currently loaded. Root cause: this whole function only ever
+  // described buildMixCheckState()'s single `file_name`; nothing here ever
+  // asked the multi-stem module (window.__mcStemsForHope(), added alongside
+  // this fix) whether 2+ stems are loaded. Per the original requirement
+  // (ROADMAP.md Multi-stem Mix Check req 4): she must already know which
+  // stems are loaded, their labels, and mute/solo state — never ask.
+  // Computed BEFORE the `if(!s) return ''` below so stem awareness still
+  // shows up in the narrow window right after stems are dropped but before
+  // the (async) combined-mix analysis pass has completed — buildMixCheckState()
+  // depends on that analysis and can be null right then, but Hope should
+  // already know stems are loading even so.
+  const stemsInfo = (typeof window.__mcStemsForHope==='function') ? window.__mcStemsForHope() : null;
+  // [Codex TP2 fix — Backlog 22] If a stem was just muted/soloed/added/removed,
+  // `s` (buildMixCheckState()) can still be non-null but describe the OLD
+  // combination — scheduleAnalysisSync()'s re-analysis is async and hasn't
+  // landed yet. Treat that as "no trustworthy numbers yet" rather than
+  // silently handing Hope stale Fix Queue/loudness/tonal figures alongside
+  // the NEW (current) stem list — she'd otherwise sound confidently wrong.
+  const stale = stemsInfo && typeof window.__mcAnalysisStale==='function' && window.__mcAnalysisStale();
+  const sOrNull = stale ? null : s;
+  if (!sOrNull && !stemsInfo) return '';
   const L = ['=== MIX CHECK — LIVE STATE (you can see all of this; Kev can too) ==='];
-  L.push('Loaded file: ' + (s.file_name || '(a mix)') + (s.target_corridor ? ('  |  target corridor: ' + s.target_corridor) : ''));
-  if (s.breakdown){
-    const lv = s.breakdown.loudness_vs_target || {};
-    const tb = s.breakdown.tonal_balance_deltas_db || {};
-    const tr = s.breakdown.transient_read || {};
+  if (stemsInfo && stemsInfo.length){
+    L.push('STEM SESSION ACTIVE — ' + stemsInfo.length + ' stem' + (stemsInfo.length===1?'':'s') + ' loaded (this is NOT a single rendered mix file — treat each stem as separately inspectable, and never ask him to bounce/export a stem down, he already has it loaded as its own file):');
+    stemsInfo.forEach(st => {
+      // [Codex TP2 fix] Base the displayed state on `audible` (which already
+      // correctly applies effectiveMuted()'s solo-overrides-mute rule) rather
+      // than raw `muted`/`solo` flags — a soloed stem that ALSO has its own
+      // mute button pressed is still actually audible (solo wins), so showing
+      // both "SOLO" and "muted" together was misleading.
+      const bits = [];
+      if (st.mismatch) bits.push('MISMATCH — excluded from playback/analysis (sample rate/channels/length does not match the other stems)');
+      else if (st.audible){
+        if (st.solo) bits.push('SOLO');
+        if (st.muted) bits.push('mute requested but overridden by solo — still audible');
+      } else {
+        bits.push(st.muted ? 'muted' : 'silenced by another stem\'s solo');
+      }
+      const stateStr = bits.length ? ' [' + bits.join(', ') + ']' : ' [audible]';
+      L.push('  - "' + st.fileName + '" — guessed/labelled: ' + st.label + (st.guessed ? ' (guessed from audio content, unconfirmed — if he corrects it, that\'s the rename)' : (st.confirmed ? ' (confirmed/renamed by Kev)' : '')) + stateStr);
+    });
+    L.push('If he asks "can you check the bass" or "what\'s causing the low end issue", answer using the ACTUAL stem(s) above whose label matches (e.g. a stem labelled Bass) — never a generic single-file answer, and never ask him which stem he means if only one plausible match exists.');
+    if (!sOrNull) L.push('(Combined-mix analysis for the audible stems above is ' + (stale ? 're-running after a stem change' : 'still running') + ' — Fix Queue/loudness/tonal numbers below are not populated yet, or would describe an OLDER stem combination. Don\'t claim measured numbers you don\'t have; you DO already know the stem names/labels/states above.)');
+    L.push('');
+  }
+  if (!sOrNull){
+    L.push('=== END MIX CHECK — LIVE STATE ===');
+    return L.join('\n');
+  }
+  L.push('Loaded file: ' + (sOrNull.file_name || '(a mix)') + (sOrNull.target_corridor ? ('  |  target corridor: ' + sOrNull.target_corridor) : ''));
+  if (sOrNull.breakdown){
+    const lv = sOrNull.breakdown.loudness_vs_target || {};
+    const tb = sOrNull.breakdown.tonal_balance_deltas_db || {};
+    const tr = sOrNull.breakdown.transient_read || {};
     L.push('Measured read — loudness ' + (lv.lufsI != null ? lv.lufsI + ' LUFS' : 'n/a') + (lv.deltaDb != null ? (' (' + (lv.deltaDb > 0 ? '+' : '') + lv.deltaDb + ' dB vs target, ' + (lv.verdict || '') + ')') : '') + ', PLR ' + (lv.plr != null ? lv.plr + ' dB' : 'n/a') + '.');
     L.push('Tonal balance vs corridor — low ' + fmtSignedDb(tb.low) + ', mid ' + fmtSignedDb(tb.mid) + ', high ' + fmtSignedDb(tb.high) + ' dB.');
     L.push('Transients — ' + (tr.character || 'n/a') + (tr.note ? (' (' + tr.note + ')') : '') + '.');
   }
-  const fq = s.fix_queue || {};
+  const fq = sOrNull.fix_queue || {};
   L.push('');
   L.push('FIX QUEUE — ' + (fq.applied || 0) + ' / ' + (fq.total || 0) + ' done. Each item below is a fix YOU posted from the measured analysis vs the corridor. If Kev asks about one by number, you already have it — answer directly, never ask where he saw it.');
   (fq.all || []).forEach(it => {
@@ -18420,12 +18478,23 @@ csInit('csPlatform');
   // stub so the existing call sites don't need touching.
   function mcFillWaveBars(){}
 
-  window.refLoadFile=async function(file){
-    if(!file)return;
-    if(LIVE.active)await window.refLiveStop(); // file analysis takes over cleanly
+  // Shared "the transport card has something loaded" reveal — three DOM
+  // writes that used to live only inside refLoadFile() (single-file path).
+  // Multi-stem mode (Backlog 22) needs the SAME reveal to happen
+  // synchronously and immediately when stems finish decoding, not only once
+  // window.refLoadFile() gets called later/async by the analysis pipeline
+  // (runAnalysisSync -> refLoadFile(wavFile)) — see mcEnterStemMode(). Bug:
+  // per-stem waveform canvases were drawing while this container was still
+  // display:none (0×0 layout box), so the very first draw silently no-op'd.
+  window.__mcRevealTransport = function(){
     document.getElementById('refDzEmpty').style.display='none';
     document.getElementById('refDzLoaded').classList.add('visible');
     document.getElementById('refDropZone').classList.add('has-file');
+  };
+  window.refLoadFile=async function(file){
+    if(!file)return;
+    if(LIVE.active)await window.refLiveStop(); // file analysis takes over cleanly
+    window.__mcRevealTransport();
     // R3 post-ship loose end (Kevin approved 2026-09-02): strip the extension from the
     // small transport label too — fix #2 only did #mcTitle. Same treatment: drop from the
     // last dot, but keep the whole name when there is no dot / it is a leading-dot name.
@@ -19134,6 +19203,15 @@ csInit('csPlatform');
         stems.push({
           id: nextStemId++,
           file:f,
+          // [Backlog 22 bug fix] fileName is IMMUTABLE — set once here and never
+          // touched again (unlike `label`, which the classifier below overwrites
+          // with a guessed category, and which rename can further overwrite).
+          // Previously the filename was only ever stored in `label`, so the
+          // classification step a few lines down silently discarded it — once
+          // 2+ stems land in the same guessed category their rows were
+          // text-for-text identical (label + badge), with no way to tell them
+          // apart. Rendered in the row head alongside the editable label.
+          fileName: stemBaseName(f.name),
           label: stemBaseName(f.name),
           guessed:false,
           buffer:buf,
@@ -19328,13 +19406,25 @@ csInit('csPlatform');
       const peaks=smBuild(buf);
       const mid=ch*0.5, amp=ch*0.46;
       const played=playedFrac*cw;
-      const grad=g.createLinearGradient(0,0,Math.max(1,played),0);
-      grad.addColorStop(0,'#2fa1e6'); grad.addColorStop(1,'#a557f4');
+      // [Backlog 22 colour-scheme fix, Kevin direct] Deliberately INVERTED vs
+      // the real locked #mcWave (which never changes — see docs/CLAUDE.md):
+      // for these NEW per-stem rows only, the full/unplayed span renders in
+      // the app's existing blue->purple --send-blue gradient (spanning the
+      // WHOLE canvas width, not just up to the playhead), and the PLAYED span
+      // (behind the playhead) switches to the app's existing faded-orange
+      // gradient (#fdba74->#f97316, reused verbatim from
+      // .aichat-msg.fixaction .fa-mini i elsewhere in this file). Kevin's own
+      // words: "I want the waves in our colour... complete wave and as played
+      // they turn Orange."
+      const blueGrad=g.createLinearGradient(0,0,cw,0);
+      blueGrad.addColorStop(0,'#2fa1e6'); blueGrad.addColorStop(1,'#a557f4');
+      const orangeGrad=g.createLinearGradient(0,0,Math.max(1,played),0);
+      orangeGrad.addColorStop(0,'#fdba74'); orangeGrad.addColorStop(1,'#f97316');
       g.globalAlpha = muted ? 0.4 : 1;
       for(let i=0;i<SMWAVE_BUCKETS;i++){
         const x=i/SMWAVE_BUCKETS*cw;
         const y0=mid-peaks[i*2+1]*amp, y1=mid-peaks[i*2]*amp;
-        g.strokeStyle=(x<=played)?grad:'#4a4f56';
+        g.strokeStyle=(x<=played)?orangeGrad:blueGrad;
         g.beginPath(); g.moveTo(x+0.5,y0); g.lineTo(x+0.5,Math.max(y1,y0+1)); g.stroke();
       }
       g.globalAlpha=1;
@@ -19358,8 +19448,14 @@ csInit('csPlatform');
       wrap.innerHTML = stems.map((s,i)=>{
         const mism = s.mismatch ? ' mismatch' : '';
         const guessBadge = s.guessed ? '<span class="mc-stem-guess" title="Best guess from audio content — click the name to rename if this looks wrong">guessed</span>' : '';
+        // [Backlog 22 bug fix] Filename is a separate, non-editable identifier
+        // shown ahead of the editable content-guessed label so two rows that
+        // share the same guessed category (e.g. two "Bass" guesses) are still
+        // visually distinguishable — see fileName note at stems.push() above.
+        const fileNameSpan = s.fileName ? '<span class="mc-stem-file tp-file" title="'+esc(s.fileName)+'">'+esc(s.fileName)+'</span>' : '';
         return '<div class="mc-stem-row'+mism+'" data-i="'+i+'">'
           + '<div class="mc-stem-row-head">'
+          + fileNameSpan
           + '<span class="mc-stem-label" contenteditable="true" spellcheck="false" data-i="'+i+'" title="Click to rename">'+esc(s.label)+'</span>'
           + guessBadge
           + (s.mismatch?'<span class="mc-stem-warn" title="Sample rate/channels/length mismatch vs the other stems — excluded from playback and the combined analysis">&#9888;</span>':'')
@@ -19381,6 +19477,17 @@ csInit('csPlatform');
 
     function mcEnterStemMode(){
       document.getElementById('mcWaveBox').style.display='none';
+      // [Backlog 22 bug fix] Reveal the shared transport container (#refDzLoaded)
+      // SYNCHRONOUSLY here, before rendering/drawing any stem row. Previously
+      // this reveal only ever happened later, inside window.refLoadFile(),
+      // which for the multi-stem path is invoked asynchronously by
+      // runAnalysisSync() (well after this function returns). mcRenderStemRows()
+      // below draws each stem's canvas immediately and synchronously — if the
+      // container is still display:none at that moment, every canvas measures
+      // 0×0 and smDraw() silently no-ops, leaving blank waveforms until some
+      // later transport action (play/pause/seek) happens to redraw once the
+      // container has finally been revealed by the analysis pipeline.
+      if(typeof window.__mcRevealTransport==='function') window.__mcRevealTransport();
       document.getElementById('mcStemStack').hidden=false;
       mcRenderStemRows();
       mcSetMultiStemHeader();
@@ -19463,6 +19570,16 @@ csInit('csPlatform');
 
     // ---------------- analysis sync (req 3/8) — latest-wins serialized queue ----------------
     let analysisSeq=0, analysisRunning=false, pendingAnalysisSeq=0;
+    // [Codex TP2 fix — Backlog 22] Tracks which analysis generation actually
+    // finished populating MC_FIXQUEUE/loudness/tonal-balance via refLoadFile().
+    // Any mute/solo/add/remove bumps analysisSeq immediately (synchronously,
+    // in scheduleAnalysisSync) but the real numbers only land later, async,
+    // once runAnalysisSync's own await completes. Without this, Hope's
+    // context block could describe the NEW stem list/mute-state alongside
+    // the OLD (pre-change) Fix Queue numbers with no indication they don't
+    // match yet. See window.__mcAnalysisStale() below and its use in
+    // buildMixCheckContextBlock().
+    let lastCompletedAnalysisSeq=0;
     function scheduleAnalysisSync(){
       pendingAnalysisSeq = ++analysisSeq;
       if(!analysisRunning) drainAnalysis();
@@ -19527,6 +19644,12 @@ csInit('csPlatform');
       // exists even in some future refactor that changes the seq bump order).
       if(mySeq===analysisSeq && stems.length){
         mcSetMultiStemHeader(); // refLoadFile() just called mcSetHeader(wavFile.name,...) — override back immediately
+        // Defensive second-chance repaint (Codex TP1): cheap, idempotent, and
+        // covers any other timing edge case where the first mcRenderStemRows()
+        // draw call happened before layout was ready — same fix family as the
+        // __mcRevealTransport() call in mcEnterStemMode() above.
+        mcDrawStemRows(currentPlayFrac());
+        lastCompletedAnalysisSeq = mySeq; // [Codex TP2 fix] this generation's numbers are now trustworthy
       }
     }
 
@@ -19543,6 +19666,35 @@ csInit('csPlatform');
     window.refClearFile = function(){
       if(stems.length) mcResetStems();
       return origClearFile();
+    };
+
+    // [Backlog 22 gap fix — Hope stem awareness] Real (non-debug) accessor:
+    // `stems` is private to this IIFE's closure, so buildMixCheckContextBlock()
+    // (which lives outside it, in the main script scope, and is what actually
+    // gets woven into the system prompt sent to Claude on every Hope-rail
+    // message) has no way to see current stem state at all. That's the root
+    // cause of Hope answering as if only a single rendered mix file were
+    // loaded — she was never told stems exist. This getter is the bridge.
+    // [Codex TP2 fix — Backlog 22] Real accessor: true while the currently
+    // populated Fix Queue/loudness/tonal-balance numbers (from
+    // buildMixCheckState()) belong to an OLDER stem combination than the one
+    // currently loaded/muted/soloed — i.e. a stem change has been made that
+    // scheduleAnalysisSync() hasn't finished re-analysing yet.
+    window.__mcAnalysisStale = function(){
+      return stems.length>0 && lastCompletedAnalysisSeq!==analysisSeq;
+    };
+    window.__mcStemsForHope = function(){
+      if(!stems.length) return null;
+      return stems.map(s=>({
+        fileName: s.fileName || s.label,
+        label: s.label,
+        guessed: !!s.guessed,
+        confirmed: !!s.confirmed,
+        mismatch: !!s.mismatch,
+        muted: !!s.requestedMuted,
+        solo: !!s.solo,
+        audible: !s.mismatch && !effectiveMuted(s)
+      }));
     };
 
     // Debug/verification hook only (TP3 real-headless-Chrome click-through) —
