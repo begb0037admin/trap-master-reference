@@ -404,6 +404,17 @@ referencing, driving, and demonstrating — not matching their feature checklist
 This note exists to inform priority calls (see Library reorganization, item 23 below, explicitly
 deprioritized behind Hope-intelligence work as a result) — it is not itself a build item.
 
+**Product vision, sharpened 2026-09-07 (Kevin, in his own words, reviewing the Multi-stem Mix
+Check mockup's Hope demonstrate/instruct behavior):** "this is the kind of interaction I want from
+Hope and set this apart from all the other mix apps out there." The concrete shape of it: Hope
+should be conversationally smart enough to flag a real problem unprompted in plain language ("your
+bass is high and over") and then genuinely act on it ("here, let me show you" — a real solo/mute
+call, not just a description), or offer to talk the user through doing it themselves. This is the
+explicit, load-bearing differentiator for AIMM going forward — not a nice demo moment, the actual
+reason Hope exists as a product idea. Treat any future Hope-intelligence work (Backlog 24/25, the
+demonstrate/instruct mechanism itself, and anything similar) as building directly toward this
+statement, not a generic assistant feature.
+
 **Requirements gathered so far (2026-09-04 session, Kevin's refinements as the spec developed —
 fold all of these into whichever option/build a future session picks up):**
 
