@@ -1,5 +1,58 @@
 # STATUS.md — AIMM
 
+**2026-09-07 update, final pass (Jules) — Backlog 22 (Multi-stem Mix Check): final agreed brief,
+SUPERSEDES `multistem-mixcheck.html`, `multistem-mixcheck-in-context.html`, and
+`multistem-mixcheck-minimal.html` for review purposes.** After an extensive live design discussion,
+Kevin gave a complete final brief covering all remaining open questions on this feature (the exact
+continuous-sync-while-muted playback model, content-based stem labelling instead of filenames,
+Snapshot integration, and a hard "never concatenate filenames in the header" rule after the earlier
+concatenated-header bug). One-line reason each prior mockup is superseded: `multistem-mixcheck.html`
+— wrong drop-target structure (a separate stem-slot panel instead of extending the real shared
+drop zone); `multistem-mixcheck-in-context.html` — hidden real components + a duplicate Hope panel;
+`multistem-mixcheck-minimal.html` — wrong interaction model (one single-buffer engine reused for
+both playback and analysis, so mute/solo had to interrupt the mix, and filename-based labels, which
+is what produced the concatenated-header bug).
+
+**Flagged, not silently resolved:** a fourth prior mockup, `multistem-mixcheck-v2.html` (per-stem
+drop slots, built after Kevin rejected the minimal pass's shared picker), was NOT named in this
+final brief's explicit supersession list. This pass's shared-drop-zone requirement is the opposite
+structural direction from v2's slots. Very likely also superseded given the rest of the brief
+(content classification + rename removes the labelling problem slots partly existed to solve), but
+logged as an open question for Kevin to confirm rather than assumed — see the full reasoning in
+`docs/ROADMAP.md`'s Multi-stem Mix Check section. `multistem-mixcheck-v2.html` stays live,
+unchanged; its DASHBOARD.html badge is not removed.
+
+**Delivered:** `docs/mockups/multistem-mixcheck-final.html`, pushed to `main`. Live at
+`https://begb0037admin.github.io/aimm/docs/mockups/multistem-mixcheck-final.html`. Base = a fresh
+fetch of `main` `index.html`, edited in place; `index.html` itself untouched throughout.
+
+**The core correction, verified not just built:** every loaded stem's `AudioBufferSourceNode` now
+runs continuously for the whole playback duration regardless of mute state — mute/solo ramps ONLY
+that stem's own persistent `GainNode`, never stops/restarts/reschedules a source. Verified via a
+debug hook (`window.__mcDebug`) instrumenting real `AudioContext.prototype.createBufferSource`
+calls: 3 full rounds of mute-toggling every stem + a solo/un-solo cycle, while genuinely playing,
+produced zero new source-node creations, with `AudioContext.state` staying `"running"` and
+`currentTime`/elapsed-time continuing to advance throughout. Isolating one stem changed measured
+loudness from -70.0 LUFS (all muted) to -14.7 LUFS (real signal) — live-reactive Audio Specs/Fix
+Queue/Spectral Balance confirmed functionally correct, not just visually plausible, reusing the
+same summed-buffer-through-`refLoadFile()` technique the minimal pass proved, now serialized via a
+latest-wins queue. Stem labels come from real content-based classification (concrete FFT/threshold
+constants, honestly badged "guessed," click-to-rename), classified all 4 correctly on
+spectrally-distinguishable synthetic demo stems after a TP3-found onset-detection fix. A Snapshot
+extends the existing `STATE.journal`/`createWorkbenchBackupPill()` pattern (fingerprint-keyed,
+settings-only) — confirmed via headless-Chrome save/reload that labels (including a manual rename)
+restore automatically without re-classifying. Header never concatenates (`#mcSub` = "N stems loaded
+— duration"). No EQ, exactly one real `#hopeRail`. Codex three-touchpoint review — TP1 materially
+reshaped the playback engine, analysis-serialization, classification constants, and Snapshot
+fingerprint design before code was written; TP2 (diff review) confirmed the mute/solo path never
+touches a source node and found+fixed 6 more real bugs (an analysis-reset race, a solo+mute
+audible-set inconsistency between playback and analysis, an unstable Fix-Queue signature across
+reloads, a Snapshot-restore duplicate-matching gap, a stem added mid-playback staying silent, a
+mismatch-reference edge case); TP3 (real headless-Chrome click-through) found+fixed 2 more (a
+`[hidden]` CSS bug, the onset-detection logic bug) then re-ran the full suite clean. Full
+design-decision + Codex-findings write-up in `docs/ROADMAP.md`'s Multi-stem Mix Check section.
+Not build authorization; Option A vs B remains Kevin's open call.
+
 **2026-09-07 update, later same day again (Jules) — Backlog 22 (Multi-stem Mix Check) v2:
 per-stem drop slots, SUPERSEDES the minimal pass below after Kevin tested it and found a real
 bug plus a wrong interaction model.** Kevin tested `docs/mockups/multistem-mixcheck-minimal.html`
